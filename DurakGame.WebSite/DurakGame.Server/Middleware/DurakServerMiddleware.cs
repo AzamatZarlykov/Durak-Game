@@ -29,6 +29,8 @@ namespace DurakGame.Server.Middleware
                 Console.WriteLine("WebSocket Connected");
 
                 StringBuilder playerID = _manager.AddSocket(websocket);
+                await SendPlayerIDAsync(websocket, playerID);
+
 
                 await ReceiveMessage(websocket, async (result, buffer) =>
                 {
@@ -49,6 +51,12 @@ namespace DurakGame.Server.Middleware
             {
                 await _next(context);
             }
+        }
+
+        private async Task SendPlayerIDAsync(WebSocket socket, StringBuilder playerID)
+        {
+            var buffer = Encoding.UTF8.GetBytes("PlayerID: " + playerID);
+            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
         private async Task ReceiveMessage(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage)
