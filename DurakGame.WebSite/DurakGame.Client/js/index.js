@@ -5,8 +5,8 @@ var sendMessage = document.getElementById("sendMessage");
 var sendButton = document.getElementById("sendButton");
 var commsLog = document.getElementById("commsLog");
 var closeButton = document.getElementById("closeButton");
-var connID = document.getElementById("connIDLabel");
-
+var playerID = document.getElementById("playerIdLabel");
+var totalPlayers = document.getElementById("totalNumberOfPlayers");
 
 connectionUrl.value = "ws://localhost:1234";
 
@@ -14,7 +14,7 @@ connectButton.onclick = function () {
     stateLabel.innerHTML = "Attempting to connect...";
     socket = new WebSocket(connectionUrl.value);
     socket.onopen = function (event) {
-        updateState();
+        updateState(); 
         commsLog.innerHTML += '<tr>' +
             '<td colspan="3" class="commslog-data">Connection opened</td>' +
             '</tr>';
@@ -26,20 +26,27 @@ connectButton.onclick = function () {
             '</tr>';
     };
     socket.onerror = updateState;
+
     socket.onmessage = function (event) {
-        commsLog.innerHTML += '<tr>' +
+        if(event.data.substring(0,9) == "PlayerID:") {
+            commsLog.innerHTML += '<tr>' +
             '<td class="commslog-server">Server</td>' +
             '<td class="commslog-client">Client</td>' +
             '<td class="commslog-data">' + htmlEscape(event.data) + '</td></tr>';
-        isConnID(event.data);
+            isPlayerID(event.data);
+        }else {
+            setTotalPlayers(event.data);
+        }
     };
-
 };
 
 closeButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
+    // socket.onmessage = function (event) {
+    //     setTotalPlayers(event.data);
+    // };
     socket.close(1000, "Closing from client");
 };
 
@@ -65,12 +72,13 @@ function htmlEscape(str) {
         .replace(/>/g, '&gt;');
 }
 
-
-function isConnID(str) {
-    if (str.substring(0, 7) == "ConnID:")
-        connID.innerHTML = "ConnID: " + str.substring(8, 45);
+function isPlayerID(str) {
+    playerID.innerHTML = "PlayerID: " + str.substring(10, 45);;
 }
 
+function setTotalPlayers(str) {
+    totalPlayers.innerHTML = "Total Number Of Players: " + str;
+}
 
 function updateState() {
     function disable() {
@@ -91,7 +99,7 @@ function updateState() {
         switch (socket.readyState) {
             case WebSocket.CLOSED:
                 stateLabel.innerHTML = "Closed";
-                connID.innerHTML = "ConnID: N/a"
+                playerID.innerHTML = "PlayerID: N/a"  
                 disable();
                 connectionUrl.disabled = false;
                 connectButton.disabled = false;

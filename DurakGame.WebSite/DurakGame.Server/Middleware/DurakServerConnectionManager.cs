@@ -18,12 +18,24 @@ namespace DurakGame.Server.Middleware
             return _sockets;
         }
 
+        public int ReturnNumberOfPlayers()
+        {
+            Console.WriteLine("Total Number of Players: " + numberOfPlayers);
+            return numberOfPlayers;
+        }
+
+        public int DecrementNumberOfPlayers()
+        {
+            numberOfPlayers--;
+            Console.WriteLine("Total Number of Players: " + numberOfPlayers);
+            return numberOfPlayers;
+        }
+
         public StringBuilder AddSocket(WebSocket socket)
         {
             numberOfPlayers += 1;
 
-            StringBuilder playerID = new StringBuilder("Player");
-            playerID.Append(numberOfPlayers.ToString());
+            StringBuilder playerID = new StringBuilder(numberOfPlayers.ToString());
             
             _sockets.TryAdd(playerID, socket);
             Console.WriteLine("Connection Added: " + playerID);

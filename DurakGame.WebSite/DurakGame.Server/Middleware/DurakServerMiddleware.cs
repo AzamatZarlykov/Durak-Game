@@ -29,8 +29,11 @@ namespace DurakGame.Server.Middleware
                 Console.WriteLine("WebSocket Connected");
 
                 StringBuilder playerID = _manager.AddSocket(websocket);
-                await SendPlayerIDAsync(websocket, playerID);
+                int totalPlayers = _manager.ReturnNumberOfPlayers();
 
+                await SendTotalNumberOfPlayersAsync(websocket, totalPlayers);
+
+                await SendPlayerIDAsync(websocket, playerID);
 
                 await ReceiveMessage(websocket, async (result, buffer) =>
                 {
@@ -42,6 +45,8 @@ namespace DurakGame.Server.Middleware
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
+                        totalPlayers = _manager.DecrementNumberOfPlayers();
+                        await SendTotalNumberOfPlayersAsync(websocket, totalPlayers);
                         Console.WriteLine("Received Close Message");
                         return;
                     }
@@ -56,6 +61,12 @@ namespace DurakGame.Server.Middleware
         private async Task SendPlayerIDAsync(WebSocket socket, StringBuilder playerID)
         {
             var buffer = Encoding.UTF8.GetBytes("PlayerID: " + playerID);
+            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
+        private async Task SendTotalNumberOfPlayersAsync(WebSocket socket, int totalPlayers)
+        {
+            var buffer = Encoding.UTF8.GetBytes(totalPlayers.ToString());
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
