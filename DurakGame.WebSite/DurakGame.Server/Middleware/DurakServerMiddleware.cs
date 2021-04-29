@@ -13,9 +13,12 @@ namespace DurakGame.Server.Middleware
     {
         private readonly RequestDelegate _next;
 
-        public DurakServerMiddleware(RequestDelegate next)
+        private readonly DurakServerConnectionManager _manager;
+
+        public DurakServerMiddleware(RequestDelegate next, DurakServerConnectionManager manager)
         {
             _next = next;
+            _manager = manager;
         }
          
         public async Task InvokeAsync(HttpContext context)
@@ -24,6 +27,8 @@ namespace DurakGame.Server.Middleware
             {
                 WebSocket websocket = await context.WebSockets.AcceptWebSocketAsync();
                 Console.WriteLine("WebSocket Connected");
+
+                StringBuilder playerID = _manager.AddSocket(websocket);
 
                 await ReceiveMessage(websocket, async (result, buffer) =>
                 {
