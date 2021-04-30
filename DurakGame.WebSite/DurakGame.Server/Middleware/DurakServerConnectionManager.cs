@@ -4,39 +4,36 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 
 namespace DurakGame.Server.Middleware
 {
     public class DurakServerConnectionManager
     {
-        private int numberOfPlayers = 0;
-        private ConcurrentDictionary<StringBuilder, WebSocket> _sockets = new ConcurrentDictionary<StringBuilder, WebSocket>();
+        private ConcurrentDictionary<string, WebSocket> _sockets = new ConcurrentDictionary<string, WebSocket>();
 
-        public ConcurrentDictionary<StringBuilder, WebSocket> GetAllSockets()
+        public ConcurrentDictionary<string, WebSocket> GetAllSockets()
         {
             return _sockets;
         }
-
+        /*
         public int ReturnNumberOfPlayers()
         {
             Console.WriteLine("Total Number of Players: " + numberOfPlayers);
             return numberOfPlayers;
         }
-
-        public int DecrementNumberOfPlayers()
+        
+        public WebSocket RemoveElementFromSockets(string id)
         {
-            numberOfPlayers--;
-            Console.WriteLine("Total Number of Players: " + numberOfPlayers);
-            return numberOfPlayers;
+            numberOfPlayers -= 1;
+            _sockets.TryRemove(id, out WebSocket socket);
+            return socket;
         }
-
-        public StringBuilder AddSocket(WebSocket socket)
+        */
+        public string AddSocket(WebSocket socket)
         {
-            numberOfPlayers += 1;
+            //string playerID = numberOfPlayers.ToString();
+            string playerID = Guid.NewGuid().ToString();
 
-            StringBuilder playerID = new StringBuilder(numberOfPlayers.ToString());
-            
             _sockets.TryAdd(playerID, socket);
             Console.WriteLine("Connection Added: " + playerID);
             return playerID;

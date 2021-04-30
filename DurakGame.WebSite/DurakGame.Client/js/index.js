@@ -7,6 +7,9 @@ var commsLog = document.getElementById("commsLog");
 var closeButton = document.getElementById("closeButton");
 var playerID = document.getElementById("playerIdLabel");
 var totalPlayers = document.getElementById("totalNumberOfPlayers");
+var recipient = document.getElementById("recipients");
+
+let allPlayers;
 
 connectionUrl.value = "ws://localhost:1234";
 
@@ -35,6 +38,7 @@ connectButton.onclick = function () {
             '<td class="commslog-data">' + htmlEscape(event.data) + '</td></tr>';
             isPlayerID(event.data);
         }else {
+            allPlayers = event.data;
             setTotalPlayers(event.data);
         }
     };
@@ -44,9 +48,6 @@ closeButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
-    // socket.onmessage = function (event) {
-    //     setTotalPlayers(event.data);
-    // };
     socket.close(1000, "Closing from client");
 };
 
@@ -55,7 +56,7 @@ sendButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
-    var data = sendMessage.value;
+    var data = constructJSON();
     socket.send(data);
     commsLog.innerHTML += '<tr>' +
         '<td class="commslog-client">Client</td>' +
@@ -73,11 +74,20 @@ function htmlEscape(str) {
 }
 
 function isPlayerID(str) {
-    playerID.innerHTML = "PlayerID: " + str.substring(10, 45);;
+    playerID.innerHTML = "PlayerID: " + str.substring(10, str.length);
 }
 
 function setTotalPlayers(str) {
-    totalPlayers.innerHTML = "Total Number Of Players: " + str;
+    allPlayers = str
+    totalPlayers.innerHTML = "Total Number Of Players: " + allPlayers;
+}
+
+function constructJSON() {
+    return JSON.stringify({
+        "From" : playerID.innerHTML.substring(10, playerID.innerHTML.length),
+        "To" : recipients.value,
+        "Message" : sendMessage.value
+    });
 }
 
 function updateState() {
@@ -85,11 +95,13 @@ function updateState() {
         sendMessage.disabled = true;
         sendButton.disabled = true;
         closeButton.disabled = true;
+        recipient.disabled = true;
     }
     function enable() {
         sendMessage.disabled = false;
         sendButton.disabled = false;
         closeButton.disabled = false;
+        recipient.disabled = false;
     }
     connectionUrl.disabled = true;
     connectButton.disabled = true;
