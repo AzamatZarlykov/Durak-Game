@@ -9,30 +9,29 @@ namespace DurakGame.Server.Middleware
 {
     public class DurakServerConnectionManager
     {
+        private int totalPlayers = 0;
         private ConcurrentDictionary<string, WebSocket> _sockets = new ConcurrentDictionary<string, WebSocket>();
 
+        public int GetTotalPlayers()
+        {
+            return totalPlayers;
+        }
         public ConcurrentDictionary<string, WebSocket> GetAllSockets()
         {
             return _sockets;
         }
-        /*
-        public int ReturnNumberOfPlayers()
-        {
-            Console.WriteLine("Total Number of Players: " + numberOfPlayers);
-            return numberOfPlayers;
-        }
         
         public WebSocket RemoveElementFromSockets(string id)
         {
-            numberOfPlayers -= 1;
+            totalPlayers -= 1;
             _sockets.TryRemove(id, out WebSocket socket);
             return socket;
         }
-        */
+        
         public string AddSocket(WebSocket socket)
         {
-            //string playerID = numberOfPlayers.ToString();
-            string playerID = Guid.NewGuid().ToString();
+            totalPlayers++;
+            string playerID = totalPlayers.ToString();
 
             _sockets.TryAdd(playerID, socket);
             Console.WriteLine("Connection Added: " + playerID);
