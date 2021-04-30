@@ -5,6 +5,9 @@ var commsLog = document.getElementById("commsLog");
 var closeButton = document.getElementById("closeButton");
 var playerID = document.getElementById("playerIdLabel");
 var totalPlayers = document.getElementById("totalNumberOfPlayers");
+var sendMessage = document.getElementById("sendMessage");
+var sendButton = document.getElementById("sendButton");
+var recipients = document.getElementById("recipients");
 
 let nPlayers;
 
@@ -48,6 +51,18 @@ closeButton.onclick = function () {
     socket.close(1000, "Closing from client");
 };
 
+sendButton.onclick = function () {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        alert("socket not connected");
+    }
+    var data = constructJSONPayload();
+    socket.send(data);
+    commsLog.innerHTML += '<tr>' +
+        '<td class="commslog-client">Client</td>' +
+        '<td class="commslog-server">Server</td>' +
+        '<td class="commslog-data">' + htmlEscape(data) + '</td></tr>';
+};
+
 function htmlEscape(str) {
     return str.toString()
         .replace(/&/g, '&amp;')
@@ -65,12 +80,26 @@ function setTotalPlayers(str) {
     totalPlayers.innerHTML = "Total Number Of Players: " + str;
 }
 
+function constructJSONPayload() {
+    return JSON.stringify({
+        "From": playerID.innerHTML.substring(10, playerID.innerHTML.length),
+        "To": recipients.value,
+        "Message": sendMessage.value
+    });
+}
+
 function updateState() {
     function disable() {
+        sendMessage.disabled = true;
+        sendButton.disabled = true;
         closeButton.disabled = true;
+        recipients.disabled = true;
     }
     function enable() {
+        sendMessage.disabled = false;
+        sendButton.disabled = false;
         closeButton.disabled = false;
+        recipients.disabled = false;
     }
     connectionUrl.disabled = true;
     connectButton.disabled = true;

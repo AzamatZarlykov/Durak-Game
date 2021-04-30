@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Net.WebSockets;
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using System.Text.Json;
 using Newtonsoft.Json;
 
 namespace DurakGame.Server.Middleware
@@ -42,9 +41,8 @@ namespace DurakGame.Server.Middleware
                     Console.WriteLine(result);
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        Console.WriteLine("Receive -----> Text");
                         Console.WriteLine($"Message : {Encoding.UTF8.GetString(buffer, 0, result.Count)}");
-                        //await RouteJSONMessageAsync(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                        await RouteJSONMessageAsync(Encoding.UTF8.GetString(buffer, 0, result.Count));
                         return;
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
@@ -69,6 +67,35 @@ namespace DurakGame.Server.Middleware
             else
             {
                 await _next(context);
+            }
+        }
+        /*
+        Deserialize the string using the JsonConvert class to get the object. Using the object
+        use it to pass the message to the destination. Or to everyone. 
+        */
+        private async Task RouteJSONMessageAsync(string message)
+        {
+            // Deserialize the message of the format -> {"From":"1","To":"","Message":"asdf"}
+            // into route object
+            var route = JsonConvert.DeserializeObject<dynamic>(message);
+
+            // Send message to the given destination. Otherwise, send to everyone
+            // From and To parts of the object are IDs of the players
+            if (int.TryParse(route.To.ToString(), out int val))
+            {
+
+            }else
+            {
+                Console.WriteLine("BroadCast to Everyone");
+                foreach(var socket in _manager.GetAllSockets())
+                {
+                    if(socket.Value.State == WebSocketState.Open)
+                    {
+                        Console.WriteLine("Connection Open on " + socket.Key);
+                        await socket.Value.SendAsync(Encoding.UTF8.GetBytes(route.Message.ToString()), 
+                            WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                }
             }
         }
 
@@ -96,41 +123,5 @@ namespace DurakGame.Server.Middleware
                 handleMessage(result, buffer);
             }
         }
-        /*
-        private async Task RouteJSONMessageAsync(string message)
-        {
-            var routeOb = JsonConvert.DeserializeObject<dynamic>(message);
-            Console.WriteLine("To: " + routeOb.To.ToString());
-
-            if (Guid.TryParse(routeOb.To.ToString(), out Guid guidout))
-            {
-                
-                var sock = _manager.GetAllSockets().FirstOrDefault(s => s.Key == routeOb.To.ToString());
-                if(sock.Value != null)
-                {
-                    if(sock.Value.State == WebSocketState.Open)
-                    {
-                        await sock.Value.SendAsync(Encoding.UTF8.GetBytes(routeOb.Message.ToString()),
-                            WebSocketMessageType.Text, true, CancellationToken.None);
-                    }
-                }else
-                {
-                    Console.WriteLine("Invalid Recepient");
-                }
-                
-    }
-            else
-            {
-                foreach(var sock in _manager.GetAllSockets())
-                {
-                    if(sock.Value.State == WebSocketState.Open)
-                    {
-                        await sock.Value.SendAsync(Encoding.UTF8.GetBytes(routeOb.Message.ToString()),
-                            WebSocketMessageType.Text, true, CancellationToken.None);
-                    }
-                }
-            }
-        }
-        */
     }
 }
