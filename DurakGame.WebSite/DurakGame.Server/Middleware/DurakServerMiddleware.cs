@@ -81,12 +81,29 @@ namespace DurakGame.Server.Middleware
 
             // Send message to the given destination. Otherwise, send to everyone
             // From and To parts of the object are IDs of the players
+            Console.WriteLine(int.TryParse(route.To.ToString(), out int v));
             if (int.TryParse(route.To.ToString(), out int val))
             {
-
+                Console.WriteLine("Specified to " + route.To);
+                // get the KeyValue pair of the recepient 
+                var socket = _manager.GetAllSockets().FirstOrDefault(s => s.Key == route.To.ToString());
+                if(socket.Value != null)
+                {
+                    if (socket.Value.State == WebSocketState.Open)
+                    {
+                        Console.WriteLine("Connection Open on " + socket.Key);
+                        await socket.Value.SendAsync(Encoding.UTF8.GetBytes(route.Message.ToString()),
+                            WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid Recepient");
+                }
             }else
             {
                 Console.WriteLine("BroadCast to Everyone");
+                // Send to everyone the message
                 foreach(var socket in _manager.GetAllSockets())
                 {
                     if(socket.Value.State == WebSocketState.Open)
