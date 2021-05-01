@@ -31,15 +31,31 @@ connectButton.onclick = function () {
     socket.onerror = updateState;
     
     socket.onmessage = function (event) {
-        if(event.data.substring(0,9) == "PlayerID:") {
+        var obj = JSON.parse(event.data);
+        if(obj.command == "SetPlayerID") { 
             commsLog.innerHTML += '<tr>' +
             '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">Client</td>' +
-            '<td class="commslog-data">' + htmlEscape(event.data) + ' Connected</td></tr>';
-            isPlayerID(event.data);
-        }else {
-            nPlayers = event.data;
-            setTotalPlayers(event.data);
+            '<td class="commslog-client">Client</td>' + 
+            '<td class="commslog-data"> Player ' +  htmlEscape(obj.playerID) + ' Connected</td></tr>'
+            isPlayerID(obj.playerID);
+        } else if (obj.command == "InformLeaving"){ 
+            commsLog.innerHTML += '<tr>' +
+            '<td class="commslog-server">Server</td>' +
+            '<td class="commslog-client">Client</td>' + 
+            '<td class="commslog-data"> Player ' +  htmlEscape(obj.leavingPlayerID) + ' Disconnected</td></tr>';
+        } else if(obj.command == "InformJoining") {
+            commsLog.innerHTML += '<tr>' +
+            '<td class="commslog-server">Server</td>' +
+            '<td class="commslog-client">Client</td>' + 
+            '<td class="commslog-data"> Player ' +  htmlEscape(obj.playerID) + ' Joined The Game</td></tr>';
+        } else if(obj.command == "UserMessage") {
+            commsLog.innerHTML += '<tr>' +
+            '<td class="commslog-server">' + htmlEscape(obj.From) + '</td>' +
+            '<td class="commslog-client">Client</td>' + 
+            '<td class="commslog-data">' +  htmlEscape(obj.message) + '</td></tr>';
+        }
+        if(obj.command != "UserMessage") {
+            setTotalPlayers(obj.totalPlayers);
         }
     };
 };
@@ -48,6 +64,12 @@ closeButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
+    // socket.onmessage = function(event) {
+    //     console.log("Got here");
+    //     var obj = JSON.parse(event.data);
+    //     setTotalPlayers(obj.totalPlayers);
+    // };
+
     socket.close(1000, "Closing from client");
 };
 
@@ -73,7 +95,7 @@ function htmlEscape(str) {
 }
 
 function isPlayerID(str) {
-    playerID.innerHTML = "PlayerID: " + str.substring(10, str.length);
+    playerID.innerHTML = "PlayerID: " + str;
 }
 
 function setTotalPlayers(str) {

@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 using System.Net.WebSockets;
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace DurakGame.Server.Middleware
 {
     public class DurakServerMiddleware
     {
+        private string command;
         private readonly RequestDelegate _next;
 
         private readonly DurakServerConnectionManager _manager;
@@ -28,13 +29,7 @@ namespace DurakGame.Server.Middleware
                 WebSocket websocket = await context.WebSockets.AcceptWebSocketAsync();
                 Console.WriteLine("WebSocket Connected");
 
-                // Send the players ID back to client to show on their window
-                string playerID = _manager.AddSocket(websocket);
-                await SendPlayerIDAsync(websocket, playerID);
-
-                // Send the total number of players to client to represent players connected
-                int totalPlayers = _manager.GetTotalPlayers();
-                await SendTotalNumberOfPlayersAsync(websocket, totalPlayers);
+                await InformPlayerInformationAsync(websocket);
 
                 await ReceiveMessage(websocket, async (result, buffer) =>
                 {
@@ -47,16 +42,14 @@ namespace DurakGame.Server.Middleware
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
-                        string id = _manager.GetAllSockets().FirstOrDefault(s => s.Value == websocket).Key;
-                        Console.WriteLine("Receive ----> Close From " + id);
+                        int id = _manager.GetAllSockets().FirstOrDefault(s => s.Value == websocket).Key;
+                        Console.WriteLine("Receive ----> Close From " + id.ToString());
 
                         WebSocket sock =  _manager.RemoveElementFromSockets(id);
 
-                        Console.WriteLine("Managed Connections: " + _manager.GetAllSockets().Count.ToString());
+                        await InformLeavingToOtherPlayersAsync(id);
 
-                        // Send the number of players left after the player closes the connection
-                        // int leftPlayers = _manager.GetTotalPlayers();
-                        // await SendTotalNumberOfPlayersAsync(sock, leftPlayers);
+                        Console.WriteLine("Managed Connections: " + _manager.GetAllSockets().Count.ToString());
 
                         await sock.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
 
@@ -69,19 +62,60 @@ namespace DurakGame.Server.Middleware
                 await _next(context);
             }
         }
+
+        private async Task InformLeavingToOtherPlayersAsync(int leavingPlayerID)
+        {
+            command = "InformLeaving";
+            int totalPlayers = _manager.GetTotalPlayers();
+            foreach (var socket in _manager.GetAllSockets())
+            {
+                await SendJSONAsync(socket.Value, JsonSerializer.Serialize(new { command, leavingPlayerID, totalPlayers }));
+            }
+        }
+
+        private async Task InformJoiningToOtherPlayersAsync(int totalPlayers, int playerID)
+        {
+            command = "InformJoining";
+            foreach (var socket in _manager.GetAllSockets())
+            {
+                if(socket.Key != playerID)
+                {
+                    await SendJSONAsync(socket.Value, JsonSerializer.Serialize(new { command, playerID, totalPlayers }));
+                }
+            }
+        }
+
+        private async Task InformPlayerInformationAsync(WebSocket websocket)
+        {
+            command = "SetPlayerID";
+            int playerID = _manager.AddSocket(websocket);
+            int totalPlayers = _manager.GetTotalPlayers();
+            await SendJSONAsync(websocket, JsonSerializer.Serialize(new { command, playerID, totalPlayers }));
+            await InformJoiningToOtherPlayersAsync(totalPlayers, playerID);
+        }
+
+        private async Task SendJSONAsync(WebSocket socket, string jsonFile)
+        {
+            var buffer = Encoding.UTF8.GetBytes(jsonFile);
+            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
         /*
         Deserialize the string using the JsonConvert class to get the object. Using the object
         use it to pass the message to the destination. Or to everyone. 
         */
-        private async Task RouteJSONMessageAsync(string message)
+        private async Task RouteJSONMessageAsync(string jsonMessage)
         {
-            // Deserialize the message of the format -> {"From":"1","To":"","Message":"asdf"}
-            // into route object
-            var route = JsonConvert.DeserializeObject<dynamic>(message);
+            command = "UserMessage";
+            var route = JsonSerializer.Deserialize<dynamic>(jsonMessage);
 
+            string message = route.Message;
+            string from = route.From;
+
+            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, message, from}));
             // Send message to the given destination. Otherwise, send to everyone
             // From and To parts of the object are IDs of the players
-            Console.WriteLine(int.TryParse(route.To.ToString(), out int v));
+
             if (int.TryParse(route.To.ToString(), out int val))
             {
                 Console.WriteLine("Specified to " + route.To);
@@ -92,8 +126,7 @@ namespace DurakGame.Server.Middleware
                     if (socket.Value.State == WebSocketState.Open)
                     {
                         Console.WriteLine("Connection Open on " + socket.Key);
-                        await socket.Value.SendAsync(Encoding.UTF8.GetBytes(route.Message.ToString()),
-                            WebSocketMessageType.Text, true, CancellationToken.None);
+                        await socket.Value.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
                     }
                 }
                 else
@@ -109,23 +142,10 @@ namespace DurakGame.Server.Middleware
                     if(socket.Value.State == WebSocketState.Open)
                     {
                         Console.WriteLine("Connection Open on " + socket.Key);
-                        await socket.Value.SendAsync(Encoding.UTF8.GetBytes(route.Message.ToString()), 
-                            WebSocketMessageType.Text, true, CancellationToken.None);
+                        await socket.Value.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
                     }
                 }
             }
-        }
-
-        private async Task SendPlayerIDAsync(WebSocket socket, string playerID)
-        {
-            var buffer = Encoding.UTF8.GetBytes("PlayerID: " + playerID);
-            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-        }
-
-        private async Task SendTotalNumberOfPlayersAsync(WebSocket socket, int totalPlayers)
-        {
-            var buffer = Encoding.UTF8.GetBytes(totalPlayers.ToString());
-            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
         private async Task ReceiveMessage(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage)
@@ -142,3 +162,6 @@ namespace DurakGame.Server.Middleware
         }
     }
 }
+
+
+
