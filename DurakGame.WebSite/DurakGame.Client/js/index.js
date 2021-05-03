@@ -10,6 +10,7 @@ var sendButton = document.getElementById("sendButton");
 var recipients = document.getElementById("recipients");
 
 let nPlayers;
+let id;
 
 connectionUrl.value = "ws://localhost:1234";
 
@@ -41,20 +42,21 @@ connectButton.onclick = function () {
         } else if (obj.command == "InformLeaving"){ 
             commsLog.innerHTML += '<tr>' +
             '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">Client</td>' + 
+            '<td class="commslog-client">Player ' + id +'</td>' + 
             '<td class="commslog-data"> Player ' +  htmlEscape(obj.leavingPlayerID) + ' Disconnected</td></tr>';
         } else if(obj.command == "InformJoining") {
             commsLog.innerHTML += '<tr>' +
             '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">Client</td>' + 
+            '<td class="commslog-client">Player ' + id +'</td>' + 
             '<td class="commslog-data"> Player ' +  htmlEscape(obj.playerID) + ' Joined The Game</td></tr>';
-        } else if(obj.command == "UserMessage") {
+        } else if(obj.command.substring(0, 11) == "UserMessage") {
             commsLog.innerHTML += '<tr>' +
-            '<td class="commslog-server">' + htmlEscape(obj.From) + '</td>' +
-            '<td class="commslog-client">Client</td>' + 
-            '<td class="commslog-data">' +  htmlEscape(obj.message) + '</td></tr>';
+            (obj.command.substring(11, obj.command.length) == "Private" ? '<td class="commslog-server">(Private) Player ' + htmlEscape(obj.From) + '</td>' : 
+            '<td class="commslog-server">Player ' + htmlEscape(obj.From) + '</td>') +
+            '<td class="commslog-client">Player ' + id +'</td>' + 
+            '<td class="commslog-data">' +  htmlEscape(obj.Message) + '</td></tr>';
         }
-        if(obj.command != "UserMessage") {
+        if(obj.command.substring(0, 11) != "UserMessage") {
             setTotalPlayers(obj.totalPlayers);
         }
     };
@@ -64,12 +66,6 @@ closeButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
-    // socket.onmessage = function(event) {
-    //     console.log("Got here");
-    //     var obj = JSON.parse(event.data);
-    //     setTotalPlayers(obj.totalPlayers);
-    // };
-
     socket.close(1000, "Closing from client");
 };
 
@@ -78,11 +74,12 @@ sendButton.onclick = function () {
         alert("socket not connected");
     }
     var data = constructJSONPayload();
+    var parsedData = JSON.parse(data);
     socket.send(data);
     commsLog.innerHTML += '<tr>' +
-        '<td class="commslog-client">Client</td>' +
-        '<td class="commslog-server">Server</td>' +
-        '<td class="commslog-data">' + htmlEscape(data) + '</td></tr>';
+        '<td class="commslog-client">Player ' + id +'</td>' +
+        '<td class="commslog-server">' + (parsedData.To == 0 ? 'Everyone' : 'Player ' + parsedData.To.toString()) +'</td>' +
+        '<td class="commslog-data">' + parsedData.Message + '</td></tr>';
 };
 
 function htmlEscape(str) {
@@ -96,6 +93,7 @@ function htmlEscape(str) {
 
 function isPlayerID(str) {
     playerID.innerHTML = "PlayerID: " + str;
+    id = str;
 }
 
 function setTotalPlayers(str) {
@@ -104,8 +102,8 @@ function setTotalPlayers(str) {
 
 function constructJSONPayload() {
     return JSON.stringify({
-        "From": playerID.innerHTML.substring(10, playerID.innerHTML.length),
-        "To": recipients.value,
+        "From": parseInt(playerID.innerHTML.substring(10, playerID.innerHTML.length)),
+        "To": parseInt(recipients.value) || 0,
         "Message": sendMessage.value
     });
 }

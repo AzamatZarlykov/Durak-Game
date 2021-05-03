@@ -7,6 +7,7 @@ using System.Net.WebSockets;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
+using DurakGame.Server.Helper;
 
 namespace DurakGame.Server.Middleware
 {
@@ -107,25 +108,27 @@ namespace DurakGame.Server.Middleware
         private async Task RouteJSONMessageAsync(string jsonMessage)
         {
             command = "UserMessage";
-            var route = JsonSerializer.Deserialize<dynamic>(jsonMessage);
 
-            string message = route.Message;
-            string from = route.From;
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, message, from}));
+            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, route.From, route.Message }));
+            Console.WriteLine(Encoding.UTF8.GetString(buffer));
+            Console.WriteLine(route.To);
             // Send message to the given destination. Otherwise, send to everyone
             // From and To parts of the object are IDs of the players
 
-            if (int.TryParse(route.To.ToString(), out int val))
+            if (route.To != 0)
             {
-                Console.WriteLine("Specified to " + route.To);
-                // get the KeyValue pair of the recepient 
-                var socket = _manager.GetAllSockets().FirstOrDefault(s => s.Key == route.To.ToString());
+                command += "Private";
+                buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, route.From, route.Message }));
+
+                var socket = _manager.GetAllSockets().FirstOrDefault(s => s.Key == route.To);
+
                 if(socket.Value != null)
                 {
                     if (socket.Value.State == WebSocketState.Open)
                     {
-                        Console.WriteLine("Connection Open on " + socket.Key);
                         await socket.Value.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
                     }
                 }
@@ -139,7 +142,7 @@ namespace DurakGame.Server.Middleware
                 // Send to everyone the message
                 foreach(var socket in _manager.GetAllSockets())
                 {
-                    if(socket.Value.State == WebSocketState.Open)
+                    if(socket.Value.State == WebSocketState.Open && socket.Key != route.From)
                     {
                         Console.WriteLine("Connection Open on " + socket.Key);
                         await socket.Value.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
