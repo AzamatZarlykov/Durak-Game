@@ -11,13 +11,13 @@ using DurakGame.Server.Helper;
 
 namespace DurakGame.Server.Middleware
 {
-    public class DurakServerMiddleware
+    public class Middleware
     {
         private string command;
         private readonly RequestDelegate _next;
 
-        private readonly DurakServerConnectionManager _manager;
-        public DurakServerMiddleware(RequestDelegate next, DurakServerConnectionManager manager)
+        private readonly ConnectionManager _manager;
+        public Middleware(RequestDelegate next, ConnectionManager manager)
         {
             _next = next;
             _manager = manager;
@@ -118,7 +118,6 @@ namespace DurakGame.Server.Middleware
 
         private async Task SendJSONAsync(WebSocket socket, string jsonFile)
         {
-            Console.WriteLine(jsonFile);
             var buffer = Encoding.UTF8.GetBytes(jsonFile);
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }

@@ -7,16 +7,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DurakGame.Server.Middleware
 {
-    public static class DurakServerMiddlewareExtensions
+    public static class MiddlewareExtensions
     {
         public static IApplicationBuilder UseWebSocketServer(this IApplicationBuilder builder)
         {
-            return builder.UseMiddleware<DurakServerMiddleware>();
+            return builder.UseMiddleware<Middleware>();
         }
 
         public static IServiceCollection AddWebSocketManager(this IServiceCollection services)
         {
-            services.AddSingleton<DurakServerConnectionManager>();
+            services.AddSingleton<ConnectionManager>();
             return services;
         }
     }

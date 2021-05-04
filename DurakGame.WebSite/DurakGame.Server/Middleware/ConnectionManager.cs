@@ -7,7 +7,7 @@ using System.Net.WebSockets;
 
 namespace DurakGame.Server.Middleware
 {
-    public class DurakServerConnectionManager
+    public class ConnectionManager
     {
         private ConcurrentDictionary<int, WebSocket> _sockets = new ConcurrentDictionary<int, WebSocket>();
 
