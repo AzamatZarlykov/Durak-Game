@@ -55,6 +55,9 @@ connectButton.onclick = function () {
             '<td class="commslog-server">Player ' + htmlEscape(obj.From) + '</td>') +
             '<td class="commslog-client">Player ' + id +'</td>' + 
             '<td class="commslog-data">' +  htmlEscape(obj.Message) + '</td></tr>';
+        } else if(obj.command == "Goodbye") {
+            setTotalPlayers(obj.totalPlayers);
+            socket.close(1000, "Closing from client");
         }
         if(obj.command.substring(0, 11) != "UserMessage") {
             setTotalPlayers(obj.totalPlayers);
@@ -66,19 +69,24 @@ closeButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
-    socket.close(1000, "Closing from client");
+    var data = constructJSONPayload();
+    socket.send(data);
 };
 
 sendButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
-    var data = constructJSONPayload();
+    var data = constructJSONPayload(sendMessage.value);
     var parsedData = JSON.parse(data);
+    var toSomeone = parsedData.To == 0 ? false : true
+
     socket.send(data);
+
     commsLog.innerHTML += '<tr>' +
-        '<td class="commslog-client">Player ' + id +'</td>' +
-        '<td class="commslog-server">' + (parsedData.To == 0 ? 'Everyone' : 'Player ' + parsedData.To.toString()) +'</td>' +
+        (toSomeone ? '<td class="commslog-client">(Private)Player ' + id +'</td>' :
+        '<td class="commslog-client">Player ' + id +'</td>') +
+        '<td class="commslog-server">' + (!toSomeone ? 'Everyone' : 'Player ' + parsedData.To.toString()) +'</td>' +
         '<td class="commslog-data">' + parsedData.Message + '</td></tr>';
 };
 
@@ -100,11 +108,11 @@ function setTotalPlayers(str) {
     totalPlayers.innerHTML = "Total Number Of Players: " + str;
 }
 
-function constructJSONPayload() {
+function constructJSONPayload(message = "leaving") {
     return JSON.stringify({
         "From": parseInt(playerID.innerHTML.substring(10, playerID.innerHTML.length)),
         "To": parseInt(recipients.value) || 0,
-        "Message": sendMessage.value
+        "Message": message
     });
 }
 
@@ -130,7 +138,6 @@ function updateState() {
             case WebSocket.CLOSED:
                 stateLabel.innerHTML = "Closed";
                 playerID.innerHTML = "PlayerID: N/a"  
-                // setTotalPlayers(parseInt(nPlayers)-1);
                 disable();
                 connectionUrl.disabled = false;
                 connectButton.disabled = false;
