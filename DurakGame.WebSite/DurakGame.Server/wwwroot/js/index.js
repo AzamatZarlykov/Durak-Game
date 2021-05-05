@@ -8,6 +8,7 @@ var totalPlayers = document.getElementById("totalNumberOfPlayers");
 var sendMessage = document.getElementById("sendMessage");
 var sendButton = document.getElementById("sendButton");
 var recipients = document.getElementById("recipients");
+var startGameButton = document.getElementById("startGameButton");
 
 let nPlayers;
 let id;
@@ -122,12 +123,14 @@ function updateState() {
         sendButton.disabled = true;
         closeButton.disabled = true;
         recipients.disabled = true;
+        startGameButton.disabled = true;
     }
     function enable() {
         sendMessage.disabled = false;
         sendButton.disabled = false;
         closeButton.disabled = false;
         recipients.disabled = false;
+        startGameButton.disabled = false;
     }
     connectionUrl.disabled = true;
     connectButton.disabled = true;
@@ -161,14 +164,3 @@ function updateState() {
         }
     }
 }
-
-
-// Dear professor Dingle,
-
-// I hope you are doing well.
-// Regarding the proposal for the non-procedural class, I have been thinking of implementing the string matching algorithm in Haskell. It can be the KMP algorithm (or to make it difficult use the Aho-Corasick algorithm to make it work with multiple string searches). 
-// The input of the program can work in a couple of different ways. When running the program, the user can specify the text file and the list of strings that they are looking for. The text file will be the first argument and the list of strings to be searched the second. If one or more arguments are missing the program assumes they will be read from the terminal. I have not thought about how the input will differentiate between the text and the string of words to be searched but I was thinking to have some sort of indication of text like opening and closing quotes around the text and a list of strings indicating the words to search. 
-// Once the input is given the program will output the number of the line where the particular string locates.
-// I am not quite sure if this is difficult enough for the semester project. Judging by other project ideas, writing a string searching algorithm seems easier since it requires just implement the algorithm whereas other projects require computer bots and implementing a text-based interface. Or is there something that I am missing in the string matching idea? Maybe some details that would complicate the project? 
-// Would this project idea be sufficient? And if not how would you suggest improving it?
-// Best Regards,Azamat
