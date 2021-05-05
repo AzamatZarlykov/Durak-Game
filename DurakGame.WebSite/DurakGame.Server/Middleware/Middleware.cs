@@ -48,6 +48,9 @@ namespace DurakGame.Server.Middleware
                         {
                             // Sending the client the number of players when they leave to update their page with current number of players 
                             await UpdatePlayersNumberAsync(websocket);
+                        }else if(route.Message == "start game")
+                        {
+                            Console.WriteLine(route.From + " wants to joing the game");
                         }else
                         {
                             // Route the messages from client to client
@@ -126,10 +129,6 @@ namespace DurakGame.Server.Middleware
         */
         private async Task RouteJSONMessageAsync(ClientMessage route)
         {
-            
-            // prepare the message to be send back to player/s
-            
-
             // Send message to the given destination. Otherwise, send to everyone
             // From and To parts of the object are IDs of the players
             if (route.To != 0)

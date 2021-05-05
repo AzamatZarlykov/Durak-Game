@@ -8,7 +8,7 @@ var totalPlayers = document.getElementById("totalNumberOfPlayers");
 var sendMessage = document.getElementById("sendMessage");
 var sendButton = document.getElementById("sendButton");
 var recipients = document.getElementById("recipients");
-var startGameButton = document.getElementById("startGameButton");
+var startButton = document.getElementById("startGameButton");
 
 let nPlayers;
 let id;
@@ -91,6 +91,11 @@ sendButton.onclick = function () {
         '<td class="commslog-data">' + parsedData.Message + '</td></tr>';
 };
 
+startButton.onclick = function () {
+    var data = constructJSONPayload("start game");
+    socket.send(data);
+};
+
 function htmlEscape(str) {
     return str.toString()
         .replace(/&/g, '&amp;')
@@ -123,14 +128,14 @@ function updateState() {
         sendButton.disabled = true;
         closeButton.disabled = true;
         recipients.disabled = true;
-        startGameButton.disabled = true;
+        startButton.disabled = true;
     }
     function enable() {
         sendMessage.disabled = false;
         sendButton.disabled = false;
         closeButton.disabled = false;
         recipients.disabled = false;
-        startGameButton.disabled = false;
+        startButton.disabled = false;
     }
     connectionUrl.disabled = true;
     connectButton.disabled = true;

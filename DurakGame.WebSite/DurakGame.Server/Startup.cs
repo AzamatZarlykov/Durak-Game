@@ -28,7 +28,6 @@ namespace DurakGame.Server
             
             app.Run(async context =>
             {
-                Console.WriteLine("Hello From the last pipeline");
                 await context.Response.WriteAsync("Hello From the last pipeline");
             });
         }
