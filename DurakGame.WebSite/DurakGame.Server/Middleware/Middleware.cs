@@ -83,7 +83,7 @@ namespace DurakGame.Server.Middleware
             int totalPlayers = _manager.GetTotalPlayers();
             foreach (var socket in _manager.GetAllSockets())
             {
-                await SendJSONAsync(socket.Value, JsonSerializer.Serialize(new { command, leavingPlayerID, totalPlayers }));
+                await SendJSONAsync(socket.Value, new { command, leavingPlayerID, totalPlayers });
             }
         }
 
@@ -91,7 +91,7 @@ namespace DurakGame.Server.Middleware
         {
             command = "Goodbye";
             int totalPlayers = _manager.GetTotalPlayers() - 1;
-            await SendJSONAsync(websocket, JsonSerializer.Serialize(new { command, totalPlayers }));
+            await SendJSONAsync(websocket, new { command, totalPlayers });
         }
 
         private async Task InformJoiningToOtherPlayersAsync(int totalPlayers, int playerID)
@@ -101,7 +101,7 @@ namespace DurakGame.Server.Middleware
             {
                 if(socket.Key != playerID)
                 {
-                    await SendJSONAsync(socket.Value, JsonSerializer.Serialize(new { command, playerID, totalPlayers }));
+                    await SendJSONAsync(socket.Value,new { command, playerID, totalPlayers });
                 }
             }
         }
@@ -111,13 +111,13 @@ namespace DurakGame.Server.Middleware
             command = "SetPlayerID";
             int playerID = _manager.AddSocket(websocket);
             int totalPlayers = _manager.GetTotalPlayers();
-            await SendJSONAsync(websocket, JsonSerializer.Serialize(new { command, playerID, totalPlayers }));
+            await SendJSONAsync(websocket, new { command, playerID, totalPlayers });
             await InformJoiningToOtherPlayersAsync(totalPlayers, playerID);
         }
 
-        private async Task SendJSONAsync(WebSocket socket, string jsonFile)
+        private async Task SendJSONAsync<T>(WebSocket socket, T data)
         {
-            var buffer = Encoding.UTF8.GetBytes(jsonFile);
+            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
