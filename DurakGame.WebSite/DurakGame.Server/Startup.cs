@@ -21,11 +21,16 @@ namespace DurakGame.Server
             app.UseWebSockets();
             // Calling the middleware extensions to pass the requests to the middleware pipeline
             app.UseWebSocketServer();
-            // Calling the default files i.e index.html
-            app.UseDefaultFiles();
+
             // Allowing to use the static files locating in wwwroot folder (js, css, html, images)
-            app.UseStaticFiles();
-            
+            // and using the default files in the wwwroot folder.
+            // Below default name changes allow the home.html to be default file 
+            FileServerOptions fileServerOptions = new FileServerOptions();
+            fileServerOptions.DefaultFilesOptions.DefaultFileNames.Clear();
+            fileServerOptions.DefaultFilesOptions.DefaultFileNames.Add("home.html");
+
+            app.UseFileServer(fileServerOptions);
+
             app.Run(async context =>
             {
                 await context.Response.WriteAsync("Hello From the last pipeline");
