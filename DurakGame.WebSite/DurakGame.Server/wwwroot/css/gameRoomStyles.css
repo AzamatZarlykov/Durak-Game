@@ -1,0 +1,34 @@
+.main {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2400px;
+    height: 1200px;
+  }
+  
+.table {
+    background-color: green;
+    height: 100%;
+    width: 100%;
+    border-radius: 0;
+    margin: auto;
+    border: 0.5em solid black;
+}
+
+.board {
+    position: relative;
+    text-align: center;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px;
+}
+
+.card {
+    position: relative;
+    height: 300px;
+    display: inline-block;
+    padding: 5px;
+}
+  
