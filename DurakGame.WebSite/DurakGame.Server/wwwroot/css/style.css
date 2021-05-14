@@ -31,19 +31,3 @@
     display: inline-block;
     padding: 5px;
 }
-
-#wrapper {
-    position: relative;
-}
-
-#playingTable {
-    position: absolute;
-}
-
-#communicationDetail {
-    position: absolute;
-}
-
-#communicationLog {
-    position: absolute;
-}
