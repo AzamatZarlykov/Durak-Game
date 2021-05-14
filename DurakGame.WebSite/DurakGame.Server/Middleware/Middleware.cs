@@ -48,9 +48,14 @@ namespace DurakGame.Server.Middleware
                         {
                             // Sending the client the number of players when they leave to update their page with current number of players 
                             await UpdatePlayersNumberAsync(websocket);
-                        }else if(route.Message == "start game")
+                        }
+                        else if(route.Message == "startGame")
                         {
-                            Console.WriteLine(route.From + " wants to joing the game");
+                            Console.WriteLine("Player: " + route.From + " wants to joing the game");
+
+                            // Move the player to gameRoom.html
+                            await InformStartGame(route);
+
                         }else
                         {
                             // Route the messages from client to client
@@ -77,6 +82,15 @@ namespace DurakGame.Server.Middleware
             else
             {
                 await _next(context);
+            }
+        }
+
+        private async Task InformStartGame(ClientMessage route)
+        {
+            command = "JoinGame";
+            foreach(var socket in _manager.GetAllSockets())
+            {
+                await SendJSONAsync(socket.Value, new { command, route.From });
             }
         }
 

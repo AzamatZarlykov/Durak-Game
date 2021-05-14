@@ -13,58 +13,80 @@ var startButton = document.getElementById("startGameButton");
 let nPlayers;
 let id;
 
+let setIdCommand = "SetPlayerID";
+let informLeavingCommand = "InformLeaving";
+let informJoiningCommand = "InformJoining";
+let joinGameCommand = "JoinGame";
+let userMessageCommand = "UserMessage";
+let userMessageCommandPrivate = "UserMessagePrivate";
+let goodByeCommand = "Goodbye";
+
+let serverCommands = [setIdCommand, informLeavingCommand, informJoiningCommand, joinGameCommand];
+let allCommands = [setIdCommand, informLeavingCommand, informJoiningCommand, joinGameCommand, userMessageCommand, userMessageCommandPrivate, goodByeCommand]
+
 connectionUrl.value = "ws://localhost:1234";
 
 connectButton.onclick = function () {
     stateLabel.innerHTML = "Attempting to connect...";
     socket = new WebSocket(connectionUrl.value);
+
     socket.onopen = function (event) {
         updateState(); 
         commsLog.innerHTML += '<tr>' +
             '<td colspan="3" class="commslog-data">Connection opened</td>' +
             '</tr>';
     };
+    
     socket.onclose = function (event) {
         updateState();
         commsLog.innerHTML += '<tr>' +
             '<td colspan="3" class="commslog-data">Connection closed. Code: ' + htmlEscape(event.code) + '. Reason: ' + htmlEscape(event.reason) + '</td>' +
             '</tr>';
     };
+    
     socket.onerror = updateState;
     
     socket.onmessage = function (event) {
         var obj = JSON.parse(event.data);
-        if(obj.command == "SetPlayerID") { 
-            commsLog.innerHTML += '<tr>' +
-            '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">Client</td>' + 
-            '<td class="commslog-data"> Player ' +  htmlEscape(obj.playerID) + ' Connected</td></tr>'
-            isPlayerID(obj.playerID);
-        } else if (obj.command == "InformLeaving"){ 
-            commsLog.innerHTML += '<tr>' +
-            '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">Player ' + id +'</td>' + 
-            '<td class="commslog-data"> Player ' +  htmlEscape(obj.leavingPlayerID) + ' Disconnected</td></tr>';
-        } else if(obj.command == "InformJoining") {
-            commsLog.innerHTML += '<tr>' +
-            '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">Player ' + id +'</td>' + 
-            '<td class="commslog-data"> Player ' +  htmlEscape(obj.playerID) + ' Joined The Game</td></tr>';
-        } else if(obj.command.substring(0, 11) == "UserMessage") {
-            commsLog.innerHTML += '<tr>' +
-            (obj.command.substring(11, obj.command.length) == "Private" ? '<td class="commslog-server">(Private) Player ' + htmlEscape(obj.From) + '</td>' : 
-            '<td class="commslog-server">Player ' + htmlEscape(obj.From) + '</td>') +
-            '<td class="commslog-client">Player ' + id +'</td>' + 
-            '<td class="commslog-data">' +  htmlEscape(obj.Message) + '</td></tr>';
-        } else if(obj.command == "Goodbye") {
-            setTotalPlayers(obj.totalPlayers);
-            socket.close(1000, "Closing from client");
-        }
-        if(obj.command.substring(0, 11) != "UserMessage") {
-            setTotalPlayers(obj.totalPlayers);
+        
+        if(allCommands.indexOf(obj.command) > - 1) {
+            if(serverCommands.indexOf(obj.command) > - 1) {
+                commslogServerHtml(obj)
+                if(obj.command == setIdCommand) { 
+                    isPlayerID(obj.playerID);
+                }
+                setTotalPlayers(nPlayers);
+            } else if (obj.command == userMessageCommand || obj.command == userMessageCommandPrivate){ 
+                commslogMessageHtml(obj);
+            } else if(obj.command == goodByeCommand) {
+                setTotalPlayers(obj.totalPlayers);
+                socket.close(1000, "Closing from client");
+            } 
+        } else {
+            console.log("Unknown command from the server");
         }
     };
 };
+
+function commslogMessageHtml(jsonObj) {
+    commsLog.innerHTML += '<tr>' +
+    '<td class="commslog-server">' + (jsonObj.command == userMessageCommand ? "Player " : "(Private)Player ") + htmlEscape(jsonObj.From) + '</td>' +
+    '<td class="commslog-client">Player ' + id +'</td>' + 
+    '<td class="commslog-data">' +  htmlEscape(jsonObj.Message) + '</td></tr>';
+}
+
+function commslogServerHtml (jsonObj) {
+    if(jsonObj.command != joinGameCommand) {
+        nPlayers = jsonObj.totalPlayers;
+    }
+    commsLog.innerHTML += '<tr>' +
+        '<td class="commslog-server">Server</td>' +
+        '<td class="commslog-client">' + (jsonObj.command == setIdCommand ? "Client" : "Player " + id) + '</td>' + 
+        '<td class="commslog-data"> Player ' + (jsonObj.command == informLeavingCommand ? htmlEscape(jsonObj.leavingPlayerID) : 
+        (jsonObj.command == joinGameCommand ? htmlEscape(jsonObj.From) : htmlEscape(jsonObj.playerID)))  + ' ' + 
+        (jsonObj.command == setIdCommand ? "connected" : (jsonObj.command == informLeavingCommand ? "disconnected" : 
+        (jsonObj.command == joinGameCommand ? "started the game" : "joined the game"))) + '</td></tr>'
+}
 
 closeButton.onclick = function () {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -92,9 +114,11 @@ sendButton.onclick = function () {
 };
 
 startButton.onclick = function () {
-    var data = constructJSONPayload("start game");
+    var data = constructJSONPayload("startGame");
     socket.send(data);
 };
+
+
 
 function htmlEscape(str) {
     return str.toString()
