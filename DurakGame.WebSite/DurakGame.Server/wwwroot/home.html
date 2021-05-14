@@ -1,36 +1,54 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>WebSocket JavaScript Client</title>
+    <link rel="stylesheet" type="text/css" href="css/gameRoomStyles.css">
 </head>
 
 <body>
     <p id="stateLabel">Ready to connect</p>
     <p id="playerIdLabel">PlayerID: N/a</p>
-    <p id="totalNumberOfPlayers">Total Number Of Players: 0</p>
+    <div class="playersNumber">
+        <p id="totalNumberOfPlayers">Total Number Of Players: 0</p>
+        <p id="playersPlaying" hidden>Number Of Players In The Game: 0</p>
+    </div>
     <div>
-        <label for="connectionUrl">WebSocket Server URL:</label>
-        <input id="connectionUrl" />
-        <button id="connectButton" type="submit">Connect</button>
-        <button id="closeButton" disabled>Close Socket</button>
+        <div>
+            <label for="connectionUrl">WebSocket Server URL:</label>
+            <input id="connectionUrl" />
+            <button id="connectButton" type="submit">Connect</button>
+            <button id="closeButton" disabled>Close Socket</button>
+        </div>
+
+
     </div>
     <p></p>
     <div>
         <label for="sendMessage">Message:</label>
         <input id="sendMessage" disabled />
+        <label for="recipients">Recipient IDs:</label>
+        <input id="recipients" disabled />
         <button id="sendButton" type="submit" disabled>Send</button>
     </div>
     <p></p>
-    <div>
-        <label for="recipients">Recipient IDs:</label>
-        <input id="recipients" disabled />
-    </div>
     <p></p>
     <div>
         <button id="startGameButton" type="button" disabled>Start Game</button>
     </div>
+
+    <div id="playingTable" class="main" hidden>
+        <div class="table">
+            <div class="board">
+            <img class="card" src="images/standard deck/6C.png" alt="six c">
+            <img class="card" src="images/standard deck/AH.png" alt="six c">
+            <img class="card" src="images/standard deck/KS.png" alt="six c">
+            <img class="card" src="images/standard deck/JC.png" alt="six c">
+            <img class="card" src="images/standard deck/TD.png" alt="six c">
+            </div>
+        </div>
+    </div>
+
     <h2>Communication Log</h2>
     <table style="width: 800px">
         <thead>
@@ -43,7 +61,7 @@
         <tbody id="commsLog">
         </tbody>
     </table>
-    <p></p>
+    
 </body>
 <script src="js/index.js"></script>
 </html>

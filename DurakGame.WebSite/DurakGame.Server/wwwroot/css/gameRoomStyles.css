@@ -3,8 +3,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 2400px;
-    height: 1200px;
+    width: 750px;
+    height: 400px;
   }
   
 .table {
@@ -27,8 +27,23 @@
 
 .card {
     position: relative;
-    height: 300px;
+    height: 100px;
     display: inline-block;
     padding: 5px;
 }
-  
+
+#wrapper {
+    position: relative;
+}
+
+#playingTable {
+    position: absolute;
+}
+
+#communicationDetail {
+    position: absolute;
+}
+
+#communicationLog {
+    position: absolute;
+}

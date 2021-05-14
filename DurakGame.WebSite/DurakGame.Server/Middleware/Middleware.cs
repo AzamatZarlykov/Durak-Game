@@ -44,19 +44,24 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        if(route.Message == "leaving")
+                        if(route.Message == "Leaving")
                         {
                             // Sending the client the number of players when they leave to update their page with current number of players 
                             await UpdatePlayersNumberAsync(websocket);
                         }
-                        else if(route.Message == "startGame")
+                        else if(route.Message == "StartGame")
                         {
                             Console.WriteLine("Player: " + route.From + " wants to joing the game");
 
                             // Move the player to gameRoom.html
                             await InformStartGame(route);
 
-                        }else
+                        }else if(route.Message == "EndGame")
+                        {
+                            Console.WriteLine("ENDGAME CALLING");
+                            await InformGameEnding();
+                        }
+                        else
                         {
                             // Route the messages from client to client
                             await RouteJSONMessageAsync(route);
@@ -84,24 +89,32 @@ namespace DurakGame.Server.Middleware
                 await _next(context);
             }
         }
+        
+        private async Task DistributeJSONToWebSockets<T>(T data)
+        {
+            foreach(var socket in _manager.GetAllSockets())
+            {
+                await SendJSONAsync(socket.Value, data);
+            }
+        }
+
+        private async Task InformGameEnding()
+        {
+            command = "EndGame";
+            await DistributeJSONToWebSockets(new { command });
+        }
 
         private async Task InformStartGame(ClientMessage route)
         {
             command = "JoinGame";
-            foreach(var socket in _manager.GetAllSockets())
-            {
-                await SendJSONAsync(socket.Value, new { command, route.From });
-            }
+            await DistributeJSONToWebSockets(new { command, route.From});
         }
 
         private async Task InformLeavingToOtherPlayersAsync(int leavingPlayerID)
         {
             command = "InformLeaving";
             int totalPlayers = _manager.GetTotalPlayers();
-            foreach (var socket in _manager.GetAllSockets())
-            {
-                await SendJSONAsync(socket.Value, new { command, leavingPlayerID, totalPlayers });
-            }
+            await DistributeJSONToWebSockets(new { command, leavingPlayerID, totalPlayers });
         }
 
         private async Task UpdatePlayersNumberAsync(WebSocket websocket)

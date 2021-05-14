@@ -9,9 +9,12 @@ var sendMessage = document.getElementById("sendMessage");
 var sendButton = document.getElementById("sendButton");
 var recipients = document.getElementById("recipients");
 var startButton = document.getElementById("startGameButton");
+var playingTable = document.getElementById("playingTable");
+var playersPlaying = document.getElementById("playersPlaying");
 
-let nPlayers;
 let id;
+let nPlayers;
+let nPlayersPlaying;
 
 let setIdCommand = "SetPlayerID";
 let informLeavingCommand = "InformLeaving";
@@ -20,9 +23,10 @@ let joinGameCommand = "JoinGame";
 let userMessageCommand = "UserMessage";
 let userMessageCommandPrivate = "UserMessagePrivate";
 let goodByeCommand = "Goodbye";
+let endGameCommand = "EndGame";
 
 let serverCommands = [setIdCommand, informLeavingCommand, informJoiningCommand, joinGameCommand];
-let allCommands = [setIdCommand, informLeavingCommand, informJoiningCommand, joinGameCommand, userMessageCommand, userMessageCommandPrivate, goodByeCommand]
+let allCommands = [endGameCommand, setIdCommand, informLeavingCommand, informJoiningCommand, joinGameCommand, userMessageCommand, userMessageCommandPrivate, goodByeCommand]
 
 connectionUrl.value = "ws://localhost:1234";
 
@@ -61,6 +65,8 @@ connectButton.onclick = function () {
             } else if(obj.command == goodByeCommand) {
                 setTotalPlayers(obj.totalPlayers);
                 socket.close(1000, "Closing from client");
+            } else if (obj.command == endGameCommand) {
+                commslogEndGame(obj);
             } 
         } else {
             console.log("Unknown command from the server");
@@ -68,27 +74,12 @@ connectButton.onclick = function () {
     };
 };
 
-function commslogMessageHtml(jsonObj) {
-    commsLog.innerHTML += '<tr>' +
-    '<td class="commslog-server">' + (jsonObj.command == userMessageCommand ? "Player " : "(Private)Player ") + htmlEscape(jsonObj.From) + '</td>' +
-    '<td class="commslog-client">Player ' + id +'</td>' + 
-    '<td class="commslog-data">' +  htmlEscape(jsonObj.Message) + '</td></tr>';
-}
-
-function commslogServerHtml (jsonObj) {
-    if(jsonObj.command != joinGameCommand) {
-        nPlayers = jsonObj.totalPlayers;
-    }
-    commsLog.innerHTML += '<tr>' +
-        '<td class="commslog-server">Server</td>' +
-        '<td class="commslog-client">' + (jsonObj.command == setIdCommand ? "Client" : "Player " + id) + '</td>' + 
-        '<td class="commslog-data"> Player ' + (jsonObj.command == informLeavingCommand ? htmlEscape(jsonObj.leavingPlayerID) : 
-        (jsonObj.command == joinGameCommand ? htmlEscape(jsonObj.From) : htmlEscape(jsonObj.playerID)))  + ' ' + 
-        (jsonObj.command == setIdCommand ? "connected" : (jsonObj.command == informLeavingCommand ? "disconnected" : 
-        (jsonObj.command == joinGameCommand ? "started the game" : "joined the game"))) + '</td></tr>'
-}
-
 closeButton.onclick = function () {
+    if(nPlayersPlaying == 1 && playingTable.hidden == false) {
+        var data = constructJSONPayload("EndGame");
+        socket.send(data);
+    }
+
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("socket not connected");
     }
@@ -114,11 +105,45 @@ sendButton.onclick = function () {
 };
 
 startButton.onclick = function () {
-    var data = constructJSONPayload("startGame");
+    var data = constructJSONPayload("StartGame");
     socket.send(data);
 };
 
+function commslogEndGame() {
+    commsLog.innerHTML += '<tr>' +
+        '<td class="commslog-server">Server</td>' +
+        '<td class="commslog-client">Player ' + id + '</td>' + 
+        '<td class="commslog-data">' +  "Game Over" + '</td></tr>';
+}
 
+function commslogMessageHtml(jsonObj) {
+    commsLog.innerHTML += '<tr>' +
+    '<td class="commslog-server">' + (jsonObj.command == userMessageCommand ? "Player " : "(Private)Player ") + htmlEscape(jsonObj.From) + '</td>' +
+    '<td class="commslog-client">Player ' + id +'</td>' + 
+    '<td class="commslog-data">' +  htmlEscape(jsonObj.Message) + '</td></tr>';
+}
+
+function commslogServerHtml (jsonObj) {
+    if(jsonObj.command != joinGameCommand) {
+        nPlayers = jsonObj.totalPlayers;
+    }
+    commsLog.innerHTML += '<tr>' +
+        '<td class="commslog-server">Server</td>' +
+        '<td class="commslog-client">' + (jsonObj.command == setIdCommand ? "Client" : "Player " + id) + '</td>' + 
+        '<td class="commslog-data"> Player ' + (jsonObj.command == informLeavingCommand ? htmlEscape(jsonObj.leavingPlayerID) : 
+        (jsonObj.command == joinGameCommand ? htmlEscape(jsonObj.From) : htmlEscape(jsonObj.playerID)))  + ' ' + 
+        (jsonObj.command == setIdCommand ? "connected" : (jsonObj.command == informLeavingCommand ? "disconnected" : 
+        (jsonObj.command == joinGameCommand ? "started the game" : "joined the game"))) + '</td></tr>'
+    
+    if(jsonObj.command == joinGameCommand) {
+        playingTable.hidden = false;
+        playersPlaying.hidden = false;
+        setTotalPlayingPlayers(nPlayers);
+    } else if(jsonObj.command == informLeavingCommand && playingTable.hidden == false) {
+        nPlayersPlaying -= 1;   
+        setTotalPlayingPlayers(nPlayersPlaying);
+    }
+}
 
 function htmlEscape(str) {
     return str.toString()
@@ -134,11 +159,16 @@ function isPlayerID(str) {
     id = str;
 }
 
+function setTotalPlayingPlayers(str) { 
+    nPlayersPlaying = str
+    playersPlaying.innerHTML = "Number Of Players In The Game: " + nPlayersPlaying
+}
+
 function setTotalPlayers(str) {
     totalPlayers.innerHTML = "Total Number Of Players: " + str;
 }
 
-function constructJSONPayload(message = "leaving") {
+function constructJSONPayload(message = "Leaving") {
     return JSON.stringify({
         "From": parseInt(playerID.innerHTML.substring(10, playerID.innerHTML.length)),
         "To": parseInt(recipients.value) || 0,
@@ -153,6 +183,8 @@ function updateState() {
         closeButton.disabled = true;
         recipients.disabled = true;
         startButton.disabled = true;
+        playingTable.hidden = true;
+        playersPlaying.hidden = true;
     }
     function enable() {
         sendMessage.disabled = false;
