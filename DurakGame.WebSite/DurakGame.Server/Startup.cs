@@ -27,7 +27,7 @@ namespace DurakGame.Server
             // Below default name changes allow the home.html to be default file 
             FileServerOptions fileServerOptions = new FileServerOptions();
             fileServerOptions.DefaultFilesOptions.DefaultFileNames.Clear();
-            fileServerOptions.DefaultFilesOptions.DefaultFileNames.Add("home.html");
+            fileServerOptions.DefaultFilesOptions.DefaultFileNames.Add("index.html");
 
             app.UseFileServer(fileServerOptions);
 

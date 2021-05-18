@@ -147,14 +147,14 @@ startButton.onclick = function () {
   socket.send(data);
 };
 
-// function displayPlayersPositionsAroundTable() { 
-//     const playerDiv = dociment.createElement("div");
-//     displayMainPlayer(playerDiv);
-// }
+function displayPlayersPositionsAroundTable() { 
+    const playerDiv = dociment.createElement("div");
+    displayMainPlayer(playerDiv);
+}
 
 // function displayMainPlayer(newDiv) {
 //     var tag = document.createElement("p");
-//     var text = document.createTextNode("Player " )
+//     var text = document.createTextNode("Player " + )
 // }
 
 function commslogEndGame() {
