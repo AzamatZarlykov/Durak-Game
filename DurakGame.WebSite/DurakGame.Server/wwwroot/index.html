@@ -16,7 +16,7 @@
     <div>
       <div>
         <label for="connectionUrl">WebSocket Server URL:</label>
-        <input id="connectionUrl" />
+        <input id="connectionUrl"/>
         <button id="connectButton" type="submit">Connect</button>
         <button id="closeButton" disabled>Close Socket</button>
       </div>
@@ -34,20 +34,15 @@
     <div>
       <button id="startGameButton" type="button" disabled>Start Game</button>
     </div>
-
-    <div id="playingTable" class="main" hidden>
-      <div class="table">
-        <div class="board">
-          <img class="card" src="images/standard deck/6C.png" alt="six c" />
-          <img class="card" src="images/standard deck/AH.png" alt="six c" />
-          <img class="card" src="images/standard deck/KS.png" alt="six c" />
-          <img class="card" src="images/standard deck/JC.png" alt="six c" />
-          <img class="card" src="images/standard deck/TD.png" alt="six c" />
-        </div>
-        
+    <div  id="playingTable" class="table" hidden>
+      <div class="board">
+        <img class="card" src="images/standard deck/6C.png" alt="six c" />
+        <img class="card" src="images/standard deck/AH.png" alt="six c" />
+        <img class="card" src="images/standard deck/KS.png" alt="six c" />
+        <img class="card" src="images/standard deck/JC.png" alt="six c" />
+        <img class="card" src="images/standard deck/TD.png" alt="six c" />
       </div>
     </div>
-
     <h2>Communication Log</h2>
     <table style="width: 800px">
       <thead>

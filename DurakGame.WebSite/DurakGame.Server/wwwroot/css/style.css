@@ -1,19 +1,21 @@
-.main {
-    position: fixed;
+.table {
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    background-color: green;
     width: 750px;
     height: 400px;
-  }
-  
-.table {
-    background-color: green;
-    height: 100%;
-    width: 100%;
     border-radius: 0;
     margin: auto;
     border: 0.5em solid black;
+}
+
+.playerTable {
+    position: absolute;
+    top: 0px;
+    height: 100%;
+    width: 100%;
 }
 
 .board {
@@ -30,4 +32,39 @@
     height: 100px;
     display: inline-block;
     padding: 5px;
+}
+
+.Player {
+    color: white;
+    position: absolute;
+}
+
+#Player1.Player {
+    left: 335px;
+    bottom: 10px;
+}
+
+#Player2.Player {
+    left: 80px;
+    bottom: 10px;
+}
+
+#Player3.Player {
+    left: 80px;
+    top: 10px;
+}
+
+#Player4.Player {
+    left: 335px;
+    top: 10px;
+}
+
+#Player5.Player {
+    right: 80px;
+    top: 10px;
+}
+
+#Player6.Player {
+    right: 80px;
+    bottom: 10px;
 }

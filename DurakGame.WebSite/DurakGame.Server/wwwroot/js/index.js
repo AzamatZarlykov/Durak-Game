@@ -12,6 +12,10 @@ var startButton = document.getElementById("startGameButton");
 var playingTable = document.getElementById("playingTable");
 var playersPlaying = document.getElementById("playersPlaying");
 
+var tag;
+var text;
+var className = "Player ";
+
 let id;
 let nPlayers;
 let nPlayersPlaying;
@@ -148,14 +152,327 @@ startButton.onclick = function () {
 };
 
 function displayPlayersPositionsAroundTable() { 
-    const playerDiv = dociment.createElement("div");
+    const playerDiv = document.createElement("div");
+    playerDiv.className = "playerTable"
+
     displayMainPlayer(playerDiv);
+
+    if(nPlayersPlaying > 1) {
+      displayOtherPlayers(playerDiv);
+    }
+
+    var table = document.getElementById("playingTable");
+    table.appendChild(playerDiv);
 }
 
-// function displayMainPlayer(newDiv) {
-//     var tag = document.createElement("p");
-//     var text = document.createTextNode("Player " + )
-// }
+function setHTMLForPlayers(player, newDiv, className) {
+  text = document.createTextNode(className.concat(player.toString()));
+  tag.className = className.trim();
+  tag.appendChild(text);
+  newDiv.appendChild(tag);
+}
+
+function placeTwoPlayers(newDiv, className) {
+  for (var i = 1; i <= nPlayersPlaying; i++) {
+    tag = document.createElement("p");
+    if(id == i) {
+      continue;
+    }
+    tag.setAttribute("id", className.trim().concat("4"));
+
+    setHTMLForPlayers(i, newDiv, className);
+  }
+}
+
+function placeThreePlayers(newDiv, className) {
+  for (var i = 1; i <= nPlayersPlaying; i++) {
+    tag = document.createElement("p");
+    if(id == 1) {
+      if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+    }else if(id == 2) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+    }else if(id == 3) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+    }
+    if(id != i) {
+      setHTMLForPlayers(i, newDiv, className);
+    }
+  }
+}
+
+function placeFourPlayers(newDiv, className) {
+  for(var i = 1; i <= nPlayersPlaying; i++) {
+    tag = document.createElement("p");
+    if(id == 1) {
+      if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+    }else if(id == 2) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+    }else if(id == 3) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+    }else if(id == 4) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+    }
+    if(id != i) {
+      setHTMLForPlayers(i, newDiv, className);
+    }
+  }
+}
+
+function placeFivePlayers(newDiv, className) {
+  for(var i = 1; i <= nPlayersPlaying; i++) {
+    tag = document.createElement("p");
+    if(id == 1) {
+      if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+    }else if(id == 2) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+    }else if(id == 3) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+    }else if(id == 4) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+    }else if(id == 5) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+    }
+    if(id != i) {
+      setHTMLForPlayers(i, newDiv, className);
+    }
+  }
+}
+
+function placeSixPlayers(newDiv, className) {
+
+  for (var i = 1; i <= nPlayersPlaying; i++) {
+    tag = document.createElement("p");
+    if(id == 1) {
+      if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 6) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+    }else if(id == 2) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 6) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+    }else if(id == 3) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 6) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+    }else if(id == 4) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 6) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+    }else if(id == 5) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+      else if(i == 6) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+    }else if(id == 6) {
+      if(i == 1) {
+        tag.setAttribute("id", className.trim().concat("2"));
+      }
+      else if(i == 2) {
+        tag.setAttribute("id", className.trim().concat("3"));
+      }
+      else if(i == 3) {
+        tag.setAttribute("id", className.trim().concat("4"));
+      }
+      else if(i == 4) {
+        tag.setAttribute("id", className.trim().concat("5"));
+      }
+      else if(i == 5) {
+        tag.setAttribute("id", className.trim().concat("6"));
+      }
+    }
+    if(id != i) {
+      setHTMLForPlayers(i, newDiv, className);
+    }
+  }
+}
+
+function displayOtherPlayers(newDiv) {
+  if(nPlayersPlaying == 2) {
+    placeTwoPlayers(newDiv, className);
+  } else if(nPlayersPlaying == 3) {
+    placeThreePlayers(newDiv, className);
+  } else if(nPlayersPlaying == 4) {
+    placeFourPlayers(newDiv, className);
+  } else if(nPlayersPlaying == 5) {
+    placeFivePlayers(newDiv, className);
+  } else if(nPlayersPlaying == 6) {
+    placeSixPlayers(newDiv, className);
+  }
+}
+
+function displayMainPlayer(newDiv) {
+  var mainID = "Player1";
+  var tag = document.createElement("p");
+  var className = "Player ";
+  tag.setAttribute("id", mainID);
+  tag.className = className.trim();
+
+  var text = document.createTextNode(className + id);
+
+  tag.appendChild(text);
+  newDiv.appendChild(tag);
+}
 
 function commslogEndGame() {
   commsLog.innerHTML +=
