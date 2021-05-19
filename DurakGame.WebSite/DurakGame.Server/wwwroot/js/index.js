@@ -172,275 +172,22 @@ function setHTMLForPlayers(player, newDiv, className) {
   newDiv.appendChild(tag);
 }
 
-function placeTwoPlayers(newDiv, className) {
-  for (var i = 1; i <= nPlayersPlaying; i++) {
+function placePlayers(newDiv, className, pos) {
+  var x = id;
+  if(id==nPlayersPlaying){
+    x = 1;
+  }
+  var allPos = (pos % (10 ** (x-1))).toString().concat((Math.floor(pos/(10 ** (x-1)))).toString());
+  var count = 10**(nPlayersPlaying-2);
+  for(var i = 1; i <= nPlayersPlaying; i++) {
     tag = document.createElement("p");
-    if(id == i) {
+    if(i == id)
+    {
       continue;
     }
-    tag.setAttribute("id", className.trim().concat("4"));
-
-    setHTMLForPlayers(i, newDiv, className);
-  }
-}
-
-function placeThreePlayers(newDiv, className) {
-  for (var i = 1; i <= nPlayersPlaying; i++) {
-    tag = document.createElement("p");
-    if(id == 1) {
-      if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-    }else if(id == 2) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-    }else if(id == 3) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-    }
-    if(id != i) {
-      setHTMLForPlayers(i, newDiv, className);
-    }
-  }
-}
-
-function placeFourPlayers(newDiv, className) {
-  for(var i = 1; i <= nPlayersPlaying; i++) {
-    tag = document.createElement("p");
-    if(id == 1) {
-      if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-    }else if(id == 2) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-    }else if(id == 3) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-    }else if(id == 4) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-    }
-    if(id != i) {
-      setHTMLForPlayers(i, newDiv, className);
-    }
-  }
-}
-
-function placeFivePlayers(newDiv, className) {
-  for(var i = 1; i <= nPlayersPlaying; i++) {
-    tag = document.createElement("p");
-    if(id == 1) {
-      if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-    }else if(id == 2) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-    }else if(id == 3) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-    }else if(id == 4) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-    }else if(id == 5) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-    }
-    if(id != i) {
-      setHTMLForPlayers(i, newDiv, className);
-    }
-  }
-}
-
-function placeSixPlayers(newDiv, className) {
-
-  for (var i = 1; i <= nPlayersPlaying; i++) {
-    tag = document.createElement("p");
-    if(id == 1) {
-      if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 6) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-    }else if(id == 2) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 6) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-    }else if(id == 3) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 6) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-    }else if(id == 4) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 6) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-    }else if(id == 5) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-      else if(i == 6) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-    }else if(id == 6) {
-      if(i == 1) {
-        tag.setAttribute("id", className.trim().concat("2"));
-      }
-      else if(i == 2) {
-        tag.setAttribute("id", className.trim().concat("3"));
-      }
-      else if(i == 3) {
-        tag.setAttribute("id", className.trim().concat("4"));
-      }
-      else if(i == 4) {
-        tag.setAttribute("id", className.trim().concat("5"));
-      }
-      else if(i == 5) {
-        tag.setAttribute("id", className.trim().concat("6"));
-      }
-    }
+    var result = Math.floor(allPos/count) % 10;
+    count = count / 10;
+    tag.setAttribute("id", className.trim().concat(result));
     if(id != i) {
       setHTMLForPlayers(i, newDiv, className);
     }
@@ -449,15 +196,15 @@ function placeSixPlayers(newDiv, className) {
 
 function displayOtherPlayers(newDiv) {
   if(nPlayersPlaying == 2) {
-    placeTwoPlayers(newDiv, className);
+    placePlayers(newDiv, className,4);
   } else if(nPlayersPlaying == 3) {
-    placeThreePlayers(newDiv, className);
+    placePlayers(newDiv, className,35);
   } else if(nPlayersPlaying == 4) {
-    placeFourPlayers(newDiv, className);
+    placePlayers(newDiv, className,345);
   } else if(nPlayersPlaying == 5) {
-    placeFivePlayers(newDiv, className);
+    placePlayers(newDiv, className,2356);
   } else if(nPlayersPlaying == 6) {
-    placeSixPlayers(newDiv, className);
+    placePlayers(newDiv, className,23456);
   }
 }
 
