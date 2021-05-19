@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Collections.Generic;
 
 namespace DurakGame.Server.Middleware
 {
@@ -9,15 +10,12 @@ namespace DurakGame.Server.Middleware
     {
         private ConcurrentDictionary<int, WebSocket> _sockets = new ConcurrentDictionary<int, WebSocket>();
 
-        public int GetTotalPlayers()
-        {
-            return _sockets.Count;
-        }
-        public ConcurrentDictionary<int, WebSocket> GetAllSockets()
-        {
-            return _sockets;
-        }
-        
+        public List<int> GetIDsOfPlayers() => new List<int>(_sockets.Keys);
+
+        public int GetTotalPlayers() => _sockets.Count;
+
+        public ConcurrentDictionary<int, WebSocket> GetAllSockets() => _sockets;
+
         public WebSocket RemoveElementFromSockets(int id)
         {
             _sockets.TryRemove(id, out WebSocket socket);

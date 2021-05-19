@@ -29,12 +29,15 @@ let userMessageCommandPrivate = "UserMessagePrivate";
 let goodByeCommand = "Goodbye";
 let endGameCommand = "EndGame";
 
+let existingPlayers = [];
+
 let serverCommands = [
   setIdCommand,
   informLeavingCommand,
   informJoiningCommand,
   joinGameCommand,
 ];
+
 let allCommands = [
   endGameCommand,
   setIdCommand,
@@ -45,6 +48,7 @@ let allCommands = [
   userMessageCommandPrivate,
   goodByeCommand,
 ];
+
 
 connectionUrl.value = "ws://localhost:5000";
 
@@ -79,30 +83,48 @@ connectButton.onclick = function () {
 
     if (allCommands.indexOf(obj.command) > -1) {
       if (serverCommands.indexOf(obj.command) > -1) {
+        // Outputs the messages on the log depending on the command
         commslogServerHtml(obj);
-
+        
         if (obj.command != joinGameCommand) {
           nPlayers = obj.totalPlayers;
-        } else if (obj.command == joinGameCommand) {
+        } 
+        else if (obj.command == joinGameCommand) {
           setTotalPlayingPlayers(nPlayers);
           displayGame();
-          displayPlayersPositionsAroundTable();
-        } else if (obj.command == informLeavingCommand &&
-          playingTable.hidden == false) {
+          displayPlayersPositionsAroundTable(false);
+        } 
+        if (obj.command == informLeavingCommand) {
+          existingPlayers = obj.allPlayersIDs;
+        }
+        if (
+          obj.command == informLeavingCommand &&
+          playingTable.hidden == false
+        ) {
           nPlayersPlaying -= 1;
           setTotalPlayingPlayers(nPlayersPlaying);
+          displayPlayersPositionsAroundTable(true);
+        } 
+        if (obj.command == informJoiningCommand) {
+          existingPlayers = obj.allPlayersIDs;
         }
         if (obj.command == setIdCommand) {
           isPlayerID(obj.playerID);
+          existingPlayers = obj.allPlayersIDs;
         }
         setTotalPlayers(nPlayers);
-      } else if (obj.command == userMessageCommand ||
-        obj.command == userMessageCommandPrivate) {
+      } 
+      else if (
+        obj.command == userMessageCommand ||
+        obj.command == userMessageCommandPrivate
+      ) {
         commslogMessageHtml(obj);
-      } else if (obj.command == goodByeCommand) {
+      } 
+      else if (obj.command == goodByeCommand) {
         setTotalPlayers(obj.totalPlayers);
         socket.close(1000, "Closing from client");
-      } else if (obj.command == endGameCommand) {
+      } 
+      else if (obj.command == endGameCommand) {
         commslogEndGame(obj);
       }
     } else {
@@ -111,6 +133,9 @@ connectButton.onclick = function () {
   };
 };
 
+/*
+Sends the "leaving" message to the server prior closing the connection.
+*/
 closeButton.onclick = function () {
   if (nPlayersPlaying == 1 && playingTable.hidden == false) {
     var data = constructJSONPayload("EndGame");
@@ -123,6 +148,10 @@ closeButton.onclick = function () {
   socket.send(data);
 };
 
+/*
+Sends the messages to the server containing the message (public or private)
+Displays the message on commslog.
+*/
 sendButton.onclick = function () {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     alert("socket not connected");
@@ -146,25 +175,51 @@ sendButton.onclick = function () {
     "</td></tr>";
 };
 
+/*
+Sends the data to the server when button is pressed
+*/
 startButton.onclick = function () {
   var data = constructJSONPayload("StartGame");
   socket.send(data);
 };
 
-function displayPlayersPositionsAroundTable() { 
-    const playerDiv = document.createElement("div");
-    playerDiv.className = "playerTable"
-
-    displayMainPlayer(playerDiv);
-
-    if(nPlayersPlaying > 1) {
-      displayOtherPlayers(playerDiv);
-    }
-
-    var table = document.getElementById("playingTable");
-    table.appendChild(playerDiv);
+/*
+places players in the right positions based on the folowing information:
+number of players: nPlayersPlaying, list of existing players: existingPlayers, 
+list of positions avaliable: it is passed as an argument. 
+*/
+function placePlayers(newDiv, className, pos) {
+  var names = shuffle();
+  for (var i = 0; i < nPlayersPlaying-1; i++) {
+    tag = document.createElement("p");
+    tag.setAttribute("id", className.trim().concat(pos[i]));
+    setHTMLForPlayers(names[i], newDiv, className);
+  }
 }
 
+/*
+Shuffle positions according to the ID of the player.
+E.g the playerID = 3 then the output list is [4,5,6,1,2]
+*/
+function shuffle(){
+  var result1 = [];
+  var result2 = [];
+  for (var i = 0; i < nPlayersPlaying; i++){
+    if (existingPlayers[i] > id){
+      result1.push(existingPlayers[i]);
+    }
+    if (existingPlayers[i] < id){
+      result2.push(existingPlayers[i]);
+    }
+  }
+  return result1.concat(result2);
+}
+
+/*
+function sets the html elements for each of the player on the table.
+Each of their ID correcsponds with the CSS style that place players
+around the table.
+*/
 function setHTMLForPlayers(player, newDiv, className) {
   text = document.createTextNode(className.concat(player.toString()));
   tag.className = className.trim();
@@ -172,42 +227,49 @@ function setHTMLForPlayers(player, newDiv, className) {
   newDiv.appendChild(tag);
 }
 
-function placePlayers(newDiv, className, pos) {
-  var x = id;
-  if(id==nPlayersPlaying){
-    x = 1;
+/*
+displays the players around the table. The bool redraw is responsible
+if function should delete previous div element of players and add new
+div with updated number of elements
+*/
+function displayPlayersPositionsAroundTable(redraw) {
+  if(redraw) {
+    var obj = document.getElementById("playerIDTable");
+    obj.remove();
   }
-  var allPos = (pos % (10 ** (x-1))).toString().concat((Math.floor(pos/(10 ** (x-1)))).toString());
-  var count = 10**(nPlayersPlaying-2);
-  for(var i = 1; i <= nPlayersPlaying; i++) {
-    tag = document.createElement("p");
-    if(i == id)
-    {
-      continue;
-    }
-    var result = Math.floor(allPos/count) % 10;
-    count = count / 10;
-    tag.setAttribute("id", className.trim().concat(result));
-    if(id != i) {
-      setHTMLForPlayers(i, newDiv, className);
-    }
+
+  const playerDiv = document.createElement("div");
+  playerDiv.setAttribute("id", "playerIDTable");
+  playerDiv.className = "playerTable";
+
+  // Display the main player 
+  displayMainPlayer(playerDiv);
+
+  // Display other players 
+  if (nPlayersPlaying > 1) {
+    displayOtherPlayers(playerDiv);
   }
+
+  var table = document.getElementById("playingTable");
+  table.appendChild(playerDiv);
 }
 
+// Determines the placing based on number of players
 function displayOtherPlayers(newDiv) {
-  if(nPlayersPlaying == 2) {
-    placePlayers(newDiv, className,4);
-  } else if(nPlayersPlaying == 3) {
-    placePlayers(newDiv, className,35);
-  } else if(nPlayersPlaying == 4) {
-    placePlayers(newDiv, className,345);
-  } else if(nPlayersPlaying == 5) {
-    placePlayers(newDiv, className,2356);
-  } else if(nPlayersPlaying == 6) {
-    placePlayers(newDiv, className,23456);
+  if (nPlayersPlaying == 2) {
+    placePlayers(newDiv, className, [4]);
+  } else if (nPlayersPlaying == 3) {
+    placePlayers(newDiv, className, [3,5]);
+  } else if (nPlayersPlaying == 4) {
+    placePlayers(newDiv, className, [3,4,5]);
+  } else if (nPlayersPlaying == 5) {
+    placePlayers(newDiv, className, [2,3,5,6]);
+  } else if (nPlayersPlaying == 6) {
+    placePlayers(newDiv, className, [2,3,4,5,6]);
   }
 }
 
+// Displays the main player
 function displayMainPlayer(newDiv) {
   var mainID = "Player1";
   var tag = document.createElement("p");
@@ -221,6 +283,7 @@ function displayMainPlayer(newDiv) {
   newDiv.appendChild(tag);
 }
 
+// Output on CommsLog when the game is finished
 function commslogEndGame() {
   commsLog.innerHTML +=
     "<tr>" +
@@ -233,6 +296,7 @@ function commslogEndGame() {
     "</td></tr>";
 }
 
+// Outputs on CommsLog the messages public or private
 function commslogMessageHtml(jsonObj) {
   commsLog.innerHTML +=
     "<tr>" +
@@ -248,6 +312,7 @@ function commslogMessageHtml(jsonObj) {
     "</td></tr>";
 }
 
+// Outputs on CommsLog all the information coming from the server
 function commslogServerHtml(jsonObj) {
   commsLog.innerHTML +=
     "<tr>" +
@@ -272,11 +337,19 @@ function commslogServerHtml(jsonObj) {
     "</td></tr>";
 }
 
+/*
+Displays the table and the current number of 
+players joined to the game
+*/
 function displayGame() {
   playingTable.hidden = false;
   playersPlaying.hidden = false;
 }
 
+/*
+Stops displaying the table and the current number of 
+players joined to the game
+*/ 
 function stopDisplayGame() {
   playingTable.hidden = true;
   playersPlaying.hidden = true;
@@ -292,21 +365,33 @@ function htmlEscape(str) {
     .replace(/>/g, "&gt;");
 }
 
+/*
+Sets the player ID on html
+*/
 function isPlayerID(str) {
   playerID.innerHTML = "PlayerID: " + str;
   id = str;
 }
 
+/*
+Sets the total number of players playing in the game on html
+*/
 function setTotalPlayingPlayers(str) {
   nPlayersPlaying = str;
   playersPlaying.innerHTML =
     "Number Of Players In The Game: " + nPlayersPlaying;
 }
 
+/*
+Sets the total number of players on html
+*/
 function setTotalPlayers(str) {
   totalPlayers.innerHTML = "Total Number Of Players: " + str;
 }
 
+/*
+Returns the JSON object that containts the message to the server
+*/
 function constructJSONPayload(message = "Leaving") {
   return JSON.stringify({
     From: parseInt(playerID.innerHTML.substring(10, playerID.innerHTML.length)),
@@ -315,6 +400,9 @@ function constructJSONPayload(message = "Leaving") {
   });
 }
 
+/*
+Function that updates the game based on the websocket communication
+*/
 function updateState() {
   function disable() {
     sendMessage.disabled = true;
