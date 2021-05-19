@@ -151,7 +151,7 @@ namespace DurakGame.Server.Middleware
             int totalPlayers = _manager.GetTotalPlayers();
             List<int> allPlayersIDs = _manager.GetIDsOfPlayers();
             
-            await SendJSONAsync(websocket, new { command, playerID, totalPlayers, allPlayersIDs });
+            await SendJSONAsync(websocket, new { command, playerID, totalPlayers, allPlayersIDs });     
             await InformJoiningToOtherPlayersAsync(totalPlayers, playerID, allPlayersIDs);
         }
 
