@@ -6,6 +6,7 @@
         "sourceMap": true,
         "target": "es5",
         "outDir": "wwwroot/dist",
-        "rootDir": "wwwroot/src"
+        "rootDir": "wwwroot/src",
+        "declaration": true
     }
 }

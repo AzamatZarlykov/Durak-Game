@@ -30,6 +30,7 @@ namespace DurakGame.Server.Middleware
                 // Acceptping the websocket connection
                 WebSocket websocket = await context.WebSockets.AcceptWebSocketAsync();
 
+                Console.WriteLine("Someone has connected");
                 // Sending the player its information (id, totalPlayers) 
                 await InformPlayerInformationAsync(websocket);
 
