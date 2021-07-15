@@ -15,6 +15,9 @@ namespace DurakGame.Server.Middleware
         public int GetTotalPlayers() => _sockets.Count;
 
         public ConcurrentDictionary<int, WebSocket> GetAllSockets() => _sockets;
+        
+        // We want to get only 6 players to play the game. This function will be used
+        // to send the JoinGame message only to those that are first 6 players to join
 
         public WebSocket RemoveElementFromSockets(int id)
         {

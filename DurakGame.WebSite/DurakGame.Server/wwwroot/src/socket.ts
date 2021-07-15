@@ -32,14 +32,14 @@ let joinGameCommand: string = "JoinGame";
 let userMessageCommand: string = "UserMessage";
 let userMessageCommandPrivate: string = "UserMessagePrivate";
 let goodByeCommand: string = "Goodbye";
-let endGameCommand: string = "EndGame";
 let startGameCommand: string = "StartGame";
 let requestStateGameCommand: string = "RequestStateGame";
+let gameOverCommand: string = "GameOver";
 
 let existingPlayers : number[] = [];
 
 let allCommands: string[] = [
-    endGameCommand,
+    gameOverCommand,
     setIdCommand,
     informLeavingCommand,
     informJoiningCommand,
@@ -86,14 +86,13 @@ socket.onmessage = function (event) : void {
             // Outputs the messages on the log depending on the command
             commslogServerHtml(obj);
 
-            // Each server command updates the nPlayers(number of players in the game)
-            nPlayers = obj.totalPlayers;
-            setTotalPlayers(nPlayers);
-
             // setIdCommand, informJoiningCommand, informLeavingCommand commands update the list of
             // players in the game. This if statement will handle the updating the value of the array
             if ([setIdCommand, informJoiningCommand, informLeavingCommand].includes(obj.command)) {
                 existingPlayers = obj.allPlayersIDs;
+
+                // Each server command updates the nPlayers(number of players in the game)
+                setTotalPlayers(obj.totalPlayers);
             }
 
             if (obj.command == setIdCommand) {
@@ -105,14 +104,24 @@ socket.onmessage = function (event) : void {
             // of players depending on IDs
             if (obj.command == informLeavingCommand && playingTable.hidden == false) {
                 nPlayersPlaying -= 1;
-                setTotalPlayingPlayers(nPlayersPlaying);
-                displayPlayersPositionsAroundTable(true);
+                if (nPlayersPlaying > 1) {
+                    setTotalPlayingPlayers(nPlayersPlaying);
+                    displayPlayersPositionsAroundTable(true);
+                } else {
+                    // when 1 person left the game is over. Close the board and tell server that game
+                    // has finished
+                    stopDisplayGame();
+
+                    let data: string = constructJSONPayload(gameOverCommand);
+                    socket.send(data);
+                }
+                
             }
             // When any player starts the game, the server sends this message to all the players in the 
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             if (obj.command == joinGameCommand) {
-                setTotalPlayingPlayers(nPlayers);
+                setTotalPlayingPlayers(obj.totalPlayers);
                 displayGame();
                 displayPlayersPositionsAroundTable(false);
             }
@@ -138,7 +147,9 @@ socket.onmessage = function (event) : void {
             setTotalPlayers(obj.totalPlayers);
             socket.close(1000, "Closing from client");
         }
-        else if (obj.command == endGameCommand) {
+        // Game is over
+        else if (obj.command == gameOverCommand) {
+            gameInProgress = false;
             commslogEndGame();
         }
     } else {
@@ -371,9 +382,7 @@ function displayPlayersPositionsAroundTable(redraw : boolean) : void {
     displayMainPlayer(playerDiv);
 
     // Display other players 
-    if (nPlayersPlaying > 1) {
-        displayOtherPlayers(playerDiv);
-    }
+    displayOtherPlayers(playerDiv);
 
     let table = document.getElementById("playingTable") as HTMLDivElement;
     table.appendChild(playerDiv);
@@ -422,7 +431,8 @@ function constructJSONPayload(message : string = "Leaving") : string{
 /*
 Sets the total number of players on html
 */
-function setTotalPlayers(count : number) {
+function setTotalPlayers(count: number) {
+    nPlayers = count;
     totalPlayers.innerHTML = "Total Number Of Players: " + count.toString();
 }
 

@@ -71,9 +71,13 @@ namespace DurakGame.Server.Middleware
                                 await InformStartGame(route);
                             }
                         }
-                        else if(route.Message == "EndGame")
+                        else if(route.Message == "GameOver")
                         {
                             Console.WriteLine("ENDGAME CALLING");
+
+                            // Set teh game in progress to be false
+                            game.GameInProgress = false;
+
                             await InformGameEnding();
                         }
                         else if(route.Message == "RequestStateGame")
@@ -121,7 +125,7 @@ namespace DurakGame.Server.Middleware
 
         private async Task InformGameEnding()
         {
-            command = "EndGame";
+            command = "GameOver";
             await DistributeJSONToWebSockets(new { command });
         }
 
@@ -130,7 +134,20 @@ namespace DurakGame.Server.Middleware
             command = "JoinGame";
             int totalPlayers = _manager.GetTotalPlayers();
 
-            await DistributeJSONToWebSockets(new { command, totalPlayers, route.From});
+            // total players
+            if (totalPlayers > 6) totalPlayers = 6;
+
+            int count = 0;
+
+            foreach(var element in _manager.GetAllSockets())
+            {
+                if (count == 6) break;
+
+                count += 1;
+                await SendJSONAsync(element.Value, new { command, totalPlayers, route.From });
+            }
+
+            // await DistributeJSONToWebSockets(new { command, totalPlayers, route.From});
         }
 
         private async Task InformLeavingToOtherPlayersAsync(int leavingPlayerID)
