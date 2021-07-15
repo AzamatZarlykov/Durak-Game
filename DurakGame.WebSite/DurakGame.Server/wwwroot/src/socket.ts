@@ -86,28 +86,38 @@ socket.onmessage = function (event) : void {
             // Outputs the messages on the log depending on the command
             commslogServerHtml(obj);
 
+            // Each server command updates the nPlayers(number of players in the game)
             nPlayers = obj.totalPlayers;
+            setTotalPlayers(nPlayers);
 
-            if (obj.command == joinGameCommand) {
-                setTotalPlayingPlayers(nPlayers);
-                displayGame();
-                displayPlayersPositionsAroundTable(false);
-            }
-            if (obj.command == informLeavingCommand) {
+            // setIdCommand, informJoiningCommand, informLeavingCommand commands update the list of
+            // players in the game. This if statement will handle the updating the value of the array
+            if ([setIdCommand, informJoiningCommand, informLeavingCommand].includes(obj.command)) {
                 existingPlayers = obj.allPlayersIDs;
             }
+
+            if (obj.command == setIdCommand) {
+                SetPlayerID(obj.playerID);
+            }
+
+            // Handles the event when the player leaves when the game is on. It updates the value of
+            // number of people playing and rearranges the position
+            // of players depending on IDs
             if (obj.command == informLeavingCommand && playingTable.hidden == false) {
                 nPlayersPlaying -= 1;
                 setTotalPlayingPlayers(nPlayersPlaying);
                 displayPlayersPositionsAroundTable(true);
             }
-            if (obj.command == informJoiningCommand) {
-                existingPlayers = obj.allPlayersIDs;
+            // When any player starts the game, the server sends this message to all the players in the 
+            // game to join the playing room. This statement displays number of playing players and displays
+            // each players position on the table
+            if (obj.command == joinGameCommand) {
+                setTotalPlayingPlayers(nPlayers);
+                displayGame();
+                displayPlayersPositionsAroundTable(false);
             }
-            if (obj.command == setIdCommand) {
-                isPlayerID(obj.playerID);
-                existingPlayers = obj.allPlayersIDs;
-            }
+
+            // Handles the message about the state of the game from the server
             if (obj.command == requestStateGameCommand) {
                 gameInProgress = obj.gameState;
                 if (!gameInProgress) {
@@ -117,11 +127,13 @@ socket.onmessage = function (event) : void {
                     console.log("Game is already being played");
                 }
             }
-            setTotalPlayers(nPlayers);
         }
+
         else if (obj.command == userMessageCommand || obj.command == userMessageCommandPrivate) {
             commslogMessageHtml(obj);
         }
+        // before leaving the server, every plyers receieves the message and updates the number of
+        // players on the server
         else if (obj.command == goodByeCommand) {
             setTotalPlayers(obj.totalPlayers);
             socket.close(1000, "Closing from client");
@@ -417,7 +429,7 @@ function setTotalPlayers(count : number) {
 /*
 Sets the player ID on html
 */
-function isPlayerID(_id : number) : void {
+function SetPlayerID(_id : number) : void {
     playerID.innerHTML = "PlayerID: " + _id;
     id = _id;
 }
