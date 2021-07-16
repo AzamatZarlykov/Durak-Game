@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace DurakGame.Server.Library.GameDeck
+﻿namespace DurakGame.Server.Library.GameDeck
 {
     interface IDeck
     {

@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 using DurakGame.Server.Library.GameCard;
 
-namespace DurakGame.Server.Library.Deck
+namespace DurakGame.Server.Library.GameDeck
 {
-    public class Deck
+    public class Deck : IDeck
     {
         private int cardsLeft;
 
