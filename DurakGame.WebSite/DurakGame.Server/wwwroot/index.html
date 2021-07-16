@@ -2,27 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>WebSocket TypeScript Client</title>
+    <title>Durak</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
   </head>
 
   <body>
-    <p id="stateLabel">Ready to connect</p>
-    <p id="playerIdLabel">PlayerID: N/a</p>
-    <div class="playersNumber">
-      <p id="totalNumberOfPlayers">Total Number Of Players: 0</p>
-      <p id="playersPlaying" hidden>Number Of Players In The Game: 0</p>
-    </div>
-    <p></p>
-    <div>
-      <label for="sendMessage">Message:</label>
-      <input id="sendMessage" disabled />
-      <label for="recipients">Recipient IDs:</label>
-      <input id="recipients" disabled />
-      <button id="sendButton" type="submit" disabled>Send</button>
-    </div>
-    <p></p>
-    <p></p>
     <div>
       <button id="startGameButton" type="button" disabled>Start Game</button>
     </div>
@@ -35,17 +19,6 @@
         <img class="card" src="images/standard deck/TD.png" alt="six c" />
       </div>
     </div>
-    <h2>Communication Log</h2>
-    <table style="width: 800px">
-      <thead>
-        <tr>
-          <td style="width: 150px">From</td>
-          <td style="width: 150px">To</td>
-          <td>Message</td>
-        </tr>
-      </thead>
-      <tbody id="commsLog"></tbody>
-    </table>
 
     <script src="dist/socket.js"></script>
   </body>

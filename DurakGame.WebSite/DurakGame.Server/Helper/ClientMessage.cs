@@ -7,7 +7,7 @@ namespace DurakGame.Server.Helper
 {
     public class ClientMessage
     {
-        public int From, To;
+        public int From;
         public string Message;
     }
 }

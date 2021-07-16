@@ -84,11 +84,6 @@ namespace DurakGame.Server.Middleware
                         {
                             await InformGameState(websocket);
                         }
-                        else
-                        {
-                            // Route the messages from client to client
-                            await RouteJSONMessageAsync(route);
-                        }
                         return;
                     }
                     // Handling the client when they decide to leave/close the connection
@@ -132,6 +127,7 @@ namespace DurakGame.Server.Middleware
         private async Task InformStartGame(ClientMessage route)
         {
             command = "JoinGame";
+            int from = route.From;
             int totalPlayers = _manager.GetTotalPlayers();
 
             // total players
@@ -144,7 +140,7 @@ namespace DurakGame.Server.Middleware
                 if (count == 6) break;
 
                 count += 1;
-                await SendJSONAsync(element.Value, new { command, totalPlayers, route.From });
+                await SendJSONAsync(element.Value, new { command, totalPlayers, from });
             }
 
             // await DistributeJSONToWebSockets(new { command, totalPlayers, route.From});
@@ -202,48 +198,6 @@ namespace DurakGame.Server.Middleware
         {
             var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-        }
-
-        /*
-        Using the deserialized object parse the properties to get the destinations of the messages.
-        */
-        private async Task RouteJSONMessageAsync(ClientMessage route)
-        {
-            // Send message to the given destination. Otherwise, send to everyone
-            // From and To parts of the object are IDs of the players
-            if (route.To != 0)
-            {
-                // Prepare serializing the message as a json back to clients
-                command = "UserMessagePrivate";
-                var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, route.From, route.Message }));
-                // Get the <key, value> pair from the dictionary of the destination client
-                var socket = _manager.GetAllSockets().FirstOrDefault(s => s.Key == route.To);
-
-                if(socket.Value != null)
-                {
-                    if (socket.Value.State == WebSocketState.Open)
-                    {
-                        await socket.Value.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Invalid Recepient");
-                }
-            }else
-            {
-                // Prepare serializing the message as a json back to clients
-                command = "UserMessage";
-                var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, route.From, route.Message }));
-
-                foreach (var socket in _manager.GetAllSockets())
-                {
-                    if(socket.Value.State == WebSocketState.Open && socket.Key != route.From)
-                    {
-                        await socket.Value.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-                    }
-                }
-            }
         }
 
         private async Task ReceiveMessage(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage)

@@ -1,12 +1,4 @@
-﻿let stateLabel = document.getElementById("stateLabel") as HTMLParagraphElement;
-let sendMessage = document.getElementById("sendMessage") as HTMLInputElement;
-let sendButton = document.getElementById("sendButton") as HTMLButtonElement;
-let commsLog = document.getElementById("commsLog") as HTMLTableElement;
-let playersPlaying = document.getElementById("playersPlaying") as HTMLParagraphElement;
-let playingTable = document.getElementById("playingTable") as HTMLDivElement;
-let totalPlayers = document.getElementById("totalNumberOfPlayers") as HTMLParagraphElement;
-let playerID = document.getElementById("playerIdLabel") as HTMLParagraphElement;
-let recipients = document.getElementById("recipients") as HTMLInputElement;
+﻿let playingTable = document.getElementById("playingTable") as HTMLDivElement;
 let startButton = document.getElementById("startGameButton") as HTMLButtonElement;
 
 let socket: WebSocket;
@@ -29,10 +21,7 @@ let setIdCommand: string= "SetPlayerID";
 let informLeavingCommand: string = "InformLeaving";
 let informJoiningCommand: string = "InformJoining";
 let joinGameCommand: string = "JoinGame";
-let userMessageCommand: string = "UserMessage";
-let userMessageCommandPrivate: string = "UserMessagePrivate";
 let goodByeCommand: string = "Goodbye";
-let startGameCommand: string = "StartGame";
 let requestStateGameCommand: string = "RequestStateGame";
 let gameOverCommand: string = "GameOver";
 
@@ -44,8 +33,6 @@ let allCommands: string[] = [
     informLeavingCommand,
     informJoiningCommand,
     joinGameCommand,
-    userMessageCommand,
-    userMessageCommandPrivate,
     goodByeCommand,
     requestStateGameCommand
 ];
@@ -60,21 +47,13 @@ let serverCommands: string[] = [
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 
-stateLabel.innerHTML = "Connecting";
 socket = new WebSocket(connectionUrl);
 
 socket.onopen = function (event) : void{
     updateState();
-    commsLog.innerHTML += '<tr>' +
-        '<td colspan="3" class="commslog-data">Connection opened</td>' +
-        '</tr>';
 };
 socket.onclose = function (event) : void{
     updateState();
-    commsLog.innerHTML += '<tr>' +
-        '<td colspan="3" class="commslog-data">Connection closed. Code: ' +
-        htmlEscape(event.code.toString()) + '. Reason: ' + htmlEscape(event.reason) + '</td>' +
-        '</tr>';
 };
 socket.onerror = updateState;
 
@@ -83,8 +62,6 @@ socket.onmessage = function (event) : void {
 
     if (allCommands.indexOf(obj.command) > -1) {
         if (serverCommands.indexOf(obj.command) > -1) {
-            // Outputs the messages on the log depending on the command
-            commslogServerHtml(obj);
 
             // setIdCommand, informJoiningCommand, informLeavingCommand commands update the list of
             // players in the game. This if statement will handle the updating the value of the array
@@ -99,28 +76,40 @@ socket.onmessage = function (event) : void {
                 SetPlayerID(obj.playerID);
             }
 
+            // notify other players who just joined
+            if (obj.command == informJoiningCommand) {
+                console.log("Player " + obj.playerID + " joined");
+            }
+
             // Handles the event when the player leaves when the game is on. It updates the value of
             // number of people playing and rearranges the position
             // of players depending on IDs
-            if (obj.command == informLeavingCommand && playingTable.hidden == false) {
-                nPlayersPlaying -= 1;
-                if (nPlayersPlaying > 1) {
-                    setTotalPlayingPlayers(nPlayersPlaying);
-                    displayPlayersPositionsAroundTable(true);
-                } else {
-                    // when 1 person left the game is over. Close the board and tell server that game
-                    // has finished
-                    stopDisplayGame();
+            if (obj.command == informLeavingCommand) {
+                if (playingTable.hidden == false) {
+                    nPlayersPlaying -= 1;
+                    if (nPlayersPlaying > 1) {
+                        setTotalPlayingPlayers(nPlayersPlaying);
+                        displayPlayersPositionsAroundTable(true);
+                    } else {
+                        // when 1 person left the game is over. Close the board and tell server that game
+                        // has finished
+                        stopDisplayGame();
 
-                    let data: string = constructJSONPayload(gameOverCommand);
-                    socket.send(data);
+                        let data: string = constructJSONPayload(gameOverCommand);
+                        socket.send(data);
+                    }
+                    console.log("Player " + obj.leavingPlayerID + " left the game");
+                } else {
+                    console.log("Player" + obj.leavingPlayerID + " left the server");
                 }
-                
             }
             // When any player starts the game, the server sends this message to all the players in the 
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             if (obj.command == joinGameCommand) {
+                console.log("Game started");
+                console.log("Player " + obj.from + " started the game");
+
                 setTotalPlayingPlayers(obj.totalPlayers);
                 displayGame();
                 displayPlayersPositionsAroundTable(false);
@@ -130,16 +119,12 @@ socket.onmessage = function (event) : void {
             if (obj.command == requestStateGameCommand) {
                 gameInProgress = obj.gameState;
                 if (!gameInProgress) {
-                    let data: string = constructJSONPayload(startGameCommand);
+                    let data: string = constructJSONPayload("StartGame");
                     socket.send(data);
                 } else {
                     console.log("Game is already being played");
                 }
             }
-        }
-
-        else if (obj.command == userMessageCommand || obj.command == userMessageCommandPrivate) {
-            commslogMessageHtml(obj);
         }
         // before leaving the server, every plyers receieves the message and updates the number of
         // players on the server
@@ -150,34 +135,11 @@ socket.onmessage = function (event) : void {
         // Game is over
         else if (obj.command == gameOverCommand) {
             gameInProgress = false;
-            commslogEndGame();
+            console.log("Game is over");
         }
     } else {
         console.log("Unknown command from the server");
     }
-};
-
-sendButton.onclick = function () : void {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-        alert("socket not connected");
-    }
-    let data: string = constructJSONPayload(sendMessage.value);
-    let parsedData = JSON.parse(data);
-    let toSomeone: boolean = parsedData.To == 0 ? false : true;
-
-    socket.send(data);
-
-    commsLog.innerHTML +=
-        "<tr>" +
-        (toSomeone
-            ? '<td class="commslog-client">(Private)Player ' + id + "</td>"
-            : '<td class="commslog-client">Player ' + id + "</td>") +
-        '<td class="commslog-server">' +
-        (!toSomeone ? "Everyone" : "Player " + parsedData.To.toString()) +
-        "</td>" +
-        '<td class="commslog-data">' +
-        parsedData.Message +
-        "</td></tr>";
 };
 
 startButton.onclick = function (): void {
@@ -198,7 +160,6 @@ players joined to the game
 */
 function displayGame() : void {
     playingTable.hidden = false;
-    playersPlaying.hidden = false;
 }
 
 /*
@@ -207,21 +168,14 @@ players joined to the game
 */
 function stopDisplayGame() {
     playingTable.hidden = true;
-    playersPlaying.hidden = true;
 }
 
 function updateState() : void {
     function disable() {
-        sendMessage.disabled = true;
-        sendButton.disabled = true;
-        recipients.disabled = true;
         startButton.disabled = true;
         stopDisplayGame();
     }
     function enable() {
-        sendMessage.disabled = false;
-        sendButton.disabled = false;
-        recipients.disabled = false;
         startButton.disabled = false;
     }
 
@@ -230,84 +184,22 @@ function updateState() : void {
     } else {
         switch (socket.readyState) {
             case WebSocket.CLOSED:
-                stateLabel.innerHTML = "Closed";
                 disable();
                 break;
             case WebSocket.CLOSING:
-                stateLabel.innerHTML = "Closing...";
                 disable();
                 break;
             case WebSocket.CONNECTING:
-                stateLabel.innerHTML = "Connecting...";
                 disable();
                 break;
             case WebSocket.OPEN:
-                stateLabel.innerHTML = "Open";
                 enable();
                 break;
             default:
-                stateLabel.innerHTML = "Unknown WebSocket State: " +
-                    htmlEscape(socket.readyState.toString());
                 disable();
                 break;
         }
     }
-}
-
-// Outputs on CommsLog all the information coming from the server
-function commslogServerHtml(jsonObj): void {
-    if (jsonObj.command != requestStateGameCommand) {
-        commsLog.innerHTML +=
-            "<tr>" +
-            '<td class="commslog-server">Server</td>' +
-            '<td class="commslog-client">' +
-            (jsonObj.command == setIdCommand ? "Client" : "Player " + id) +
-            "</td>" +
-            '<td class="commslog-data"> Player ' +
-            (jsonObj.command == informLeavingCommand
-                ? htmlEscape(jsonObj.leavingPlayerID)
-                : jsonObj.command == joinGameCommand
-                    ? htmlEscape(jsonObj.From)
-                    : htmlEscape(jsonObj.playerID)) +
-            " " +
-            (jsonObj.command == setIdCommand
-                ? "connected"
-                : jsonObj.command == informLeavingCommand
-                    ? "disconnected"
-                    : jsonObj.command == joinGameCommand
-                        ? "started the game"
-                        : "joined the game") +
-            "</td></tr>";
-    }
-}
-
-// Outputs on CommsLog the messages public or private
-function commslogMessageHtml(jsonObj) : void {
-    commsLog.innerHTML +=
-        "<tr>" +
-        '<td class="commslog-server">' +
-        (jsonObj.command == userMessageCommand ? "Player " : "(Private)Player ") +
-        htmlEscape(jsonObj.From) +
-        "</td>" +
-        '<td class="commslog-client">Player ' +
-        id +
-        "</td>" +
-        '<td class="commslog-data">' +
-        htmlEscape(jsonObj.Message) +
-        "</td></tr>";
-}
-
-// Output on CommsLog when the game is finished
-function commslogEndGame() {
-    commsLog.innerHTML +=
-        "<tr>" +
-        '<td class="commslog-server">Server</td>' +
-        '<td class="commslog-client">Player ' +
-        id +
-        "</td>" +
-        '<td class="commslog-data">' +
-        "Game Over" +
-        "</td></tr>";
 }
 
 /*
@@ -315,8 +207,7 @@ Sets the total number of players playing in the game on html
 */
 function setTotalPlayingPlayers(count : number) : void {
     nPlayersPlaying = count;
-    playersPlaying.innerHTML =
-        "Number Of Players In The Game: " + nPlayersPlaying;
+    console.log("Number Of Players In The Game: " + nPlayersPlaying);
 }
 
 /*
@@ -422,8 +313,7 @@ Returns the JSON object that containts the message to the server
 */
 function constructJSONPayload(message : string = "Leaving") : string{
     return JSON.stringify({
-        From: parseInt(playerID.innerHTML.substring(10, playerID.innerHTML.length)),
-        To: parseInt(recipients.value) || 0,
+        From: id,
         Message: message,
     });
 }
@@ -433,15 +323,15 @@ Sets the total number of players on html
 */
 function setTotalPlayers(count: number) {
     nPlayers = count;
-    totalPlayers.innerHTML = "Total Number Of Players: " + count.toString();
+    console.log("Total Number Of Players: " + count.toString());
 }
 
 /*
 Sets the player ID on html
 */
-function SetPlayerID(_id : number) : void {
-    playerID.innerHTML = "PlayerID: " + _id;
-    id = _id;
+function SetPlayerID(identifier: number) {
+    id = identifier;
+    console.log("ID of the player is: " + id.toString());
 }
 
 function htmlEscape(str: string) : string {
