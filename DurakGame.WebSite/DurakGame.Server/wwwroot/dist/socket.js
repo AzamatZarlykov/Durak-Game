@@ -90,7 +90,7 @@ socket.onmessage = function (event) {
             // each players position on the table
             if (obj.command == joinGameCommand) {
                 console.log("Game started");
-                console.log("Player " + obj.from.toString() + " started the game");
+                console.log("Player " + obj.from + " started the game");
                 setTotalPlayingPlayers(obj.totalPlayers);
                 displayGame();
                 displayPlayersPositionsAroundTable(false);

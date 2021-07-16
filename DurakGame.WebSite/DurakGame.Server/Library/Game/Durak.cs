@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DurakGame.Server.Model.Game
+namespace DurakGame.Server.Library.Game
 {
     public class Durak : IDurak
     {

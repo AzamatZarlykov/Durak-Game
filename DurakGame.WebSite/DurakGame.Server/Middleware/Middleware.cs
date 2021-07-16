@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 
 using DurakGame.Server.Helper;
-using DurakGame.Server.Model.Game;
+using DurakGame.Server.Library.Game;
 
 namespace DurakGame.Server.Middleware
 {
@@ -32,7 +32,7 @@ namespace DurakGame.Server.Middleware
         {
             if (context.WebSockets.IsWebSocketRequest)
             {
-                // Acceptping the websocket connection
+                // Accepting the websocket connection
                 WebSocket websocket = await context.WebSockets.AcceptWebSocketAsync();
 
                 Console.WriteLine("Someone has connected");
@@ -51,12 +51,12 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        if(route.Message == "Leaving")
+                        if (route.Message == "Leaving")
                         {
                             // Sending the client the number of players when they leave to update their page with current number of players 
                             await UpdatePlayersNumberAsync(websocket);
                         }
-                        else if(route.Message == "StartGame")
+                        else if (route.Message == "StartGame")
                         {
                             if(game.GameInProgress)
                             {
@@ -72,7 +72,7 @@ namespace DurakGame.Server.Middleware
                                 await InformStartGame(route);
                             }
                         }
-                        else if(route.Message == "GameOver")
+                        else if (route.Message == "GameOver")
                         {
                             Console.WriteLine("ENDGAME CALLING");
 
@@ -81,7 +81,7 @@ namespace DurakGame.Server.Middleware
 
                             await InformGameEnding();
                         }
-                        else if(route.Message == "RequestStateGame")
+                        else if (route.Message == "RequestStateGame")
                         {
                             await InformGameState(websocket);
                         }
@@ -113,7 +113,7 @@ namespace DurakGame.Server.Middleware
         
         private async Task DistributeJSONToWebSockets<T>(T data)
         {
-            foreach(var socket in manager.GetAllSockets())
+            foreach (var socket in manager.GetAllSockets())
             {
                 await SendJSONAsync(socket.Value, data);
             }
@@ -136,7 +136,7 @@ namespace DurakGame.Server.Middleware
 
             int count = 0;
 
-            foreach(var element in manager.GetAllSockets())
+            foreach (var element in manager.GetAllSockets())
             {
                 if (count == 6) break;
 
@@ -168,7 +168,7 @@ namespace DurakGame.Server.Middleware
             command = "InformJoining";
             foreach (var socket in manager.GetAllSockets())
             {
-                if(socket.Key != playerID)
+                if (socket.Key != playerID)
                 {
                     await SendJSONAsync(socket.Value,new { command, playerID, totalPlayers, allPlayersIDs });
                 }
