@@ -10,14 +10,14 @@ namespace DurakGame.Server.Library.GameCard
     /// </summary>
     public class Card : ICard
     {
-        public readonly EnumRank rank;
         public readonly EnumSuit suit;
+        public readonly EnumRank rank;
 
         public Card() { }
-        public Card(EnumRank _rank, EnumSuit _suit)
+        public Card(EnumSuit _suit, EnumRank _rank)
         {
-            rank = _rank;
             suit = _suit;
+            rank = _rank;
         }
 
         public override string ToString()
