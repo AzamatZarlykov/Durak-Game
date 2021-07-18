@@ -4,10 +4,13 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Collections.Generic;
 
+using DurakGame.Server.Library.GamePlayer;
+
 namespace DurakGame.Server.Middleware
 {
     public class ConnectionManager
-    {
+    {   
+        // Keep track of users ID and their websockets connection
         private ConcurrentDictionary<int, WebSocket> _sockets = new ConcurrentDictionary<int, WebSocket>();
 
         public List<int> GetIDsOfPlayers() => new List<int>(_sockets.Keys);
@@ -15,14 +18,31 @@ namespace DurakGame.Server.Middleware
         public int GetTotalPlayers() => _sockets.Count;
 
         public ConcurrentDictionary<int, WebSocket> GetAllSockets() => _sockets;
-        
-        // We want to get only 6 players to play the game. This function will be used
-        // to send the JoinGame message only to those that are first 6 players to join
 
         public WebSocket RemoveElementFromSockets(int id)
         {
             _sockets.TryRemove(id, out WebSocket socket);
             return socket;
+        }
+
+        public List<Player> GetFirstPlayersPlaying(int totalPlayers)
+        {
+            List<Player> buffer = new List<Player>();
+
+            int count = 0;
+            foreach (var element in _sockets)
+            {
+                if (count == totalPlayers) break;
+
+                count += 1;
+
+                Player player = new Player();
+                player.ID = element.Key;
+
+                buffer.Add(player);
+            }
+
+            return buffer;
         }
         
         public int AddSocket(WebSocket socket)

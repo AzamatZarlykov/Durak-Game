@@ -10,6 +10,7 @@ using System.Collections.Generic;
 
 using DurakGame.Server.Helper;
 using DurakGame.Server.Library.Game;
+using DurakGame.Server.Library.GamePlayer;
 
 namespace DurakGame.Server.Middleware
 {
@@ -21,7 +22,8 @@ namespace DurakGame.Server.Middleware
 
         private readonly ConnectionManager manager;
 
-        private readonly Durak game = new Durak();
+        private Durak game;
+
         public Middleware(RequestDelegate _next, ConnectionManager _manager)
         {
             next = _next;
@@ -65,11 +67,19 @@ namespace DurakGame.Server.Middleware
                             {
                                 Console.WriteLine("Player: " + route.From + " started the game");
 
-                                // Set the game in progress from Durak Game module to true
-                                game.GameInProgress = true;
+                                // This is where the game is being initialized
+                                game = new Durak();
+
+                                int totalPlayersPlaying = manager.GetTotalPlayers();
+
+                                if (totalPlayersPlaying > 6) totalPlayersPlaying = 6;
+
+                                List<Player> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayersPlaying);
+
+                                game.PlayingPlayers = playersPlaying;
 
                                 // Move the player to gameRoom.html
-                                await InformStartGame(route);
+                                await InformStartGame(route, totalPlayersPlaying);
                             }
                         }
                         else if (route.Message == "GameOver")
@@ -125,14 +135,11 @@ namespace DurakGame.Server.Middleware
             await DistributeJSONToWebSockets(new { command });
         }
 
-        private async Task InformStartGame(ClientMessage route)
+        private async Task InformStartGame(ClientMessage route, int totalPlayersPlaying)
         {
             command = "JoinGame";
-            int from = route.From;
-            int totalPlayers = manager.GetTotalPlayers();
 
-            // total players
-            if (totalPlayers > 6) totalPlayers = 6;
+            int from = route.From;
 
             int count = 0;
 
@@ -141,10 +148,8 @@ namespace DurakGame.Server.Middleware
                 if (count == 6) break;
 
                 count += 1;
-                await SendJSONAsync(element.Value, new { command, totalPlayers, from });
+                await SendJSONAsync(element.Value, new { command, totalPlayersPlaying, from });
             }
-
-            // await DistributeJSONToWebSockets(new { command, totalPlayers, route.From});
         }
 
         private async Task InformLeavingToOtherPlayersAsync(int leavingPlayerID)

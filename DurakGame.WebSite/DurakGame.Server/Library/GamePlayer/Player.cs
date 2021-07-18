@@ -9,12 +9,13 @@ namespace DurakGame.Server.Library.GamePlayer
 {
     public class Player
     {
-        private string name;
+        public string Name { get; set; }
+        public int ID { get; set; }
 
         // private Icon icon;
 
-        private bool isAttacking;
-        private bool isDefending; 
+        public bool IsAttacking { get; set; }
+        public bool IsDefending { get; set; }
 
         private PlayerHand hand = new PlayerHand();
         
