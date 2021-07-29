@@ -22,8 +22,8 @@ namespace DurakGame.Server.Middleware
                 idList.Add(key);
             }
 
-            // No need to sort the list because the IDs are assigned in increasing
-            // order
+
+            idList.Sort();
 
             for(int i = 1; i < idList.Count; i++)
             {
