@@ -8,29 +8,58 @@ using DurakGame.Server.Library.GamePlayer;
 
 namespace DurakGame.Server.Middleware
 {
+    // Extension class
+    public static class IDFinder
+    {
+        // Extension method that finds from the dictionary the next
+        // available ID for the connecting player to assign
+        public static int FindAvailableID(Dictionary<int, WebSocket> dictionary)
+        {
+            List<int> idList = new List<int>();
+
+            foreach(var key in dictionary.Keys)
+            {
+                idList.Add(key);
+            }
+
+            // No need to sort the list because the IDs are assigned in increasing
+            // order
+
+            for(int i = 1; i < idList.Count; i++)
+            {
+                if(idList[i] - idList[i-1] > 1)
+                {
+                    return idList[i - 1] + 1;
+                }
+            }
+            return idList.Count + 1;
+        }
+    }
+
     public class ConnectionManager
     {   
         // Keep track of users ID and their websockets connection
-        private ConcurrentDictionary<int, WebSocket> _sockets = new ConcurrentDictionary<int, WebSocket>();
+        private Dictionary<int, WebSocket> sockets = new Dictionary<int, WebSocket>();
 
-        public List<int> GetIDsOfPlayers() => new List<int>(_sockets.Keys);
+        public List<int> GetIDsOfPlayers() => new List<int>(sockets.Keys);
 
-        public int GetTotalPlayers() => _sockets.Count;
+        public int GetTotalPlayers() => sockets.Count;
 
-        public ConcurrentDictionary<int, WebSocket> GetAllSockets() => _sockets;
+        public Dictionary<int, WebSocket> GetAllSockets() => sockets;
 
         public WebSocket RemoveElementFromSockets(int id)
         {
-            _sockets.TryRemove(id, out WebSocket socket);
+            WebSocket socket = sockets[id];
+            sockets.Remove(id);
             return socket;
         }
 
         public List<Player> GetFirstPlayersPlaying(int totalPlayers)
         {
-            List<Player> buffer = new List<Player>();
+            List<Player> players = new List<Player>();
 
             int count = 0;
-            foreach (var element in _sockets)
+            foreach (var element in sockets)
             {
                 if (count == totalPlayers) break;
 
@@ -39,27 +68,20 @@ namespace DurakGame.Server.Middleware
                 Player player = new Player();
                 player.ID = element.Key;
 
-                buffer.Add(player);
+                players.Add(player);
             }
 
-            return buffer;
+            return players;
         }
         
         public int AddSocket(WebSocket socket)
         {
-            int playerID;
-            int lastID;
-            if(GetTotalPlayers() == 0)
-            {
-                playerID = GetTotalPlayers() + 1;
-            }
-            else
-            {
-                lastID = _sockets.Keys.Last() + 1;
-                playerID = lastID;
-            }
-            _sockets.TryAdd(playerID, socket);
+            int playerID = IDFinder.FindAvailableID(sockets);
+
+            sockets.TryAdd(playerID, socket);
+
             Console.WriteLine("Connection Added: " + playerID.ToString());
+
             return playerID;
         }
     }
