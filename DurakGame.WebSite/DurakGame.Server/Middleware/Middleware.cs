@@ -53,47 +53,51 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        if (route.Message == "Leaving")
+                        switch(route.Message)
                         {
-                            // Sending the client the number of players when they leave to update their page with current number of players 
-                            await UpdatePlayersNumberAsync(websocket);
-                        }
-                        else if (route.Message == "StartGame")
-                        {
-                            if(game.GameInProgress)
-                            {
-                                Console.WriteLine("Game is being played");
-                            } else
-                            {
-                                Console.WriteLine("Player: " + route.From + " started the game");
+                            case "Leaving":
+                                // Sending the client the number of players when they leave to update their
+                                // page with current number of players 
+                                await UpdatePlayersNumberAsync(websocket);
+                                break;
+                            case "StartGame":
+                                if (game.gameInProgress)
+                                {
+                                    Console.WriteLine("Game is being played");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Player: " + route.From + " started the game");
 
-                                // This is where the game is being initialized
-                                game = new Durak();
+                                    // This is where the game is being initialized
+                                    game = new Durak();
 
-                                int totalPlayersPlaying = manager.GetTotalPlayers();
+                                    int totalPlayersPlaying = manager.GetTotalPlayers();
 
-                                if (totalPlayersPlaying > 6) totalPlayersPlaying = 6;
+                                    if (totalPlayersPlaying > 6) totalPlayersPlaying = 6;
 
-                                List<Player> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayersPlaying);
+                                    List<Player> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayersPlaying);
 
-                                game.PlayingPlayers = playersPlaying;
+                                    game.playingPlayers = playersPlaying;
 
-                                // Move the player to gameRoom.html
-                                await InformStartGame(route, totalPlayersPlaying);
-                            }
-                        }
-                        else if (route.Message == "GameOver")
-                        {
-                            Console.WriteLine("ENDGAME CALLING");
+                                    // Move the player to gameRoom.html
+                                    await InformStartGame(route, totalPlayersPlaying);
+                                }
+                                break;
+                            case "GameOver":
+                                Console.WriteLine("ENDGAME CALLING");
 
-                            // Set teh game in progress to be false
-                            game.GameInProgress = false;
+                                // Set teh game in progress to be false
+                                game.gameInProgress = false;
 
-                            await InformGameEnding();
-                        }
-                        else if (route.Message == "RequestStateGame")
-                        {
-                            await InformGameState(websocket);
+                                await InformGameEnding();
+                                break;
+                            case "RequestStateGame":
+                                await InformGameState(websocket);
+                                break;
+                            default:
+                                Console.WriteLine("Unknown Message from the client");
+                                break;
                         }
                         return;
                     }
@@ -195,7 +199,7 @@ namespace DurakGame.Server.Middleware
         {
             command = "RequestStateGame";
             int totalPlayers = manager.GetTotalPlayers();
-            bool gameState = game.GameInProgress;
+            bool gameState = game.gameInProgress;
 
             await SendJSONAsync(socket, new { command, totalPlayers, gameState });
         }

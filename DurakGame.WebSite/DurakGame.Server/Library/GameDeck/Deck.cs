@@ -9,7 +9,7 @@ namespace DurakGame.Server.Library.GameDeck
 {
     public class Deck : IDeck
     {
-        private int cardsLeft;
+        public int CardsLeft => cards.Count;
 
         private Card trump = new Card();
 
@@ -22,7 +22,7 @@ namespace DurakGame.Server.Library.GameDeck
             {
                 for (int rank = 0; rank < 9; rank++)
                 {
-                    cards.Add(new Card((EnumSuit)suit, (EnumRank)rank));
+                    cards.Add(new Card((Suit)suit, (Rank)rank));
                 }
             }
         }
@@ -33,15 +33,12 @@ namespace DurakGame.Server.Library.GameDeck
         // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
         public void Shuffle()
         {
-            Card cardTemp;
             Random rGen = new Random();
 
             for (int i = cards.Count() - 1; i > 0; i--)
             {
                 int indexGen = rGen.Next(i + 1);
-                cardTemp = cards[i];
-                cards[i] = cards[indexGen];
-                cards[indexGen] = cardTemp;
+                (cards[i], cards[indexGen]) = (cards[indexGen], cards[i]);
             }
         }
 

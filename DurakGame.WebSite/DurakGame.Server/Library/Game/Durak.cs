@@ -13,20 +13,20 @@ namespace DurakGame.Server.Library.Game
     {
         private readonly Deck deck;
 
-        private Card TrumpCard { get; set; }
+        public Card trumpCard;
 
-        public bool GameInProgress { get; set; }
+        public bool gameInProgress;
 
-        public List<Player> PlayingPlayers { get; set; }
+        public List<Player> playingPlayers;
 
         public Durak()
         {
-            GameInProgress = true;
+            gameInProgress = true;
 
             deck = new Deck();
             deck.Shuffle();
 
-            TrumpCard = deck.GetCard(0);
+            trumpCard = deck.GetCard(0);
         }
     }
 }

@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using DurakGame.Server.Library.GamePlayer.Hand;
+using DurakGame.Server.Library.GameCard;
 
 namespace DurakGame.Server.Library.GamePlayer
 {
     public class Player
     {
-        public string Name { get; set; }
-        public int ID { get; set; }
+        public string Name;
+
+        public int ID;
 
         // private Icon icon;
 
-        public bool IsAttacking { get; set; }
-        public bool IsDefending { get; set; }
+        public bool isAttacking;
 
-        private PlayerHand hand = new PlayerHand();
+        public bool isDefending;
+
+        public List<Card> playersHand = new List<Card>(); 
         
     }
 }

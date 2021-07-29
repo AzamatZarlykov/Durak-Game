@@ -10,11 +10,11 @@ namespace DurakGame.Server.Library.GameCard
     /// </summary>
     public class Card : ICard
     {
-        public readonly EnumSuit suit;
-        public readonly EnumRank rank;
+        public readonly Suit suit;
+        public readonly Rank rank;
 
         public Card() { }
-        public Card(EnumSuit _suit, EnumRank _rank)
+        public Card(Suit _suit, Rank _rank)
         {
             suit = _suit;
             rank = _rank;
