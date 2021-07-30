@@ -54,21 +54,18 @@ namespace DurakGame.Server.Middleware
             return socket;
         }
 
-        public List<Player> GetFirstPlayersPlaying(int totalPlayers)
+        public Dictionary<int, WebSocket> GetFirstPlayersPlaying(int totalPlayersPlaying)
         {
-            List<Player> players = new List<Player>();
+            Dictionary<int, WebSocket> players = new Dictionary<int, WebSocket>();
 
             int count = 0;
             foreach (var element in sockets)
             {
-                if (count == totalPlayers) break;
+                if (count == totalPlayersPlaying) break;
 
                 count += 1;
 
-                Player player = new Player();
-                player.ID = element.Key;
-
-                players.Add(player);
+                players.Add(element.Key, element.Value);
             }
 
             return players;
@@ -81,7 +78,6 @@ namespace DurakGame.Server.Middleware
             sockets.TryAdd(playerID, socket);
 
             Console.WriteLine("Connection Added: " + playerID.ToString());
-
             return playerID;
         }
     }

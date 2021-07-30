@@ -17,16 +17,28 @@ namespace DurakGame.Server.Library.Game
 
         public bool gameInProgress;
 
-        public List<Player> playingPlayers;
+        public List<Player> playingPlayers = new List<Player>();
 
         public Durak()
         {
-            gameInProgress = true;
 
             deck = new Deck();
             deck.Shuffle();
 
             trumpCard = deck.GetCard(0);
+        }
+
+        public void RemovePlayer(int playerID)
+        {
+            for (int i = 0; i < playingPlayers.Count; i++)
+            {
+                if (playingPlayers[i].ID == playerID)
+                {
+                    Console.WriteLine("The player " + playingPlayers[i].ID + " was removed from the game");
+
+                    playingPlayers.Remove(playingPlayers[i]);
+                }
+            }
         }
     }
 }

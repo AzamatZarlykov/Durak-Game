@@ -11,29 +11,16 @@ let id; // id of the player
 let nPlayers; // total number of players on the webpage
 let nPlayersPlaying; // total number of players playing on the table
 let gameInProgress; // tells if the game is on 
-let setIdCommand = "SetPlayerID";
-let informLeavingCommand = "InformLeaving";
-let informJoiningCommand = "InformJoining";
-let joinGameCommand = "JoinGame";
-let goodByeCommand = "Goodbye";
-let requestStateGameCommand = "RequestStateGame";
-let gameOverCommand = "GameOver";
 let existingPlayers = [];
+let informLeavingCommand = "InformLeaving";
+let joinGameCommand = "JoinGame";
+let requestStateGameCommand = "RequestStateGame";
+let setTotalPlayersCommand = "SetTotalPlayers";
 let allCommands = [
-    gameOverCommand,
-    setIdCommand,
     informLeavingCommand,
-    informJoiningCommand,
     joinGameCommand,
-    goodByeCommand,
-    requestStateGameCommand
-];
-let serverCommands = [
-    setIdCommand,
-    informLeavingCommand,
-    informJoiningCommand,
-    joinGameCommand,
-    requestStateGameCommand
+    requestStateGameCommand,
+    setTotalPlayersCommand
 ];
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 socket = new WebSocket(connectionUrl);
@@ -47,76 +34,54 @@ socket.onerror = updateState;
 socket.onmessage = function (event) {
     let obj = JSON.parse(event.data);
     if (allCommands.indexOf(obj.command) > -1) {
-        if (serverCommands.indexOf(obj.command) > -1) {
-            // setIdCommand, informJoiningCommand, informLeavingCommand commands update the list of
-            // players in the game. This if statement will handle the updating the value of the array
-            if ([setIdCommand, informJoiningCommand, informLeavingCommand].includes(obj.command)) {
-                existingPlayers = obj.allPlayersIDs;
-                // Each server command updates the nPlayers(number of players in the game)
-                setTotalPlayers(obj.totalPlayers);
-            }
-            if (obj.command == setIdCommand) {
-                SetPlayerID(obj.playerID);
-            }
-            // notify other players who just joined
-            if (obj.command == informJoiningCommand) {
-                console.log("Player " + obj.playerID + " joined");
-            }
-            // Handles the event when the player leaves when the game is on. It updates the value of
-            // number of people playing and rearranges the position
-            // of players depending on IDs
-            if (obj.command == informLeavingCommand) {
-                if (playingTable.hidden == false) {
-                    nPlayersPlaying -= 1;
-                    if (nPlayersPlaying > 1) {
-                        setTotalPlayingPlayers(nPlayersPlaying);
-                        displayPlayersPositionsAroundTable(true);
-                    }
-                    else {
-                        // when 1 person left the game is over. Close the board and tell server that game
-                        // has finished
-                        stopDisplayGame();
-                        let data = constructJSONPayload(gameOverCommand);
-                        socket.send(data);
-                    }
-                    console.log("Player " + obj.leavingPlayerID + " left the game");
-                }
-                else {
-                    console.log("Player" + obj.leavingPlayerID + " left the server");
-                }
-            }
-            // When any player starts the game, the server sends this message to all the players in the 
-            // game to join the playing room. This statement displays number of playing players and displays
-            // each players position on the table
-            if (obj.command == joinGameCommand) {
-                console.log("Game started");
-                console.log("Player " + obj.from + " started the game");
-                setTotalPlayingPlayers(obj.totalPlayers);
-                displayGame();
-                displayPlayersPositionsAroundTable(false);
-            }
-            // Handles the message about the state of the game from the server
-            if (obj.command == requestStateGameCommand) {
-                gameInProgress = obj.gameState;
-                if (!gameInProgress) {
-                    let data = constructJSONPayload("StartGame");
-                    socket.send(data);
-                }
-                else {
-                    console.log("Game is already being played");
-                }
-            }
-        }
-        // before leaving the server, every plyers receieves the message and updates the number of
-        // players on the server
-        else if (obj.command == goodByeCommand) {
+        if ([informLeavingCommand, setTotalPlayersCommand, joinGameCommand].includes(obj.command)) {
             setTotalPlayers(obj.totalPlayers);
-            socket.close(1000, "Closing from client");
         }
-        // Game is over
-        else if (obj.command == gameOverCommand) {
-            gameInProgress = false;
-            console.log("Game is over");
+        // Handles the event when the player leaves when the game is on. It updates the value of
+        // number of people playing and rearranges the position
+        // of players depending on IDs
+        if (obj.command == informLeavingCommand) {
+            existingPlayers = obj.allPlayersIDs;
+            if (playingTable.hidden == false) {
+                nPlayersPlaying -= 1;
+                if (nPlayersPlaying > 1) {
+                    setTotalPlayingPlayers(nPlayersPlaying);
+                    displayPlayersPositionsAroundTable(true);
+                }
+                else {
+                    // when 1 person left the game is over. Close the board and tell server that game
+                    // has finished
+                    stopDisplayGame();
+                    gameInProgress = false;
+                    console.log("The game is over");
+                }
+                console.log("Player " + obj.leavingPlayerID + " left the game");
+            }
+            else {
+                console.log("Player" + obj.leavingPlayerID + " left the server");
+            }
+        }
+        // When any player starts the game, the server sends this message to all the players in the 
+        // game to join the playing room. This statement displays number of playing players and displays
+        // each players position on the table
+        else if (obj.command == joinGameCommand) {
+            console.log("Game started");
+            existingPlayers = obj.allPlayersIDs;
+            setPlayerID(obj.playerID);
+            setTotalPlayingPlayers(obj.totalPlayers);
+            displayGame();
+            displayPlayersPositionsAroundTable(false);
+        }
+        // Handles the message about the state of the game from the server
+        else if (obj.command == requestStateGameCommand) {
+            gameInProgress = obj.gameState;
+            if (!gameInProgress) {
+                let data = constructJSONPayload("StartGame");
+                socket.send(data);
+            }
+            else {
+                console.log("Game is already being played");
+            }
         }
     }
     else {
@@ -124,17 +89,14 @@ socket.onmessage = function (event) {
     }
 };
 startButton.onclick = function () {
-    if (nPlayers < 2) {
-        console.log("Not enough players to play the game");
+    if (nPlayers > 1) {
+        let data = constructJSONPayload(requestStateGameCommand);
+        socket.send(data);
     }
     else {
-        requestIfGameIsOn();
+        console.log("Not enough people on the server to play");
     }
 };
-function requestIfGameIsOn() {
-    let data = constructJSONPayload(requestStateGameCommand);
-    socket.send(data);
-}
 /*
 Displays the table and the current number of
 players joined to the game
@@ -280,7 +242,7 @@ function displayMainPlayer(newDiv) {
 /*
 Returns the JSON object that containts the message to the server
 */
-function constructJSONPayload(message = "Leaving") {
+function constructJSONPayload(message) {
     return JSON.stringify({
         From: id,
         Message: message,
@@ -291,12 +253,11 @@ Sets the total number of players on html
 */
 function setTotalPlayers(count) {
     nPlayers = count;
-    console.log("Total Number Of Players: " + count.toString());
 }
 /*
 Sets the player ID on html
 */
-function SetPlayerID(identifier) {
+function setPlayerID(identifier) {
     id = identifier;
     console.log("ID of the player is: " + id.toString());
 }
