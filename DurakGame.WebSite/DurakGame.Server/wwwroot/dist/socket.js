@@ -52,8 +52,6 @@ socket.onmessage = function (event) {
                     // when 1 person left the game is over. Close the board and tell server that game
                     // has finished
                     stopDisplayGame();
-                    // remove the previous players positions
-                    removeDOM("playerIDTable");
                     gameInProgress = false;
                     // no players playing
                     nPlayersPlaying = 0;
@@ -114,6 +112,8 @@ Stops displaying the table and the current number of
 players joined to the game
 */
 function stopDisplayGame() {
+    // remove the previous players positions
+    removeDOM("playerIDTable");
     playingTable.hidden = true;
 }
 function updateState() {
