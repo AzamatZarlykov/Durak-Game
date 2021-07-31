@@ -28,14 +28,14 @@ namespace DurakGame.Server.Library.Game
             trumpCard = deck.GetCard(0);
         }
 
+        public int TotalPlayingPlayers() => playingPlayers.Count();
+
         public void RemovePlayer(int playerID)
         {
             for (int i = 0; i < playingPlayers.Count; i++)
             {
                 if (playingPlayers[i].ID == playerID)
                 {
-                    Console.WriteLine("The player " + playingPlayers[i].ID + " was removed from the game");
-
                     playingPlayers.Remove(playingPlayers[i]);
                 }
             }

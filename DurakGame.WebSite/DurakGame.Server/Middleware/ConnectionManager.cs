@@ -77,7 +77,6 @@ namespace DurakGame.Server.Middleware
 
             sockets.TryAdd(playerID, socket);
 
-            Console.WriteLine("Connection Added: " + playerID.ToString());
             return playerID;
         }
     }

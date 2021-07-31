@@ -37,8 +37,6 @@ namespace DurakGame.Server.Middleware
                 // Accepting the websocket connection
                 WebSocket websocket = await context.WebSockets.AcceptWebSocketAsync();
 
-                Console.WriteLine("Someone has connected");
-
                 //await InformPlayerInformationAsync(websocket);
                 await InformPlayerInformationAsync(websocket);
                 // Handling the actions of the client
@@ -85,21 +83,20 @@ namespace DurakGame.Server.Middleware
                         
                         // Get the ID of the player that wants to leave/disconnect
                         int id = manager.GetAllSockets().FirstOrDefault(s => s.Value == websocket).Key;
-                        Console.WriteLine("The player " + id + " is leaving");
+
                         // Remove the player from the collection of players 
                         WebSocket sock =  manager.RemoveElementFromSockets(id);
                         // Send messages to players informing which player leaves and update the number of players
                         // only if the game is on
                         if (game.gameInProgress)
                         {
-                            if (manager.GetTotalPlayers() < 2)
+                            // Remove the players from the game 
+                            game.RemovePlayer(id);
+
+                            if (game.TotalPlayingPlayers() < 2)
                             {
                                 game.gameInProgress = false;
                             }
-                            // Remove the players from the game 
-                            Console.WriteLine("BEFORE REMOVING FROM THE LIST");
-                            Console.WriteLine("The id to remove " + id);
-                            game.RemovePlayer(id);
 
                             // During the game inform other players who left
                             await InformLeavingToOtherPlayers(id);
@@ -158,6 +155,7 @@ namespace DurakGame.Server.Middleware
         private async Task InformLeavingToOtherPlayers(int leavingPlayerID)
         {
             command = "InformLeaving";
+
             int totalPlayers = manager.GetTotalPlayers();
             List<int> allPlayersIDs = manager.GetIDsOfPlayers();
 
@@ -178,8 +176,8 @@ namespace DurakGame.Server.Middleware
             command = "SetTotalPlayers";
 
             manager.AddSocket(websocket);
-            int totalPlayers = manager.GetTotalPlayers();
 
+            int totalPlayers = manager.GetTotalPlayers();
             await SendJSON(websocket, new { command, totalPlayers });
 
             foreach (var socket in manager.GetAllSockets())

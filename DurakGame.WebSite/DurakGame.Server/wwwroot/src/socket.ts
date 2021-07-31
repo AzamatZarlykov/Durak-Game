@@ -58,17 +58,21 @@ socket.onmessage = function (event) : void {
 
             existingPlayers = obj.allPlayersIDs;
 
+            nPlayersPlaying -= 1;
+
             if (playingTable.hidden == false) {
-                nPlayersPlaying -= 1;
                 if (nPlayersPlaying > 1) {
-                    setTotalPlayingPlayers(nPlayersPlaying);
+                    setPlayingPlayers(nPlayersPlaying);
                     displayPlayersPositionsAroundTable(true);
                 } else {
                     // when 1 person left the game is over. Close the board and tell server that game
                     // has finished
                     stopDisplayGame();
-
+                    
                     gameInProgress = false;
+                    // no players playing
+                    nPlayersPlaying = 0;
+
                     console.log("The game is over");
                 }
                 console.log("Player " + obj.leavingPlayerID + " left the game");
@@ -79,19 +83,21 @@ socket.onmessage = function (event) : void {
         // When any player starts the game, the server sends this message to all the players in the 
         // game to join the playing room. This statement displays number of playing players and displays
         // each players position on the table
-        else if (obj.command == joinGameCommand) {
+        if (obj.command == joinGameCommand) {
             console.log("Game started");
 
             existingPlayers = obj.allPlayersIDs;
             setPlayerID(obj.playerID);
 
-            setTotalPlayingPlayers(obj.totalPlayers);
+            console.log("Existing Players : " + existingPlayers);
+
+            setPlayingPlayers(obj.totalPlayers);
             displayGame();
             displayPlayersPositionsAroundTable(false);
         }
 
         // Handles the message about the state of the game from the server
-        else if (obj.command == requestStateGameCommand) {
+        if (obj.command == requestStateGameCommand) {
             gameInProgress = obj.gameState;
             if (!gameInProgress) {
                 let data: string = constructJSONPayload("StartGame");
@@ -127,6 +133,9 @@ Stops displaying the table and the current number of
 players joined to the game
 */
 function stopDisplayGame() {
+    // remove the previous players positions
+    removeDOM("playerIDTable");
+
     playingTable.hidden = true;
 }
 
@@ -165,7 +174,7 @@ function updateState() : void {
 /*
 Sets the total number of players playing in the game on html
 */
-function setTotalPlayingPlayers(count : number) : void {
+function setPlayingPlayers(count : number) : void {
     nPlayersPlaying = count;
     console.log("Number Of Players In The Game: " + nPlayersPlaying);
 }
@@ -215,14 +224,22 @@ function shuffle() : number[] {
 }
 
 /*
+function that removes the DOM from HTML. 
+argument, htmlID, the object that be removed
+*/
+function removeDOM(htmlID: string): void {
+    let obj = document.getElementById(htmlID);
+    obj.remove();
+}
+
+/*
 displays the players around the table. The bool redraw is responsible
 if function should delete previous div element of players and add new
 div with updated number of elements
 */
 function displayPlayersPositionsAroundTable(redraw : boolean) : void {
     if (redraw) {
-        let obj = document.getElementById("playerIDTable");
-        obj.remove();
+        removeDOM("playerIDTable");
     }
 
     const playerDiv = document.createElement("div") as HTMLDivElement;
