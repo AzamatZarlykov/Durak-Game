@@ -7,7 +7,7 @@ using DurakGame.Server.Library.GameCard;
 
 namespace DurakGame.Server.Library.GameDeck
 {
-    public class Deck : IDeck
+    public class Deck
     {
         public int CardsLeft => cards.Count;
 
@@ -20,7 +20,7 @@ namespace DurakGame.Server.Library.GameDeck
         {
             for (int suit = 0; suit < 4; suit++)
             {
-                for (int rank = 0; rank < 9; rank++)
+                for (int rank = 6; rank < 15; rank++)
                 {
                     cards.Add(new Card((Suit)suit, (Rank)rank));
                 }

@@ -8,7 +8,7 @@ namespace DurakGame.Server.Library.GameCard
     /// <summary>
     /// Card class that represents the card in Durak
     /// </summary>
-    public class Card : ICard
+    public class Card
     {
         public readonly Suit suit;
         public readonly Rank rank;

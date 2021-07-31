@@ -9,7 +9,7 @@ using DurakGame.Server.Library.GameCard;
 
 namespace DurakGame.Server.Library.Game
 {
-    public class Durak : IDurak
+    public class Durak
     {
         private readonly Deck deck;
 
