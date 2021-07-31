@@ -54,13 +54,12 @@ namespace DurakGame.Server.Middleware
                         switch(route.Message)
                         {
                             case "StartGame":
-                                if (game.gameInProgress)
+                                if (game.GameInProgress)
                                 {
                                     Console.WriteLine("Game is being played");
                                 }
                                 else
                                 {
-                                    game.gameInProgress = true;
                                     // Send the information about the game 
                                     // to all players that are playing the game:
                                     // IDs, total number of players, list of theirs
@@ -88,15 +87,10 @@ namespace DurakGame.Server.Middleware
                         WebSocket sock =  manager.RemoveElementFromSockets(id);
                         // Send messages to players informing which player leaves and update the number of players
                         // only if the game is on
-                        if (game.gameInProgress)
+                        if (game.GameInProgress)
                         {
                             // Remove the players from the game 
                             game.RemovePlayer(id);
-
-                            if (game.TotalPlayingPlayers() < 2)
-                            {
-                                game.gameInProgress = false;
-                            }
 
                             // During the game inform other players who left
                             await InformLeavingToOtherPlayers(id);
@@ -166,7 +160,7 @@ namespace DurakGame.Server.Middleware
         {
             command = "RequestStateGame";
 
-            bool gameState = game.gameInProgress;
+            bool gameState = game.GameInProgress;
 
             await SendJSON(socket, new { command, gameState });
         }
