@@ -126,19 +126,19 @@ namespace DurakGame.Server.Middleware
 
             if (totalPlayers > 6) totalPlayers = 6;
 
-            Dictionary<int, WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+            List<(int, WebSocket)> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
 
             List<Player> players = new List<Player>();
 
             foreach (var element in playersPlaying)
             {
                 Player p = new Player();
-                p.ID = element.Key;
+                p.ID = element.Item1;
                 players.Add(p);
 
-                int playerID = element.Key;
+                int playerID = element.Item1;
 
-                await SendJSON(element.Value, new { command, playerID, totalPlayers, allPlayersIDs });
+                await SendJSON(element.Item2, new { command, playerID, totalPlayers, allPlayersIDs });
             }
 
             // Assigning players to the instance of the game class

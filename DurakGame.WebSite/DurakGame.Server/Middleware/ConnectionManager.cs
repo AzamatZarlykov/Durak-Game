@@ -8,34 +8,6 @@ using DurakGame.Server.Library.GamePlayer;
 
 namespace DurakGame.Server.Middleware
 {
-    // Extension class
-    public static class IDFinder
-    {
-        // Extension method that finds from the dictionary the next
-        // available ID for the connecting player to assign
-        public static int FindAvailableID(Dictionary<int, WebSocket> dictionary)
-        {
-            List<int> idList = new List<int>();
-
-            foreach (var key in dictionary.Keys)
-            {
-                idList.Add(key);
-            }
-
-
-            idList.Sort();
-
-            for (int i = 1; i < idList.Count; i++)
-            {
-                if (idList[i] - idList[i - 1] > 1)
-                {
-                    return idList[i - 1] + 1;
-                }
-            }
-            return idList.Count + 1;
-        }
-    }
-
     public class ConnectionManager
     {
         // Keep track of users ID and their websockets connection
@@ -54,9 +26,9 @@ namespace DurakGame.Server.Middleware
             return socket;
         }
 
-        public Dictionary<int, WebSocket> GetFirstPlayersPlaying(int totalPlayersPlaying)
+        public List<(int, WebSocket)> GetFirstPlayersPlaying(int totalPlayersPlaying)
         {
-            Dictionary<int, WebSocket> players = new Dictionary<int, WebSocket>();
+            List<(int, WebSocket)> players = new List<(int, WebSocket)>();
 
             int count = 0;
             foreach (var element in sockets)
@@ -65,7 +37,7 @@ namespace DurakGame.Server.Middleware
 
                 count += 1;
 
-                players.Add(element.Key, element.Value);
+                players.Add((element.Key, element.Value));
             }
 
             return players;
@@ -73,11 +45,24 @@ namespace DurakGame.Server.Middleware
 
         public int AddSocket(WebSocket socket)
         {
-            int playerID = IDFinder.FindAvailableID(sockets);
+            int playerID = FindAvailableID(sockets);
 
             sockets.TryAdd(playerID, socket);
 
             return playerID;
+        }
+
+        // Method that finds from the dictionary the next
+        // available ID for the connecting player to assign
+        public int FindAvailableID(Dictionary<int, WebSocket> dictionary)
+        {
+            for (int i = 1; true; ++i)
+            {
+                if (!dictionary.ContainsKey(i))
+                {
+                    return i;
+                }
+            }
         }
     }
 }

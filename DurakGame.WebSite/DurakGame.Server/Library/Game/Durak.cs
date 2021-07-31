@@ -38,7 +38,6 @@ namespace DurakGame.Server.Library.Game
                     players.Remove(players[i]);
                 }
             }
-
         }
     }
 }
