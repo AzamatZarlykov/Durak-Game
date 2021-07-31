@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 using System.Collections.Generic;
 
-using DurakGame.Server.Helper;
+using DurakGame.Server.JSONHelper;
 using DurakGame.Server.Library.Game;
 using DurakGame.Server.Library.GamePlayer;
 
@@ -29,7 +29,7 @@ namespace DurakGame.Server.Middleware
             next = _next;
             manager = _manager;
         }
-         
+
         public async Task InvokeAsync(HttpContext context)
         {
             if (context.WebSockets.IsWebSocketRequest)
@@ -39,6 +39,7 @@ namespace DurakGame.Server.Middleware
 
                 //await InformPlayerInformationAsync(websocket);
                 await InformPlayerInformationAsync(websocket);
+
                 // Handling the actions of the client
                 await ReceiveMessage(websocket, async (result, buffer) =>
                 {
@@ -51,7 +52,7 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        switch(route.Message)
+                        switch (route.Message)
                         {
                             case "StartGame":
                                 if (game.GameInProgress)
@@ -79,12 +80,12 @@ namespace DurakGame.Server.Middleware
                     // Handling the client when they decide to leave/close the connection
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
-                        
+
                         // Get the ID of the player that wants to leave/disconnect
                         int id = manager.GetAllSockets().FirstOrDefault(s => s.Value == websocket).Key;
 
                         // Remove the player from the collection of players 
-                        WebSocket sock =  manager.RemoveElementFromSockets(id);
+                        WebSocket sock = manager.RemoveElementFromSockets(id);
                         // Send messages to players informing which player leaves and update the number of players
                         // only if the game is on
                         if (game.GameInProgress)
@@ -107,7 +108,7 @@ namespace DurakGame.Server.Middleware
                 await next(context);
             }
         }
-        
+
         private async Task DistributeJSONToWebSockets<T>(T data)
         {
             foreach (var socket in manager.GetAllSockets())
@@ -136,13 +137,13 @@ namespace DurakGame.Server.Middleware
                 players.Add(p);
 
                 int playerID = element.Key;
-               
+
                 await SendJSON(element.Value, new { command, playerID, totalPlayers, allPlayersIDs });
             }
 
             // Assigning players to the instance of the game class
             // where players ID are assigned 
-            game.playingPlayers = players;
+            game.players = players;
 
         }
 

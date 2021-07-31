@@ -89,6 +89,8 @@ socket.onmessage = function (event) : void {
             existingPlayers = obj.allPlayersIDs;
             setPlayerID(obj.playerID);
 
+            console.log(id);
+
             setPlayingPlayers(obj.totalPlayers);
             displayGame();
             displayPlayersPositionsAroundTable(false);

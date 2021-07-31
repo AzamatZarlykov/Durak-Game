@@ -48,7 +48,7 @@ namespace DurakGame.Server.Library.GameDeck
             try
             {
                 return cards[index];
-            } 
+            }
             catch (ArgumentOutOfRangeException)
             {
                 throw (new ArgumentOutOfRangeException("index", index, "Card should be between 0 and 35"));

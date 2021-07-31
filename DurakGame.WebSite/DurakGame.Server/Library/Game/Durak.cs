@@ -15,9 +15,9 @@ namespace DurakGame.Server.Library.Game
 
         public Card trumpCard;
 
-        public bool GameInProgress => playingPlayers.Count() > 1;
+        public bool GameInProgress => players.Count() > 1;
 
-        public List<Player> playingPlayers = new List<Player>();
+        public List<Player> players = new List<Player>();
 
         public Durak()
         {
@@ -30,13 +30,15 @@ namespace DurakGame.Server.Library.Game
 
         public void RemovePlayer(int playerID)
         {
-            for (int i = 0; i < playingPlayers.Count; i++)
+
+            for (int i = 0; i < players.Count; i++)
             {
-                if (playingPlayers[i].ID == playerID)
+                if (players[i].ID == playerID)
                 {
-                    playingPlayers.Remove(playingPlayers[i]);
+                    players.Remove(players[i]);
                 }
             }
+
         }
     }
 }

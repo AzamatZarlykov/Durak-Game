@@ -17,7 +17,7 @@ namespace DurakGame.Server.Middleware
         {
             List<int> idList = new List<int>();
 
-            foreach(var key in dictionary.Keys)
+            foreach (var key in dictionary.Keys)
             {
                 idList.Add(key);
             }
@@ -25,9 +25,9 @@ namespace DurakGame.Server.Middleware
 
             idList.Sort();
 
-            for(int i = 1; i < idList.Count; i++)
+            for (int i = 1; i < idList.Count; i++)
             {
-                if(idList[i] - idList[i-1] > 1)
+                if (idList[i] - idList[i - 1] > 1)
                 {
                     return idList[i - 1] + 1;
                 }
@@ -37,7 +37,7 @@ namespace DurakGame.Server.Middleware
     }
 
     public class ConnectionManager
-    {   
+    {
         // Keep track of users ID and their websockets connection
         private Dictionary<int, WebSocket> sockets = new Dictionary<int, WebSocket>();
 
@@ -70,7 +70,7 @@ namespace DurakGame.Server.Middleware
 
             return players;
         }
-        
+
         public int AddSocket(WebSocket socket)
         {
             int playerID = IDFinder.FindAvailableID(sockets);

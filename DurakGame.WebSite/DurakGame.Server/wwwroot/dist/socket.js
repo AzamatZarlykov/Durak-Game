@@ -70,6 +70,7 @@ socket.onmessage = function (event) {
             console.log("Game started");
             existingPlayers = obj.allPlayersIDs;
             setPlayerID(obj.playerID);
+            console.log(id);
             setPlayingPlayers(obj.totalPlayers);
             displayGame();
             displayPlayersPositionsAroundTable(false);

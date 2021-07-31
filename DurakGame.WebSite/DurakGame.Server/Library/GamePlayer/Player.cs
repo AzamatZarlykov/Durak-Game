@@ -19,7 +19,7 @@ namespace DurakGame.Server.Library.GamePlayer
 
         public bool isDefending;
 
-        public List<Card> playersHand = new List<Card>(); 
-        
+        public List<Card> playersHand = new List<Card>();
+
     }
 }
