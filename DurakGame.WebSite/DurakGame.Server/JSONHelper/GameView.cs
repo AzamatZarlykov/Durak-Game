@@ -10,7 +10,6 @@ namespace DurakGame.Server.Helper
     public class GameView
     {
         // Information about the player
-        public int id;
         public bool isAttacking;
         public bool isDefending;
         public List<Card> hand;
@@ -19,5 +18,7 @@ namespace DurakGame.Server.Helper
         public int DeckSize;
         public int DiscardHeapSize;
         // Add how many cards does each player have 
+        // [4,7,2,6] 
+        List<int> opponentCards = new List<int>();
     }
 }

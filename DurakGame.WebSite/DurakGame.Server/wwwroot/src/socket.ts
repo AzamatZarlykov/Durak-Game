@@ -211,7 +211,7 @@ function setHTMLForPlayers(newDiv: HTMLDivElement, player: number) : void{
 
 /*
 Shuffle positions according to the ID of the player.
-E.g the playerID = 3 t`hen the output list is [4,5,6,1,2]
+E.g the playerID = 3 then the output list is [4,5,6,1,2]
 */
 function shuffle() : number[] {
     let result1: number[] = [];
