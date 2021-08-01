@@ -9,9 +9,7 @@ namespace DurakGame.Server.Library.GamePlayer
 {
     public class Player
     {
-        public string Name;
-
-        public int ID;
+        public string name;
 
         // private Icon icon;
 

@@ -30,12 +30,12 @@ namespace DurakGame.Server.Library.Game
 
         public void RemovePlayer(int playerID)
         {
-
             for (int i = 0; i < players.Count; i++)
             {
-                if (players[i].ID == playerID)
+                if (i == playerID)
                 {
-                    players.Remove(players[i]);
+                    players.RemoveAt(i);
+                    break;
                 }
             }
         }

@@ -15,9 +15,9 @@ let id: number; // id of the player
 let nPlayers: number; // total number of players on the webpage
 let nPlayersPlaying: number; // total number of players playing on the table
 
-let gameInProgress: boolean; // tells if the game is on 
+let idsOfPlayers: number[]; // a list of player IDs
 
-let existingPlayers : number[] = [];
+let gameInProgress: boolean; // tells if the game is on 
 
 let informLeavingCommand: string = "InformLeaving";
 let joinGameCommand: string = "JoinGame";
@@ -55,12 +55,15 @@ socket.onmessage = function (event) : void {
         // number of people playing and rearranges the position
         // of players depending on IDs
         if (obj.command == informLeavingCommand) {
+            if (gameInProgress) {
 
-            existingPlayers = obj.allPlayersIDs;
+                console.log("Before remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
+                // remove the player left from the existing playing players
+                // so that players can be redistributed around the table.
+                removeFromPlayingPlayers(obj.leavingPlayerID);
+                console.log("After remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
 
-            nPlayersPlaying -= 1;
-
-            if (playingTable.hidden == false) {
+                nPlayersPlaying -= 1;
                 if (nPlayersPlaying > 1) {
                     setPlayingPlayers(nPlayersPlaying);
                     displayPlayersPositionsAroundTable(true);
@@ -68,8 +71,7 @@ socket.onmessage = function (event) : void {
                     // when 1 person left the game is over. Close the board and tell server that game
                     // has finished
                     stopDisplayGame();
-                    
-                    gameInProgress = false;
+
                     // no players playing
                     nPlayersPlaying = 0;
 
@@ -84,12 +86,11 @@ socket.onmessage = function (event) : void {
         // game to join the playing room. This statement displays number of playing players and displays
         // each players position on the table
         if (obj.command == joinGameCommand) {
+            
             console.log("Game started");
 
-            existingPlayers = obj.allPlayersIDs;
             setPlayerID(obj.playerID);
-
-            console.log(id);
+            setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
 
             setPlayingPlayers(obj.totalPlayers);
             displayGame();
@@ -124,8 +125,9 @@ startButton.onclick = function (): void {
 Displays the table and the current number of 
 players joined to the game
 */
-function displayGame() : void {
+function displayGame(): void {
     playingTable.hidden = false;
+    gameInProgress = true;
 }
 
 /*
@@ -137,6 +139,7 @@ function stopDisplayGame() {
     removeDOM("playerIDTable");
 
     playingTable.hidden = true;
+    gameInProgress = false;
 }
 
 function updateState() : void {
@@ -184,12 +187,12 @@ places players in the right positions based on the folowing information:
 number of players: nPlayersPlaying, list of existing players: existingPlayers, 
 list of positions avaliable: it is passed as an argument. 
 */
-function placePlayers(newDiv:HTMLDivElement, className:string, pos:number[]) : void {
+function placePlayers(newDiv:HTMLDivElement, pos:number[]) : void {
     let names : number[] = shuffle();
     for (let i = 0; i < nPlayersPlaying - 1; i++) {
         tag = document.createElement("p");
         tag.setAttribute("id", className.trim().concat(pos[i].toString()));
-        setHTMLForPlayers(names[i], newDiv, className);
+        setHTMLForPlayers(newDiv, names[i]);
     }
 }
 
@@ -198,7 +201,7 @@ function sets the html elements for each of the player on the table.
 Each of their ID correcsponds with the CSS style that place players
 around the table.
 */
-function setHTMLForPlayers(player: number, newDiv: HTMLDivElement, className: string) : void{
+function setHTMLForPlayers(newDiv: HTMLDivElement, player: number) : void{
     text = document.createTextNode(className.concat(player.toString()));
     tag.className = className.trim();
     tag.appendChild(text);
@@ -207,17 +210,17 @@ function setHTMLForPlayers(player: number, newDiv: HTMLDivElement, className: st
 
 /*
 Shuffle positions according to the ID of the player.
-E.g the playerID = 3 then the output list is [4,5,6,1,2]
+E.g the playerID = 3 t`hen the output list is [4,5,6,1,2]
 */
 function shuffle() : number[] {
     let result1: number[] = [];
     let result2: number[] = [];
     for (let i = 0; i < nPlayersPlaying; i++) {
-        if (existingPlayers[i] > id) {
-            result1.push(existingPlayers[i]);
+        if (idsOfPlayers[i] > id) {
+            result1.push(idsOfPlayers[i]);
         }
-        if (existingPlayers[i] < id) {
-            result2.push(existingPlayers[i]);
+        if (idsOfPlayers[i] < id) {
+            result2.push(idsOfPlayers[i]);
         }
     }
     return result1.concat(result2);
@@ -259,15 +262,15 @@ function displayPlayersPositionsAroundTable(redraw : boolean) : void {
 // Determines the placing based on number of players
 function displayOtherPlayers(newDiv : HTMLDivElement) : void {
     if (nPlayersPlaying == 2) {
-        placePlayers(newDiv, className, [4]);
+        placePlayers(newDiv, [4]);
     } else if (nPlayersPlaying == 3) {
-        placePlayers(newDiv, className, [3, 5]);
+        placePlayers(newDiv, [3, 5]);
     } else if (nPlayersPlaying == 4) {
-        placePlayers(newDiv, className, [3, 4, 5]);
+        placePlayers(newDiv, [3, 4, 5]);
     } else if (nPlayersPlaying == 5) {
-        placePlayers(newDiv, className, [2, 3, 5, 6]);
+        placePlayers(newDiv, [2, 3, 5, 6]);
     } else if (nPlayersPlaying == 6) {
-        placePlayers(newDiv, className, [2, 3, 4, 5, 6]);
+        placePlayers(newDiv, [2, 3, 4, 5, 6]);
     }
 }
 
@@ -275,7 +278,6 @@ function displayOtherPlayers(newDiv : HTMLDivElement) : void {
 function displayMainPlayer(newDiv:HTMLDivElement) : void {
     let mainID : string = "Player1";
     var tag = document.createElement("p");
-    let className : string = "Player ";
     tag.setAttribute("id", mainID);
     tag.className = className.trim();
 
@@ -298,16 +300,37 @@ function constructJSONPayload(message) : string{
 /*
 Sets the total number of players on html
 */
-function setTotalPlayers(count: number) {
+function setTotalPlayers(count: number) : void {
     nPlayers = count;
 }
 
 /*
 Sets the player ID on html
 */
-function setPlayerID(identifier: number) {
+function setPlayerID(identifier: number) : void {
     id = identifier;
     console.log("ID of the player is: " + id.toString());
+}
+
+/*
+Sets the list of ids of other players 
+*/
+function setOtherPlayerIDs(): void {
+    
+    idsOfPlayers = Array.from(Array(nPlayers).keys())
+}
+
+/*
+Remove the player from the existing playing players
+based on the playerID
+*/
+function removeFromPlayingPlayers(idToDelete: number): void {
+    var index = idsOfPlayers.indexOf(idToDelete);
+    // if the player left was playing splice the list
+    // else do nothing
+    if (index !== -1) {
+        idsOfPlayers.splice(index, 1);
+    }
 }
 
 function htmlEscape(str: string) : string {

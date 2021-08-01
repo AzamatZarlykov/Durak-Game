@@ -9,7 +9,7 @@ namespace DurakGame.Server.Library.GameDeck
 {
     public class Deck
     {
-        public int CardsLeft => cards.Count;
+        public int cardsLeft => cards.Count;
 
         private Card trump = new Card();
 
