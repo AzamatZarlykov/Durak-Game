@@ -41,7 +41,8 @@ socket.onmessage = function (event) {
         // number of people playing and rearranges the position
         // of players depending on IDs
         if (obj.command == informLeavingCommand) {
-            if (gameInProgress) {
+            console.log("State of the game " + gameInProgress);
+            if (playingTable.hidden == false) {
                 console.log("Before remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
                 // remove the player left from the existing playing players
                 // so that players can be redistributed around the table.

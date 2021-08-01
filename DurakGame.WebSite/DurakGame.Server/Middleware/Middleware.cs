@@ -96,7 +96,6 @@ namespace DurakGame.Server.Middleware
                                 await InformLeavingToOtherPlayers(id);
                             }
                         }
-
                         // Remove the player from the collection of players 
                         manager.RemoveElementFromSockets(websocket);
                         
