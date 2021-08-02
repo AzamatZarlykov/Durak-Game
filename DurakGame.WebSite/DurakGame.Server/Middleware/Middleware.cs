@@ -128,23 +128,14 @@ namespace DurakGame.Server.Middleware
 
             if (totalPlayers > 6) totalPlayers = 6;
 
+            game.SetPlayers(totalPlayers);
+
             List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
 
-            List<Player> players = new List<Player>();
-
-            for (int i = 0; i < playersPlaying.Count; i++)
+            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
-                Player p = new Player();
-                players.Add(p);
-
-                int playerID = i;
-
-                await SendJSON(playersPlaying[i], new { command, playerID, totalPlayers });
+                await SendJSON(playersPlaying[playerID], new { command, playerID, totalPlayers });
             }
-
-            // Assigning players to the instance of the game class
-            // where players ID are assigned 
-            game.players = players;
         }
 
         private async Task InformLeavingToOtherPlayers(int leavingPlayerID)

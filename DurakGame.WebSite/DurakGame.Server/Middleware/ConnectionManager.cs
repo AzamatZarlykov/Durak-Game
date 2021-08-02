@@ -48,18 +48,5 @@ namespace DurakGame.Server.Middleware
         {
             sockets.Add(socket);
         }
-
-        // Method that finds from the dictionary the next
-        // available ID for the connecting player to assign
-        public int FindAvailableID(Dictionary<int, WebSocket> dictionary)
-        {
-            for (int i = 1; true; ++i)
-            {
-                if (!dictionary.ContainsKey(i))
-                {
-                    return i;
-                }
-            }
-        }
     }
 }

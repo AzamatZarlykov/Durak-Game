@@ -21,23 +21,24 @@ namespace DurakGame.Server.Library.Game
 
         public Durak()
         {
-
             deck = new Deck();
             deck.Shuffle();
 
             trumpCard = deck.GetCard(0);
         }
 
+        public void SetPlayers(int totalPlayers)
+        {
+            for (int i = 0; i < totalPlayers; i++)
+            {
+                Player p = new Player();
+                players.Add(p);
+            }
+        }
+
         public void RemovePlayer(int playerID)
         {
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (i == playerID)
-                {
-                    players.RemoveAt(i);
-                    break;
-                }
-            }
+            players.RemoveAt(playerID);
         }
     }
 }
