@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using DurakGame.Server.Library.GameCard;
+using DurakGame.Server.Library.GameDeck;
 
 namespace DurakGame.Server.Library.GamePlayer
 {
@@ -19,5 +20,12 @@ namespace DurakGame.Server.Library.GamePlayer
 
         public List<Card> playersHand = new List<Card>();
 
+        public void PrintCards()
+        {
+            foreach (Card c in playersHand)
+            {
+                Console.WriteLine("The rank : " + c.rank + ". The suit : " + c.suit);
+            }
+        }
     }
 }

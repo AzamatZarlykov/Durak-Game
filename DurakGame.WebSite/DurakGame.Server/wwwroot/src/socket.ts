@@ -51,62 +51,65 @@ socket.onmessage = function (event) : void {
         if ([informLeavingCommand, setTotalPlayersCommand, joinGameCommand].includes(obj.command)) {
             setTotalPlayers(obj.totalPlayers);
         }
-        // Handles the event when the player leaves when the game is on. It updates the value of
-        // number of people playing and rearranges the position
-        // of players depending on IDs
-        if (obj.command == informLeavingCommand) {
-            console.log("State of the game " + gameInProgress);
-            if (playingTable.hidden == false) {
 
-                console.log("Before remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
-                // remove the player left from the existing playing players
-                // so that players can be redistributed around the table.
-                removeFromPlayingPlayers(obj.leavingPlayerID);
-                console.log("After remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
+        switch (obj.command) {
+            // Handles the event when the player leaves when the game is on. It updates the value of
+            // number of people playing and rearranges the position
+            // of players depending on IDs
+            case (informLeavingCommand):
+                if (playingTable.hidden == false) {
+                    console.log("Before remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
+                    // remove the player left from the existing playing players
+                    // so that players can be redistributed around the table.
+                    removeFromPlayingPlayers(obj.leavingPlayerID);
+                    console.log("After remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
 
-                nPlayersPlaying -= 1;
-                if (nPlayersPlaying > 1) {
-                    setPlayingPlayers(nPlayersPlaying);
-                    displayPlayersPositionsAroundTable(true);
+                    setPlayingPlayers(obj.sizeOfPlayers);
+
+                    if (nPlayersPlaying > 1) {
+                        setPlayingPlayers(nPlayersPlaying);
+                        displayPlayersPositionsAroundTable(true);
+                    } else {
+                        // when 1 person left the game is over. Close the board and tell server that game
+                        // has finished
+                        stopDisplayGame();
+
+                        // no players playing
+                        setPlayingPlayers(0);
+
+                        console.log("The game is over");
+                    }
+                    console.log("Player " + obj.leavingPlayerID + " left the game");
                 } else {
-                    // when 1 person left the game is over. Close the board and tell server that game
-                    // has finished
-                    stopDisplayGame();
-
-                    // no players playing
-                    nPlayersPlaying = 0;
-
-                    console.log("The game is over");
+                    console.log("Player" + obj.leavingPlayerID + " left the server");
                 }
-                console.log("Player " + obj.leavingPlayerID + " left the game");
-            } else {
-                console.log("Player" + obj.leavingPlayerID + " left the server");
-            }
-        }
-        // When any player starts the game, the server sends this message to all the players in the 
-        // game to join the playing room. This statement displays number of playing players and displays
-        // each players position on the table
-        if (obj.command == joinGameCommand) {
-            
-            console.log("Game started");
+                break;
+            // When any player starts the game, the server sends this message to all the players in the 
+            // game to join the playing room. This statement displays number of playing players and displays
+            // each players position on the table
+            case (joinGameCommand):
 
-            setPlayerID(obj.playerID);
-            setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
+                console.log("Game started");
 
-            setPlayingPlayers(obj.totalPlayers);
-            displayGame();
-            displayPlayersPositionsAroundTable(false);
-        }
+                setPlayerID(obj.playerID);
+                setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
+                setPlayingPlayers(obj.sizeOfPlayers);
 
-        // Handles the message about the state of the game from the server
-        if (obj.command == requestStateGameCommand) {
-            gameInProgress = obj.gameState;
-            if (!gameInProgress) {
-                let data: string = constructJSONPayload("StartGame");
-                socket.send(data);
-            } else {
-                console.log("Game is already being played");
-            }
+                displayGame();
+                displayPlayersPositionsAroundTable(false);
+                break;
+            // Handles the message about the state of the game from the server
+            case (requestStateGameCommand):
+                if (obj.command == requestStateGameCommand) {
+                    gameInProgress = obj.gameState;
+                    if (!gameInProgress) {
+                        let data: string = constructJSONPayload("StartGame");
+                        socket.send(data);
+                    } else {
+                        console.log("Game is already being played");
+                    }
+                }
+                break;
         }
     } else {
         console.log("Unknown command from the server");

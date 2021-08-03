@@ -42,7 +42,7 @@ namespace DurakGame.Server.Library.GameDeck
             }
         }
 
-        // Returns the card from the deck
+        // Returns the card from the deck given the index
         public Card GetCard(int index)
         {
             try
@@ -53,6 +53,29 @@ namespace DurakGame.Server.Library.GameDeck
             {
                 throw (new ArgumentOutOfRangeException("index", index, "Card should be between 0 and 35"));
             }
+        }
+
+        // Returns the drawn card from the deck
+        public Card DrawCard()
+        {
+            Card card = cards.First();
+            cards.RemoveAt(0);
+            return card;
+        }
+
+        // Returns the list of cards to draw to 6 cards
+        public List<Card> DrawUntilSix(int numberOfCards)
+        {
+            List<Card> cardsToDraw = new List<Card>();
+
+            for (int i = 0; i < 6 - numberOfCards; i++)
+            {
+                if (cardsLeft > 0)
+                {
+                    cardsToDraw.Add(DrawCard());
+                }
+            }
+            return cardsToDraw;
         }
     }
 }

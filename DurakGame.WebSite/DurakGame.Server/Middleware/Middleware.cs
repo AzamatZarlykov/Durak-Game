@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
@@ -10,7 +9,6 @@ using System.Collections.Generic;
 
 using DurakGame.Server.JSONHelper;
 using DurakGame.Server.Library.Game;
-using DurakGame.Server.Library.GamePlayer;
 
 namespace DurakGame.Server.Middleware
 {
@@ -125,16 +123,17 @@ namespace DurakGame.Server.Middleware
             command = "JoinGame";
 
             int totalPlayers = manager.GetTotalPlayers();
-
             if (totalPlayers > 6) totalPlayers = 6;
 
-            game.SetPlayers(totalPlayers);
+            game.StartGame(totalPlayers);
+
+            int sizeOfPlayers = game.GiveSizeOfPlayers();
 
             List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
 
             for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
-                await SendJSON(playersPlaying[playerID], new { command, playerID, totalPlayers });
+                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers });
             }
         }
 
@@ -143,8 +142,9 @@ namespace DurakGame.Server.Middleware
             command = "InformLeaving";
 
             int totalPlayers = manager.GetTotalPlayers();
+            int sizeOfPlayers = game.GiveSizeOfPlayers();
 
-            await DistributeJSONToWebSockets(new { command, leavingPlayerID, totalPlayers });
+            await DistributeJSONToWebSockets(new { command, leavingPlayerID, sizeOfPlayers, totalPlayers });
         }
 
         private async Task InformGameState(WebSocket socket)
