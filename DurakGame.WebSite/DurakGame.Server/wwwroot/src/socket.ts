@@ -28,7 +28,8 @@ let allCommands: string[] = [
     informLeavingCommand,
     joinGameCommand,
     requestStateGameCommand,
-    setTotalPlayersCommand
+    setTotalPlayersCommand,
+    "GameView"
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -45,6 +46,7 @@ socket.onerror = updateState;
 
 socket.onmessage = function (event) : void {
     let obj = JSON.parse(event.data);
+
 
     if (allCommands.indexOf(obj.command) > -1) {
 
@@ -88,7 +90,6 @@ socket.onmessage = function (event) : void {
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             case (joinGameCommand):
-
                 console.log("Game started");
 
                 setPlayerID(obj.playerID);
@@ -109,6 +110,11 @@ socket.onmessage = function (event) : void {
                         console.log("Game is already being played");
                     }
                 }
+                break;
+            // Game View For the player 
+            case ("GameView"):
+                console.log(obj);
+                
                 break;
         }
     } else {

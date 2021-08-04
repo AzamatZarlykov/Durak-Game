@@ -20,7 +20,8 @@ let allCommands = [
     informLeavingCommand,
     joinGameCommand,
     requestStateGameCommand,
-    setTotalPlayersCommand
+    setTotalPlayersCommand,
+    "GameView"
 ];
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 socket = new WebSocket(connectionUrl);
@@ -90,6 +91,10 @@ socket.onmessage = function (event) {
                         console.log("Game is already being played");
                     }
                 }
+                break;
+            // Game View For the player 
+            case ("GameView"):
+                console.log(obj);
                 break;
         }
     }

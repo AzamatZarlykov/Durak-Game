@@ -9,6 +9,7 @@ using System.Collections.Generic;
 
 using DurakGame.Server.JSONHelper;
 using DurakGame.Server.Library.Game;
+using DurakGame.Server.Helper;
 
 namespace DurakGame.Server.Middleware
 {
@@ -118,6 +119,31 @@ namespace DurakGame.Server.Middleware
             }
         }
 
+        private async Task SendGameView(List<WebSocket> playersPlaying)
+        {
+            command = "GameView";
+
+            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
+            {
+                GameView gameView = new GameView()
+                {
+                    isAttacking = game.GetPlayers()[playerID].isAttacking,
+                    isDefending = game.GetPlayers()[playerID].isDefending,
+
+                    hand = game.GetPlayers()[playerID].playersHand,
+
+                    deckSize = game.GetDeck().cardsLeft,
+                    discardHeapSize = 0,
+
+                    opponentsCards = game.GetOpponentsCards(playerID)
+                };
+
+
+                var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, gameView }));
+                await playersPlaying[playerID].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+            }
+        }
+
         private async Task UpdateInformationAboutGame(ClientMessage route)
         {
             command = "JoinGame";
@@ -135,6 +161,8 @@ namespace DurakGame.Server.Middleware
             {
                 await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers });
             }
+
+            await SendGameView(playersPlaying);
         }
 
         private async Task InformLeavingToOtherPlayers(int leavingPlayerID)

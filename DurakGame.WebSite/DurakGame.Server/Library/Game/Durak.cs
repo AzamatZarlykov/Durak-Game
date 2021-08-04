@@ -23,8 +23,24 @@ namespace DurakGame.Server.Library.Game
         {
 
         }
-
+        public Card GetTrumpCard() => trumpCard;
+        public Deck GetDeck() => deck;
+        public List<Player> GetPlayers() => players;
         public int GiveSizeOfPlayers() => players.Count;
+
+        // function that returns the list of opponents cards size
+        public List<int> GetOpponentsCards(int excludePlayerID)
+        {
+            List<int> opponentsCards = new List<int>();
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (i != excludePlayerID)
+                {
+                    opponentsCards.Add(players[i].playersHand.Count);
+                }
+            }
+            return opponentsCards;
+        }
 
         public void StartGame(int totalPlayers)
         {

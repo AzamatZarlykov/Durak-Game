@@ -15,10 +15,10 @@ namespace DurakGame.Server.Helper
         public List<Card> hand;
 
         // Information about other players and the game
-        public int DeckSize;
-        public int DiscardHeapSize;
+        public int deckSize;
+        public int discardHeapSize;
         // Add how many cards does each player have 
         // [4,7,2,6] 
-        List<int> opponentCards = new List<int>();
+        public List<int> opponentsCards = new List<int>();
     }
 }
