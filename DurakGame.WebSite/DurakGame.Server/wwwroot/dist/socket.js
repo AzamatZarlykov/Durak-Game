@@ -73,6 +73,8 @@ socket.onmessage = function (event) {
             // each players position on the table
             case (joinGameCommand):
                 console.log("Game started");
+                console.log(obj.gameView);
+                console.log(obj.gameView.isAttacking);
                 setPlayerID(obj.playerID);
                 setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
                 setPlayingPlayers(obj.sizeOfPlayers);

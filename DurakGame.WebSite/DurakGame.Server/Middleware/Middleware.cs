@@ -119,9 +119,18 @@ namespace DurakGame.Server.Middleware
             }
         }
 
-        private async Task SendGameView(List<WebSocket> playersPlaying)
+        private async Task UpdateInformationAboutGame(ClientMessage route)
         {
-            command = "GameView";
+            command = "JoinGame";
+
+            int totalPlayers = manager.GetTotalPlayers();
+            if (totalPlayers > 6) totalPlayers = 6;
+
+            game.StartGame(totalPlayers);
+
+            int sizeOfPlayers = game.GiveSizeOfPlayers();
+
+            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
 
             for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
@@ -138,31 +147,10 @@ namespace DurakGame.Server.Middleware
                     opponentsCards = game.GetOpponentsCards(playerID)
                 };
 
+                // Console.WriteLine(JsonSerializer.Serialize<GameView>(gameView));
 
-                var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { command, gameView }));
-                await playersPlaying[playerID].SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView });
             }
-        }
-
-        private async Task UpdateInformationAboutGame(ClientMessage route)
-        {
-            command = "JoinGame";
-
-            int totalPlayers = manager.GetTotalPlayers();
-            if (totalPlayers > 6) totalPlayers = 6;
-
-            game.StartGame(totalPlayers);
-
-            int sizeOfPlayers = game.GiveSizeOfPlayers();
-
-            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
-
-            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
-            {
-                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers });
-            }
-
-            await SendGameView(playersPlaying);
         }
 
         private async Task InformLeavingToOtherPlayers(int leavingPlayerID)
