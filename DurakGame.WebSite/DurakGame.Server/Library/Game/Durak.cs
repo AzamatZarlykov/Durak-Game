@@ -33,71 +33,72 @@ namespace DurakGame.Server.Library.Game
             // the last card is the trump card(the one at the bottom face up)
             trumpCard = deck.GetCard(deck.cardsLeft - 1);
 
+            // add players
+            AddPlayers(totalPlayers);
+
+            // Each player draws 6 cards
+            DistributeCardsToPlayers();
+
+            // Set the attacking player
+            SetAttacker();
+
+        }
+
+        public void AddPlayers(int totalPlayers)
+        {
             for (int i = 0; i < totalPlayers; i++)
             {
                 Player p = new Player();
                 players.Add(p);
             }
+        }
 
+        public void DistributeCardsToPlayers()
+        {
             foreach (Player p in players)
             {
                 p.playersHand = deck.DrawUntilSix(0);
             }
-
-
-            // Check the cards of the players
-            int count = 1;
-
-            Console.WriteLine("The trump of the game is " + trumpCard.rank + trumpCard.suit);
-            foreach (Player p in players)
-            {
-                Console.WriteLine("The player " + count + " cards are: ");
-                count++;
-                p.PrintCards();
-            }
-
-
-            SetAttacker();
-
-            
-            count = 1;
-            foreach (Player p in players)
-            {
-                if (p.isAttacking)
-                {
-                    Console.WriteLine("The attacking player is " + count);
-                }
-                count++;
-            }
         }
 
         // Function will find the player who has the card with
-        // lowest rank of the trump card's suit
+        // lowest rank of the trump card's suit.
         public void SetAttacker()
         {
-            Dictionary<Player, Rank> lowestCards = new Dictionary<Player, Rank>();
+            Player pl = null;
+            Rank lowTrump = 0;
+            bool isAttackingSet = false;
 
             foreach (Player p in players)
             {
-                var trumpCards = from card in p.playersHand 
-                                 where card.suit == trumpCard.suit 
-                                 orderby card.rank 
-                                 select card.rank;
-
-                lowestCards.Add(p, trumpCards.FirstOrDefault());
+                foreach (Card c in p.playersHand)
+                {
+                    if (c.suit == trumpCard.suit && (pl == null || c.rank < lowTrump))
+                    {
+                        pl = p;
+                        lowTrump = c.rank;
+                        isAttackingSet = true;
+                    }
+                }
             }
 
-            var sortedDict = from entry in lowestCards orderby entry.Value ascending select entry;
+            // If no player has a trump card then the first player
+            // connected to the game will be the attacking player
+            if (!isAttackingSet)
+            {
+                pl = players.First();
+            }
 
-            Player pl = sortedDict.First().Key;
             pl.isAttacking = true;
             pl.isDefending = false;
 
-            foreach (var entry in sortedDict.Skip(1))
+            foreach (Player p in players)
             {
-                pl = entry.Key;
-                pl.isAttacking = false;
-                pl.isDefending = true;
+                if (p != pl)
+                {
+                    p.isAttacking = false;
+                    p.isDefending = true;
+                }
             }
         }
 

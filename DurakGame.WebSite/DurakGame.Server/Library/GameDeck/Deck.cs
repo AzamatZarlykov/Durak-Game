@@ -11,9 +11,7 @@ namespace DurakGame.Server.Library.GameDeck
     {
         public int cardsLeft => cards.Count;
 
-        private Card trump = new Card();
-
-        private List<Card> cards = new List<Card>();
+        public List<Card> cards = new List<Card>();
 
         // initializes the deck by creating all the ranks with the corresponding suits
         public Deck()
