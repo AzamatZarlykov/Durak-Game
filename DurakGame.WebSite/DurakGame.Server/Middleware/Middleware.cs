@@ -7,12 +7,16 @@ using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 using System.Collections.Generic;
 
-using DurakGame.Server.JSONHelper;
-using DurakGame.Server.Library.Game;
-using DurakGame.Server.Helper;
+using DurakGame.Library.Game;
 
 namespace DurakGame.Server.Middleware
 {
+    public class ClientMessage
+    {
+        public int From;
+        public string Message;
+    }
+
     public class Middleware
     {
         private string command;
@@ -147,7 +151,6 @@ namespace DurakGame.Server.Middleware
                     opponentsCards = game.GetOpponentsCards(playerID)
                 };
 
-                // Console.WriteLine(JsonSerializer.Serialize<GameView>(gameView));
 
                 await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView });
             }

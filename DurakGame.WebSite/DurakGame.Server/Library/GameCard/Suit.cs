@@ -1,4 +1,4 @@
-﻿namespace DurakGame.Server.Library.GameCard
+﻿namespace DurakGame.Library.GameCard
 {
     public enum Suit
     {

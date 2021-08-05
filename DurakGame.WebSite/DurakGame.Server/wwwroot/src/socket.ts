@@ -115,8 +115,9 @@ socket.onmessage = function (event) : void {
                 }
                 break;
             // Game View For the player 
+            
             case ("GameView"):
-                console.log(obj);
+                
                 
                 break;
         }

@@ -1,14 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-using DurakGame.Server.Library.GamePlayer;
-using DurakGame.Server.Library.GameDeck;
-using DurakGame.Server.Library.GameCard;
+using DurakGame.Library.GamePlayer;
+using DurakGame.Library.GameDeck;
+using DurakGame.Library.GameCard;
 
-namespace DurakGame.Server.Library.Game
+namespace DurakGame.Library.Game
 {
+    public class GameView
+    {
+        // Information about the player
+        public bool isAttacking;
+        public bool isDefending;
+        public List<Card> hand;
+
+        // Information about other players and the game
+        public int deckSize;
+        public int discardHeapSize;
+        // Add how many cards does each player have 
+        // [4,7,2,6] 
+        public List<int> opponentsCards = new List<int>();
+    }
+
     public class Durak
     {
         private Deck deck;

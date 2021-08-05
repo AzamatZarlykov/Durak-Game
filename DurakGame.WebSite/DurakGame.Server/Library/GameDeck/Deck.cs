@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-using DurakGame.Server.Library.GameCard;
+using DurakGame.Library.GameCard;
 
-namespace DurakGame.Server.Library.GameDeck
+namespace DurakGame.Library.GameDeck
 {
     public class Deck
     {

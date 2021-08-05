@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-using DurakGame.Server.Library.GameCard;
-using DurakGame.Server.Library.GameDeck;
+using DurakGame.Library.GameCard;
 
-namespace DurakGame.Server.Library.GamePlayer
+namespace DurakGame.Library.GamePlayer
 {
     public class Player
     {

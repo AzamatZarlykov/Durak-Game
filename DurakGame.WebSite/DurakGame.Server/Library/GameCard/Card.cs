@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace DurakGame.Server.Library.GameCard
+﻿namespace DurakGame.Library.GameCard
 {
     /// <summary>
     /// Card class that represents the card in Durak
