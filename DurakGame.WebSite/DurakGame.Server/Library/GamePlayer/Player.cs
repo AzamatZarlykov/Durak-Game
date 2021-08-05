@@ -11,10 +11,6 @@ namespace DurakGame.Library.GamePlayer
 
         // private Icon icon;
 
-        public bool isAttacking;
-
-        public bool isDefending;
-
         public List<Card> playersHand = new List<Card>();
 
         public void PrintCards()

@@ -132,27 +132,15 @@ namespace DurakGame.Server.Middleware
 
             game.StartGame(totalPlayers);
 
-            int sizeOfPlayers = game.GiveSizeOfPlayers();
-
+            int sizeOfPlayers = game.GetSizeOfPlayers();
             List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+
+            GameView gameView;
 
             for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
-                GameView gameView = new GameView()
-                {
-                    isAttacking = game.GetPlayers()[playerID].isAttacking,
-                    isDefending = game.GetPlayers()[playerID].isDefending,
-
-                    hand = game.GetPlayers()[playerID].playersHand,
-
-                    deckSize = game.GetDeck().cardsLeft,
-                    discardHeapSize = 0,
-
-                    opponentsCards = game.GetOpponentsCards(playerID)
-                };
-
-
-                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView });
+                gameView = new GameView(game, playerID);
+                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView});
             }
         }
 
@@ -161,7 +149,7 @@ namespace DurakGame.Server.Middleware
             command = "InformLeaving";
 
             int totalPlayers = manager.GetTotalPlayers();
-            int sizeOfPlayers = game.GiveSizeOfPlayers();
+            int sizeOfPlayers = game.GetSizeOfPlayers();
 
             await DistributeJSONToWebSockets(new { command, leavingPlayerID, sizeOfPlayers, totalPlayers });
         }
@@ -192,7 +180,8 @@ namespace DurakGame.Server.Middleware
 
         private async Task SendJSON<T>(WebSocket socket, T data)
         {
-            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options));
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 

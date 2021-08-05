@@ -73,6 +73,7 @@ socket.onmessage = function (event) {
             // each players position on the table
             case (joinGameCommand):
                 console.log("Game started");
+                console.log(obj);
                 console.log(obj.gameView);
                 console.log(obj.gameView.isAttacking);
                 setPlayerID(obj.playerID);
@@ -93,10 +94,6 @@ socket.onmessage = function (event) {
                         console.log("Game is already being played");
                     }
                 }
-                break;
-            // Game View For the player 
-            case ("GameView"):
-                console.log(obj);
                 break;
         }
     }

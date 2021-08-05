@@ -55,8 +55,8 @@ namespace DurakGame.Library.GameDeck
         // Returns the drawn card from the deck
         public Card DrawCard()
         {
-            Card card = cards.First();
-            cards.RemoveAt(0);
+            Card card = cards.Last();
+            cards.RemoveAt(cardsLeft - 1);
             return card;
         }
 
@@ -65,12 +65,9 @@ namespace DurakGame.Library.GameDeck
         {
             List<Card> cardsToDraw = new List<Card>();
 
-            for (int i = 0; i < 6 - numberOfCards; i++)
+            for (int i = 0; i < 6 - numberOfCards && cardsLeft > 0; i++)
             {
-                if (cardsLeft > 0)
-                {
-                    cardsToDraw.Add(DrawCard());
-                }
+                cardsToDraw.Add(DrawCard());
             }
             return cardsToDraw;
         }
