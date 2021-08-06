@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8" />
     <title>Durak</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
-  </head>
+</head>
 
-  <body>
+<body>
     <div>
-      <button id="startGameButton" type="button" disabled>Start Game</button>
+        <button id="startGameButton" type="button" disabled>Start Game</button>
     </div>
-    <div  id="playingTable" class="table" hidden>
-      <div class="board">
-        <img class="card" src="images/standard deck/6C.png" alt="six c" />
-        <img class="card" src="images/standard deck/AH.png" alt="six c" />
-        <img class="card" src="images/standard deck/KS.png" alt="six c" />
-        <img class="card" src="images/standard deck/JC.png" alt="six c" />
-        <img class="card" src="images/standard deck/TD.png" alt="six c" />
-      </div>
+    <div>
+        <canvas id="canvas" width="500" height="500"></canvas>
     </div>
+    <!--    <div  id="playingTable" class="table" hidden>
+        <div class="board">
+          <img class="card" src="images/standard deck/6C.png" alt="six c" />
+          <img class="card" src="images/standard deck/AH.png" alt="six c" />
+          <img class="card" src="images/standard deck/KS.png" alt="six c" />
+          <img class="card" src="images/standard deck/JC.png" alt="six c" />
+          <img class="card" src="images/standard deck/TD.png" alt="six c" />
+        </div>
+      </div>-->
 
     <script src="dist/socket.js"></script>
-  </body>
+</body>
 </html>

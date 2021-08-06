@@ -1,3 +1,4 @@
+import { Table } from 'view';
 let playingTable = document.getElementById("playingTable");
 let startButton = document.getElementById("startGameButton");
 let socket;
@@ -11,7 +12,6 @@ let id; // id of the player
 let nPlayers; // total number of players on the webpage
 let nPlayersPlaying; // total number of players playing on the table
 let idsOfPlayers; // a list of player IDs
-let gameInProgress; // tells if the game is on 
 let informLeavingCommand = "InformLeaving";
 let joinGameCommand = "JoinGame";
 let requestStateGameCommand = "RequestStateGame";
@@ -21,7 +21,6 @@ let allCommands = [
     joinGameCommand,
     requestStateGameCommand,
     setTotalPlayersCommand,
-    "GameView"
 ];
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 socket = new WebSocket(connectionUrl);
@@ -44,11 +43,9 @@ socket.onmessage = function (event) {
             // of players depending on IDs
             case (informLeavingCommand):
                 if (playingTable.hidden == false) {
-                    console.log("Before remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
                     // remove the player left from the existing playing players
                     // so that players can be redistributed around the table.
                     removeFromPlayingPlayers(obj.leavingPlayerID);
-                    console.log("After remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
                     setPlayingPlayers(obj.sizeOfPlayers);
                     if (nPlayersPlaying > 1) {
                         setPlayingPlayers(nPlayersPlaying);
@@ -57,7 +54,7 @@ socket.onmessage = function (event) {
                     else {
                         // when 1 person left the game is over. Close the board and tell server that game
                         // has finished
-                        stopDisplayGame();
+                        stopDisplayTable();
                         // no players playing
                         setPlayingPlayers(0);
                         console.log("The game is over");
@@ -72,21 +69,20 @@ socket.onmessage = function (event) {
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             case (joinGameCommand):
+                let view = new Table("Azamat");
+                console.log(view.greet());
                 console.log("Game started");
                 console.log(obj);
-                console.log(obj.gameView);
-                console.log(obj.gameView.isAttacking);
                 setPlayerID(obj.playerID);
                 setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
                 setPlayingPlayers(obj.sizeOfPlayers);
-                displayGame();
+                displayTable();
                 displayPlayersPositionsAroundTable(false);
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
                 if (obj.command == requestStateGameCommand) {
-                    gameInProgress = obj.gameState;
-                    if (!gameInProgress) {
+                    if (!obj.gameState) {
                         let data = constructJSONPayload("StartGame");
                         socket.send(data);
                     }
@@ -114,24 +110,31 @@ startButton.onclick = function () {
 Displays the table and the current number of
 players joined to the game
 */
-function displayGame() {
-    playingTable.hidden = false;
-    gameInProgress = true;
+function displayTable() {
+    let canvas = document.getElementById("canvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let ctx = canvas.getContext('2d');
+    // Draws the empty table
+    ctx.fillStyle = 'green';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 10;
+    ctx.fillRect(170, 40, 1000, 550);
+    ctx.strokeRect(170, 40, 1000, 550);
+    ctx.save();
 }
 /*
 Stops displaying the table and the current number of
 players joined to the game
 */
-function stopDisplayGame() {
-    // remove the previous players positions
-    removeDOM("playerIDTable");
-    playingTable.hidden = true;
-    gameInProgress = false;
+function stopDisplayTable() {
+    var canvas = document.getElementById("canvas");
+    canvas.style.display = "none";
 }
 function updateState() {
     function disable() {
         startButton.disabled = true;
-        stopDisplayGame();
+        stopDisplayTable();
     }
     function enable() {
         startButton.disabled = false;
@@ -221,18 +224,10 @@ if function should delete previous div element of players and add new
 div with updated number of elements
 */
 function displayPlayersPositionsAroundTable(redraw) {
-    if (redraw) {
-        removeDOM("playerIDTable");
-    }
-    const playerDiv = document.createElement("div");
-    playerDiv.setAttribute("id", "playerIDTable");
-    playerDiv.className = "playerTable";
     // Display the main player 
-    displayMainPlayer(playerDiv);
+    displayMainPlayer();
     // Display other players 
-    displayOtherPlayers(playerDiv);
-    let table = document.getElementById("playingTable");
-    table.appendChild(playerDiv);
+    //displayOtherPlayers(playerDiv);
 }
 // Determines the placing based on number of players
 function displayOtherPlayers(newDiv) {
@@ -253,14 +248,11 @@ function displayOtherPlayers(newDiv) {
     }
 }
 // Displays the main player
-function displayMainPlayer(newDiv) {
-    let mainID = "Player1";
-    var tag = document.createElement("p");
-    tag.setAttribute("id", mainID);
-    tag.className = className.trim();
-    var text = document.createTextNode(className + id);
-    tag.appendChild(text);
-    newDiv.appendChild(tag);
+function displayMainPlayer() {
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext('2d');
+    ctx.font = '12px serif';
+    ctx.fillText(className + id, 170 + 500 - 20, 40 + 550 - 20);
 }
 /*
 Returns the JSON object that containts the message to the server

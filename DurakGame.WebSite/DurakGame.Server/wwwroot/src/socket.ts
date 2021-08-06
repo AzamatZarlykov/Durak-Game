@@ -1,4 +1,6 @@
-﻿let playingTable = document.getElementById("playingTable") as HTMLDivElement;
+﻿import { View } from 'view';
+
+let playingTable = document.getElementById("playingTable") as HTMLDivElement;
 let startButton = document.getElementById("startGameButton") as HTMLButtonElement;
 
 let socket: WebSocket;
@@ -17,8 +19,6 @@ let nPlayersPlaying: number; // total number of players playing on the table
 
 let idsOfPlayers: number[]; // a list of player IDs
 
-let gameInProgress: boolean; // tells if the game is on 
-
 let informLeavingCommand: string = "InformLeaving";
 let joinGameCommand: string = "JoinGame";
 let requestStateGameCommand: string = "RequestStateGame";
@@ -29,7 +29,6 @@ let allCommands: string[] = [
     joinGameCommand,
     requestStateGameCommand,
     setTotalPlayersCommand,
-    "GameView"
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -60,11 +59,9 @@ socket.onmessage = function (event) : void {
             // of players depending on IDs
             case (informLeavingCommand):
                 if (playingTable.hidden == false) {
-                    console.log("Before remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
                     // remove the player left from the existing playing players
                     // so that players can be redistributed around the table.
                     removeFromPlayingPlayers(obj.leavingPlayerID);
-                    console.log("After remove " + obj.leavingPlayerID + " from " + idsOfPlayers);
 
                     setPlayingPlayers(obj.sizeOfPlayers);
 
@@ -74,7 +71,7 @@ socket.onmessage = function (event) : void {
                     } else {
                         // when 1 person left the game is over. Close the board and tell server that game
                         // has finished
-                        stopDisplayGame();
+                        stopDisplayTable();
 
                         // no players playing
                         setPlayingPlayers(0);
@@ -90,6 +87,8 @@ socket.onmessage = function (event) : void {
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             case (joinGameCommand):
+                let view = new View("Azamat");
+                console.log(view.greet());
                 console.log("Game started");
 
                 console.log(obj);
@@ -98,14 +97,13 @@ socket.onmessage = function (event) : void {
                 setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
                 setPlayingPlayers(obj.sizeOfPlayers);
 
-                displayGame();
+                displayTable();
                 displayPlayersPositionsAroundTable(false);
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
                 if (obj.command == requestStateGameCommand) {
-                    gameInProgress = obj.gameState;
-                    if (!gameInProgress) {
+                    if (!obj.gameState) {
                         let data: string = constructJSONPayload("StartGame");
                         socket.send(data);
                     } else {
@@ -132,27 +130,36 @@ startButton.onclick = function (): void {
 Displays the table and the current number of 
 players joined to the game
 */
-function displayGame(): void {
-    playingTable.hidden = false;
-    gameInProgress = true;
+function displayTable() : void {
+    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let ctx = canvas.getContext('2d');
+
+    // Draws the empty table
+    ctx.fillStyle = 'green';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 10;
+
+    ctx.fillRect(170, 40, 1000, 550);
+    ctx.strokeRect(170, 40, 1000, 550);
+    ctx.save();
 }
 
 /*
 Stops displaying the table and the current number of 
 players joined to the game
 */
-function stopDisplayGame() {
-    // remove the previous players positions
-    removeDOM("playerIDTable");
-
-    playingTable.hidden = true;
-    gameInProgress = false;
+function stopDisplayTable() {
+    var canvas = document.getElementById("canvas");
+    canvas.style.display = "none";
 }
 
 function updateState() : void {
     function disable() {
         startButton.disabled = true;
-        stopDisplayGame();
+        stopDisplayTable();
     }
     function enable() {
         startButton.disabled = false;
@@ -248,22 +255,13 @@ if function should delete previous div element of players and add new
 div with updated number of elements
 */
 function displayPlayersPositionsAroundTable(redraw : boolean) : void {
-    if (redraw) {
-        removeDOM("playerIDTable");
-    }
 
-    const playerDiv = document.createElement("div") as HTMLDivElement;
-    playerDiv.setAttribute("id", "playerIDTable");
-    playerDiv.className = "playerTable";
 
     // Display the main player 
-    displayMainPlayer(playerDiv);
+    displayMainPlayer();
 
     // Display other players 
-    displayOtherPlayers(playerDiv);
-
-    let table = document.getElementById("playingTable") as HTMLDivElement;
-    table.appendChild(playerDiv);
+    //displayOtherPlayers(playerDiv);
 }
 
 // Determines the placing based on number of players
@@ -282,16 +280,12 @@ function displayOtherPlayers(newDiv : HTMLDivElement) : void {
 }
 
 // Displays the main player
-function displayMainPlayer(newDiv:HTMLDivElement) : void {
-    let mainID : string = "Player1";
-    var tag = document.createElement("p");
-    tag.setAttribute("id", mainID);
-    tag.className = className.trim();
+function displayMainPlayer(): void {
+    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
 
-    var text = document.createTextNode(className + id);
-
-    tag.appendChild(text);
-    newDiv.appendChild(tag);
+    let ctx = canvas.getContext('2d');
+    ctx.font = '12px serif';
+    ctx.fillText(className + id, 170 + 500 - 20, 40 + 550 - 20);
 }
 
 /*
