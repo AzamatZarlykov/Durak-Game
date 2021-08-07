@@ -15,6 +15,16 @@ export class View {
         this.context = context;
     }
     /*
+        Display the state of the game from the JSON object(attacking player,
+        deck size, discarded heap, defending player, hands etc.)
+    */
+    displayStateOfTheGame(gameView) {
+        // display the main players hand
+        // display face down cards of opponents cards
+        // display the deck of the left side
+        // outline the attacking and defending players' names
+    }
+    /*
         Displays Players arounds the table
     */
     displayPlayers(mainPlayerID, totalPlayers) {
@@ -43,7 +53,6 @@ export class View {
                     this.context.fillText(this.strPlayer + currentID, this.rightX, this.lowerY);
                     break;
             }
-            console.log(currentID + " is Drawn");
         }
         this.context.save();
     }

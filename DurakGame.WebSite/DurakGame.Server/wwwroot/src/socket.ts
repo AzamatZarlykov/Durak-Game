@@ -88,6 +88,7 @@ socket.onmessage = function (event) : void {
 
                 view.drawTable();
                 view.displayPlayers(id, nPlayersPlaying);
+                
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
@@ -177,5 +178,5 @@ Sets the player ID on html
 */
 function setPlayerID(identifier: number) : void {
     id = identifier;
-    console.log("ID of the player is: " + id.toString());
+    console.log("ID of the player is: " + id);
 }

@@ -1,4 +1,31 @@
-﻿export class View {
+﻿interface Hand {
+
+}
+
+interface PlayerView {
+
+}
+
+interface Card {
+
+}
+
+interface GameView{
+    playerID: number
+
+    attackingPlayer: number;
+    defendingPlayer: number;
+
+    deckSize: number;
+    discardHeapSize: number;
+
+    hand: Hand[];
+
+    playersView: PlayerView[];
+    trumpCard: Card;
+}
+
+export class View {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
 
@@ -26,6 +53,30 @@
         this.canvas = canvas;
         this.context = context;
     }
+    /*
+        Display the state of the game from the JSON object(attacking player,
+        deck size, discarded heap, defending player, hands etc.)
+    */
+    public displayStateOfTheGame(gameView: GameView): void {
+        // display the main players hand
+        this.displayMainPlayersHand(gameView.hand);
+        // display face down cards of opponents cards
+        
+        // display the deck of the left side
+
+        // outline the attacking and defending players' names
+
+    }
+
+    /*
+        displays the cards from the gameView object 
+    */
+    private displayMainPlayersHand(hand: Card[]) {
+        for (let i = 0; i < hand.length; i++) {
+
+        }
+    }
+
     /*
         Displays Players arounds the table 
     */
@@ -59,7 +110,6 @@
                     this.context.fillText(this.strPlayer + currentID, this.rightX, this.lowerY);
                     break;
             }
-            console.log(currentID + " is Drawn");
         }
         this.context.save();
     }

@@ -8,7 +8,6 @@ let port = document.location.port ? (":" + document.location.port) : "";
 let id; // id of the player 
 let nPlayers; // total number of players on the webpage
 let nPlayersPlaying; // total number of players playing on the table
-let idsOfPlayers; // a list of player IDs
 let informLeavingCommand = "InformLeaving";
 let joinGameCommand = "JoinGame";
 let requestStateGameCommand = "RequestStateGame";
@@ -41,9 +40,6 @@ socket.onmessage = function (event) {
             // of players depending on IDs
             case (informLeavingCommand):
                 if (playingTable.hidden == false) {
-                    // remove the player left from the existing playing players
-                    // so that players can be redistributed around the table.
-                    removeFromPlayingPlayers(obj.leavingPlayerID);
                     setPlayingPlayers(obj.sizeOfPlayers);
                     if (nPlayersPlaying > 1) {
                         setPlayingPlayers(nPlayersPlaying);
@@ -69,8 +65,8 @@ socket.onmessage = function (event) {
             case (joinGameCommand):
                 console.log("Game started");
                 console.log(obj);
+                console.log(obj.gameView.hand);
                 setPlayerID(obj.playerID);
-                setOtherPlayerIDs(); // if nPlayers = 5; then idsOfPlayers = [0,1,2,3,4]
                 setPlayingPlayers(obj.sizeOfPlayers);
                 view.drawTable();
                 view.displayPlayers(id, nPlayersPlaying);
@@ -141,48 +137,6 @@ function setPlayingPlayers(count) {
     console.log("Number Of Players In The Game: " + nPlayersPlaying);
 }
 /*
-places players in the right positions based on the folowing information:
-number of players: nPlayersPlaying, list of existing players: existingPlayers,
-list of positions avaliable: it is passed as an argument.
-*/ /*
-function placePlayers(newDiv:HTMLDivElement, pos:number[]) : void {
-    let names : number[] = shuffle();
-    for (let i = 0; i < nPlayersPlaying - 1; i++) {
-        tag = document.createElement("p");
-        tag.setAttribute("id", className.trim().concat(pos[i].toString()));
-        setHTMLForPlayers(newDiv, names[i]);
-    }
-}
-
-*/ /*
-function sets the html elements for each of the player on the table.
-Each of their ID correcsponds with the CSS style that place players
-around the table.
-*/ /*
-function setHTMLForPlayers(newDiv: HTMLDivElement, player: number) : void{
-    text = document.createTextNode(className.concat(player.toString()));
-    tag.className = className.trim();
-    tag.appendChild(text);
-    newDiv.appendChild(tag);
-}*/
-/*
-Shuffle positions according to the ID of the player.
-E.g the playerID = 3 then the output list is [4,5,6,1,2]
-*/
-function shuffle() {
-    let result1 = [];
-    let result2 = [];
-    for (let i = 0; i < nPlayersPlaying; i++) {
-        if (idsOfPlayers[i] > id) {
-            result1.push(idsOfPlayers[i]);
-        }
-        if (idsOfPlayers[i] < id) {
-            result2.push(idsOfPlayers[i]);
-        }
-    }
-    return result1.concat(result2);
-}
-/*
 Returns the JSON object that containts the message to the server
 */
 function constructJSONPayload(message) {
@@ -202,24 +156,6 @@ Sets the player ID on html
 */
 function setPlayerID(identifier) {
     id = identifier;
-    console.log("ID of the player is: " + id.toString());
-}
-/*
-Sets the list of ids of other players
-*/
-function setOtherPlayerIDs() {
-    idsOfPlayers = Array.from(Array(nPlayers).keys());
-}
-/*
-Remove the player from the existing playing players
-based on the playerID
-*/
-function removeFromPlayingPlayers(idToDelete) {
-    var index = idsOfPlayers.indexOf(idToDelete);
-    // if the player left was playing splice the list
-    // else do nothing
-    if (index !== -1) {
-        idsOfPlayers.splice(index, 1);
-    }
+    console.log("ID of the player is: " + id);
 }
 //# sourceMappingURL=socket.js.map
