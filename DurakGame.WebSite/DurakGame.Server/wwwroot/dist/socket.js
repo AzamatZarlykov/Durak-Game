@@ -43,7 +43,7 @@ socket.onmessage = function (event) {
                     setPlayingPlayers(obj.sizeOfPlayers);
                     if (nPlayersPlaying > 1) {
                         setPlayingPlayers(nPlayersPlaying);
-                        view.displayPlayers(id, nPlayersPlaying);
+                        // view.displayPlayers(id, nPlayersPlaying);
                     }
                     else {
                         // when 1 person left the game is over. Close the board and tell server that game
@@ -64,12 +64,10 @@ socket.onmessage = function (event) {
             // each players position on the table
             case (joinGameCommand):
                 console.log("Game started");
-                console.log(obj);
-                console.log(obj.gameView.hand);
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
                 view.drawTable();
-                view.displayPlayers(id, nPlayersPlaying);
+                view.displayStateOfTheGame(obj.gameView, id, nPlayersPlaying);
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):

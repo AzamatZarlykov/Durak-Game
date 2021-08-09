@@ -1,13 +1,21 @@
-﻿interface Hand {
-
-}
+﻿import { CardView } from './card.js';
 
 interface PlayerView {
-
+    numberOfCards: number;
+    isAttacking: boolean;
 }
 
-interface Card {
+enum Rank {
+    Six = 6, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace
+}
 
+enum Suit {
+    Club, Diamonds, Heart, Spade
+}
+
+export interface Card {
+    rank: Rank;
+    suit: Suit;
 }
 
 interface GameView{
@@ -19,7 +27,7 @@ interface GameView{
     deckSize: number;
     discardHeapSize: number;
 
-    hand: Hand[];
+    hand: Card[];
 
     playersView: PlayerView[];
     trumpCard: Card;
@@ -29,17 +37,16 @@ export class View {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
 
-    private cardWidth: number;
-    private cardHeight: number;
-
     private strPlayer: string = "Player ";
 
     private lowerY: number = 630;
     private upperY: number = 200;
 
-    private middleX: number = 650;
     private leftX: number = 250;
+    private middleX: number = 650;
     private rightX: number = 1150;
+
+    private cardView: CardView;
 
     constructor() {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -52,16 +59,17 @@ export class View {
 
         this.canvas = canvas;
         this.context = context;
+
+        this.cardView = new CardView()
     }
     /*
         Display the state of the game from the JSON object(attacking player,
         deck size, discarded heap, defending player, hands etc.)
     */
-    public displayStateOfTheGame(gameView: GameView): void {
-        // display the main players hand
-        this.displayMainPlayersHand(gameView.hand);
-        // display face down cards of opponents cards
+    public displayStateOfTheGame(gameView: GameView, id: number, totalPlayers: number): void {
         
+        this.displayPlayers(id, totalPlayers, gameView);
+
         // display the deck of the left side
 
         // outline the attacking and defending players' names
@@ -71,16 +79,35 @@ export class View {
     /*
         displays the cards from the gameView object 
     */
-    private displayMainPlayersHand(hand: Card[]) {
+    private displayMainPlayersHand(hand: Card[], x: number, y: number) {
         for (let i = 0; i < hand.length; i++) {
-
+            let img: HTMLImageElement = this.cardView.cardImage(hand[i]);
+            img.onload = () => {
+                this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
+            }
         }
+        this.context.save();
+    }
+
+
+    /*
+        Displays the face down cards of opponents
+    */
+    private displayFaceDownCards(playerView: PlayerView, x: number, y: number) {
+        for (let i = 0; i < playerView.numberOfCards; i++) {
+            let img: HTMLImageElement = this.cardView.faceDownCardImage();
+            img.onload = () => {
+                this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight)
+            }
+        }
+        this.context.save();
     }
 
     /*
         Displays Players arounds the table 
     */
-    public displayPlayers(mainPlayerID: number, totalPlayers: number): void {
+    public displayPlayers(mainPlayerID: number, totalPlayers: number, gameView: GameView): void {
+        let isMain: boolean;
 
         this.context.fillStyle = 'white';
 
@@ -90,29 +117,70 @@ export class View {
         for (let i = 0; i < totalPlayers; i++) {
             currentID = (mainPlayerID + i) % totalPlayers;
 
+            if (currentID == mainPlayerID) {
+                isMain = true;
+            }
+
             switch (position[i]) {
                 case 1:
                     this.context.fillText(this.strPlayer + currentID, this.middleX, this.lowerY);
-                    break;
+                    if (isMain) {
+                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardMiddleX, this.cardView.cardLowerY);
+                        isMain = false;
+                    } else {
+                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardMiddleX, this.cardView.cardLowerY);
+                    }
+                    break; 
                 case 2:
                     this.context.fillText(this.strPlayer + currentID, this.leftX, this.lowerY);
+                    if (isMain) {
+                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardLeftX, this.cardView.cardLowerY);
+                        isMain = false;
+                    } else {
+                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardLeftX, this.cardView.cardLowerY);
+                    }
                     break;
                 case 3:
                     this.context.fillText(this.strPlayer + currentID, this.leftX, this.upperY);
+                    if (isMain) {
+                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardLeftX, this.cardView.cardUpperY);
+                        isMain = false;
+                    } else {
+                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardLeftX, this.cardView.cardUpperY);
+                    }
                     break;
                 case 4:
                     this.context.fillText(this.strPlayer + currentID, this.middleX, this.upperY);
+                    if (isMain) {
+                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardMiddleX, this.cardView.cardUpperY);
+                        isMain = false;
+                    } else {
+                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardMiddleX, this.cardView.cardUpperY);
+                    }
                     break;
                 case 5:
                     this.context.fillText(this.strPlayer + currentID, this.rightX, this.upperY);
+                    if (isMain) {
+                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardRightX, this.cardView.cardUpperY);
+                        isMain = false;
+                    } else {
+                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardRightX, this.cardView.cardUpperY);
+                    }
                     break;
                 case 6:
                     this.context.fillText(this.strPlayer + currentID, this.rightX, this.lowerY);
+                    if (isMain) {
+                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardRightX, this.cardView.cardLowerY);
+                        isMain = false;
+                    } else {
+                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardRightX, this.cardView.cardLowerY);
+                    }
                     break;
             }
         }
         this.context.save();
     }
+
 
     /*
         Returns the position of players depending on the

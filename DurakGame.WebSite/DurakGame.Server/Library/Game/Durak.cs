@@ -20,13 +20,10 @@ namespace DurakGame.Library.Game
 
         public List<Card> hand = new List<Card>();
 
-        // Information about other players and the game
-        public Card trumpCard;
-        public int deckSize;
+        Durak game;
+
         public int discardHeapSize;
 
-        public int defendingPlayer;
-        public int attackingPlayer;
 
         public List<PlayerView> playersView = new List<PlayerView>();
 
@@ -38,12 +35,9 @@ namespace DurakGame.Library.Game
 
             hand = players[id].playersHand;
 
-            trumpCard = game.GetTrumpCard();
-            deckSize = game.GetDeck().cardsLeft;
             discardHeapSize = 0;
 
-            defendingPlayer = game.GetDefendingPlayer();
-            attackingPlayer = game.GetAttackingPlayer();
+            this.game = game;
 
             List<PlayerView> pViews = new List<PlayerView>();
             PlayerView playerView;
@@ -51,15 +45,10 @@ namespace DurakGame.Library.Game
             for (int i = 0; i < game.GetSizeOfPlayers(); i++)
             {
                 playerView = new PlayerView();
-                playerView.numberOfCards = players[i].playersHand.Count;
 
-                if (attackingPlayer == i)
-                {
-                    playerView.isAttacking = true;
-                } else
-                {
-                    playerView.isAttacking = false;
-                }
+                playerView.numberOfCards = players[i].playersHand.Count;
+                playerView.isAttacking = (game.GetAttackingPlayer() == i);
+
                 pViews.Add(playerView);
             }
             playersView = pViews;
@@ -88,20 +77,6 @@ namespace DurakGame.Library.Game
         public int GetAttackingPlayer() => attackingPlayer;
         public List<Player> GetPlayers() => players;
         public int GetSizeOfPlayers() => players.Count;
-
-        // function that returns the list of opponents cards size
-        public List<int> GetOpponentsCards(int excludePlayerID)
-        {
-            List<int> opponentsCards = new List<int>();
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (i != excludePlayerID)
-                {
-                    opponentsCards.Add(players[i].playersHand.Count);
-                }
-            }
-            return opponentsCards;
-        }
 
         public void StartGame(int totalPlayers)
         {
@@ -143,7 +118,6 @@ namespace DurakGame.Library.Game
         {
             Player pl = null;
             Rank lowTrump = 0;
-            bool isAttackingSet = false;
 
             foreach (Player p in players)
             {
@@ -153,14 +127,13 @@ namespace DurakGame.Library.Game
                     {
                         pl = p;
                         lowTrump = c.rank;
-                        isAttackingSet = true;
                     }
                 }
             }
 
             // If no player has a trump card then the first player
             // connected to the game will be the attacking player
-            if (!isAttackingSet)
+            if (pl == null)
             {
                 pl = players.First();
             }
