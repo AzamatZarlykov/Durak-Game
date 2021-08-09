@@ -40,6 +40,7 @@ export class View {
         deck size, discarded heap, defending player, hands etc.)
     */
     displayStateOfTheGame(gameView, id, totalPlayers) {
+        console.log(gameView);
         this.displayPlayers(id, totalPlayers, gameView);
         // display the deck of the left side
         // outline the attacking and defending players' names
@@ -53,20 +54,21 @@ export class View {
             img.onload = () => {
                 this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
             };
+            this.context.save();
         }
-        this.context.save();
     }
     /*
         Displays the face down cards of opponents
     */
     displayFaceDownCards(playerView, x, y) {
+        console.log(playerView.numberOfCards);
         for (let i = 0; i < playerView.numberOfCards; i++) {
             let img = this.cardView.faceDownCardImage();
             img.onload = () => {
                 this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
             };
+            this.context.save();
         }
-        this.context.save();
     }
     /*
         Displays Players arounds the table
@@ -143,8 +145,8 @@ export class View {
                     }
                     break;
             }
+            this.context.save();
         }
-        this.context.save();
     }
     /*
         Returns the position of players depending on the

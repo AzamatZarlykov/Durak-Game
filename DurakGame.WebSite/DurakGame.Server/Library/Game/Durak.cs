@@ -20,10 +20,14 @@ namespace DurakGame.Library.Game
 
         public List<Card> hand = new List<Card>();
 
-        Durak game;
+        public Durak game;
 
         public int discardHeapSize;
 
+        public Card trumpCard => game.GetTrumpCard();
+        public int deckSize => game.GetDeck().cardsLeft;
+        public int defendingPlayer => game.GetDefendingPlayer();
+        public int attackingPlayer => game.GetAttackingPlayer();
 
         public List<PlayerView> playersView = new List<PlayerView>();
 
@@ -47,7 +51,7 @@ namespace DurakGame.Library.Game
                 playerView = new PlayerView();
 
                 playerView.numberOfCards = players[i].playersHand.Count;
-                playerView.isAttacking = (game.GetAttackingPlayer() == i);
+                playerView.isAttacking = (attackingPlayer == i);
 
                 pViews.Add(playerView);
             }

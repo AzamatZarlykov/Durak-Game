@@ -50,9 +50,7 @@ export class CardView {
         else {
             let img = new Image();
             img.src = this.dir.concat(this.backCard.concat(".png"));
-
             console.log(img.src);
-
             this.cardImages.set(this.backCard, img);
             return this.cardImages.get(this.backCard);
         }
