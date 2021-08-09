@@ -43,11 +43,22 @@ export declare class View {
     private middleX;
     private rightX;
     private cardView;
-    constructor();
-    displayStateOfTheGame(gameView: GameView, id: number, totalPlayers: number): void;
+    private gameView;
+    private id;
+    private totalPlayers;
+    private positionsAroundTable;
+    constructor(gameView: GameView, id: number, players: number);
+    displayStateOfTheGame(): void;
+    cardImage(card: Card): HTMLImageElement;
+    faceDownCardImage(): HTMLImageElement;
     private displayMainPlayersHand;
     private displayFaceDownCards;
-    displayPlayers(mainPlayerID: number, totalPlayers: number, gameView: GameView): void;
+    displayPlayersHelper(model: {
+        property1: boolean;
+    }, index: number, xCard: number, yCard: number, x: number, y: number, id: number): {
+        property1: boolean;
+    };
+    displayPlayers(): void;
     private getPositions;
     drawTable(): void;
     removeTable(): void;

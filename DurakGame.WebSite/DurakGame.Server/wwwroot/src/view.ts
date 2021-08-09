@@ -18,7 +18,7 @@ export interface Card {
     suit: Suit;
 }
 
-interface GameView{
+interface GameView {
     playerID: number
 
     attackingPlayer: number;
@@ -47,8 +47,14 @@ export class View {
     private rightX: number = 1150;
 
     private cardView: CardView;
+    private gameView: GameView;
 
-    constructor() {
+    private id: number;
+    private totalPlayers: number;
+
+    private positionsAroundTable: { xCard: number, yCard: number, x: number, y: number }[];
+
+    constructor(gameView: GameView, id: number, players: number) {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
         let context = canvas.getContext("2d");
 
@@ -61,14 +67,30 @@ export class View {
         this.context = context;
 
         this.cardView = new CardView()
+        this.gameView = gameView;
+        this.id = id;
+        this.totalPlayers = players;
+
+        this.positionsAroundTable = [
+            { xCard: this.cardView.cardMiddleX, yCard: this.cardView.cardLowerY, x: this.middleX, y: this.lowerY },
+            { xCard: this.cardView.cardLeftX, yCard: this.cardView.cardLowerY, x: this.leftX, y: this.lowerY },
+            { xCard: this.cardView.cardLeftX, yCard: this.cardView.cardUpperY, x: this.leftX, y: this.upperY },
+            { xCard: this.cardView.cardMiddleX, yCard: this.cardView.cardUpperY, x: this.middleX, y: this.upperY },
+            { xCard: this.cardView.cardRightX, yCard: this.cardView.cardUpperY, x: this.rightX, y: this.upperY },
+            { xCard: this.cardView.cardRightX, yCard: this.cardView.cardLowerY, x: this.rightX, y: this.lowerY }
+        ]
+
+        console.log(gameView);
     }
     /*
         Display the state of the game from the JSON object(attacking player,
         deck size, discarded heap, defending player, hands etc.)
     */
-    public displayStateOfTheGame(gameView: GameView, id: number, totalPlayers: number): void {
-        console.log(gameView);
-        this.displayPlayers(id, totalPlayers, gameView);
+    public displayStateOfTheGame(): void {
+
+        this.drawTable();
+
+        this.displayPlayers();
 
         // display the deck of the left side
 
@@ -77,16 +99,50 @@ export class View {
     }
 
     /*
+        Returns an image for a given card.
+    */
+    public cardImage(card: Card): HTMLImageElement {
+        let strRank: string = this.cardView.fromIntToRank(card.rank);
+        let strSuit: string = this.cardView.fromIntToSuit(card.suit);
+        let strCard: string = strRank.concat(strSuit);
+
+        if (this.cardView.cardImages.has(strCard)) {
+            return this.cardView.cardImages.get(strCard);
+        }
+        else {
+            let img = new Image();
+            img.onload = () => this.displayStateOfTheGame();
+            img.src = this.cardView.dir.concat(strCard.concat(".png"));
+
+            this.cardView.cardImages.set(strCard, img);
+            return this.cardView.cardImages.get(strCard);
+        }
+    }
+
+    /*
+        Returns an image for a given card.
+    */
+    public faceDownCardImage(): HTMLImageElement {
+        if (this.cardView.cardImages.has(this.cardView.backCard)) {
+            return this.cardView.cardImages.get(this.cardView.backCard);
+        }
+        else {
+            let img = new Image();
+            img.onload = () => this.displayStateOfTheGame();
+            img.src = this.cardView.dir.concat(this.cardView.backCard.concat(".png"));
+
+            this.cardView.cardImages.set(this.cardView.backCard, img);
+            return this.cardView.cardImages.get(this.cardView.backCard);
+        }
+    }
+
+    /*
         displays the cards from the gameView object 
     */
     private displayMainPlayersHand(hand: Card[], x: number, y: number) {
         for (let i = 0; i < hand.length; i++) {
-            let img: HTMLImageElement = this.cardView.cardImage(hand[i]);
-            img.onload = () => {
-                this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
-            }
-            this.context.save();
-
+            let img: HTMLImageElement = this.cardImage(hand[i]);
+            this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
         }
     }
 
@@ -95,91 +151,48 @@ export class View {
         Displays the face down cards of opponents
     */
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number) {
-        console.log(playerView.numberOfCards);
         for (let i = 0; i < playerView.numberOfCards; i++) {
-            let img: HTMLImageElement = this.cardView.faceDownCardImage();
-            img.onload = () => {
-                this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight)
-            }
-            this.context.save();
+            let img: HTMLImageElement = this.faceDownCardImage();
+            this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight)
+        }
+    }
+
+
+    public displayPlayersHelper(model: { property1: boolean }, index: number, xCard: number, yCard: number, x: number, y: number, id: number) {
+        this.context.fillText(this.strPlayer + id, x, y);
+
+        if (model.property1) {
+            this.displayMainPlayersHand(this.gameView.hand, xCard, yCard);
+            model.property1 = false;
+            return model;
+        } else {
+            this.displayFaceDownCards(this.gameView.playersView[index], xCard, yCard);
         }
     }
 
     /*
         Displays Players arounds the table 
     */
-    public displayPlayers(mainPlayerID: number, totalPlayers: number, gameView: GameView): void {
+    public displayPlayers(): void {
         let isMain: boolean;
+        const bar = { property1: isMain };
 
         this.context.fillStyle = 'white';
 
-        let position: number[] = this.getPositions(totalPlayers);
+        let position: number[] = this.getPositions(this.totalPlayers);
         let currentID: number;
+        let currentPos: { xCard: number, yCard: number, x: number, y: number };
 
-        for (let i = 0; i < totalPlayers; i++) {
-            currentID = (mainPlayerID + i) % totalPlayers;
+        for (let i = 0; i < this.totalPlayers; i++) {
+            currentID = (this.id + i) % this.totalPlayers;
+            currentPos = this.positionsAroundTable[position[i] - 1];
 
-            if (currentID == mainPlayerID) {
-                isMain = true;
+            if (currentID == this.id) {
+                bar.property1 = true;
             }
 
-            switch (position[i]) {
-                case 1:
-                    this.context.fillText(this.strPlayer + currentID, this.middleX, this.lowerY);
-                    if (isMain) {
-                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardMiddleX, this.cardView.cardLowerY);
-                        isMain = false;
-                    } else {
-                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardMiddleX, this.cardView.cardLowerY);
-                    }
-                    break; 
-                case 2:
-                    this.context.fillText(this.strPlayer + currentID, this.leftX, this.lowerY);
-                    if (isMain) {
-                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardLeftX, this.cardView.cardLowerY);
-                        isMain = false;
-                    } else {
-                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardLeftX, this.cardView.cardLowerY);
-                    }
-                    break;
-                case 3:
-                    this.context.fillText(this.strPlayer + currentID, this.leftX, this.upperY);
-                    if (isMain) {
-                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardLeftX, this.cardView.cardUpperY);
-                        isMain = false;
-                    } else {
-                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardLeftX, this.cardView.cardUpperY);
-                    }
-                    break;
-                case 4:
-                    this.context.fillText(this.strPlayer + currentID, this.middleX, this.upperY);
-                    if (isMain) {
-                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardMiddleX, this.cardView.cardUpperY);
-                        isMain = false;
-                    } else {
-                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardMiddleX, this.cardView.cardUpperY);
-                    }
-                    break;
-                case 5:
-                    this.context.fillText(this.strPlayer + currentID, this.rightX, this.upperY);
-                    if (isMain) {
-                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardRightX, this.cardView.cardUpperY);
-                        isMain = false;
-                    } else {
-                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardRightX, this.cardView.cardUpperY);
-                    }
-                    break;
-                case 6:
-                    this.context.fillText(this.strPlayer + currentID, this.rightX, this.lowerY);
-                    if (isMain) {
-                        this.displayMainPlayersHand(gameView.hand, this.cardView.cardRightX, this.cardView.cardLowerY);
-                        isMain = false;
-                    } else {
-                        this.displayFaceDownCards(gameView.playersView[i], this.cardView.cardRightX, this.cardView.cardLowerY);
-                    }
-                    break;
-            }
-            this.context.save();
+            this.displayPlayersHelper(bar, i, currentPos.xCard, currentPos.yCard,
+                currentPos.x, currentPos.y, currentID);
         }
     }
 
@@ -207,7 +220,7 @@ export class View {
         Displays the table and the current number of
         players joined to the game
     */
-    public drawTable(): void{
+    public drawTable(): void {
         // Draws the empty table
         this.context.fillStyle = 'green';
         this.context.strokeStyle = 'black';

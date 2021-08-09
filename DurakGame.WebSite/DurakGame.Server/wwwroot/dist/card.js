@@ -12,69 +12,21 @@ export class CardView {
         this.backCard = "2B";
     }
     /*
-        Retrueves an image for a given card.
-    */
-    cardImage(card) {
-        let strRank = this.fromIntToRank(card.rank);
-        let strSuit = this.fromIntToSuit(card.suit);
-        let strCard = strRank.concat(strSuit);
-        if (this.cardImages.has(strCard)) {
-            return this.cardImages.get(strCard);
-        }
-        else {
-            let img = new Image();
-            img.src = this.dir.concat(strCard.concat(".png"));
-            console.log(img.src);
-            this.cardImages.set(strCard, img);
-            return this.cardImages.get(strCard);
-        }
-    }
-    faceDownCardImage() {
-        if (this.cardImages.has(this.backCard)) {
-            return this.cardImages.get(this.backCard);
-        }
-        else {
-            let img = new Image();
-            img.src = this.dir.concat(this.backCard.concat(".png"));
-            console.log(img.src);
-            this.cardImages.set(this.backCard, img);
-            return this.cardImages.get(this.backCard);
-        }
-    }
-    /*
         Returns the string from number that represents the
         rank of the card
     */
     fromIntToRank(enumRank) {
-        if (5 < enumRank && enumRank < 11) {
+        if (5 < enumRank && enumRank < 10) {
             return enumRank.toString();
         }
-        switch (enumRank) {
-            case 11:
-                return "J";
-            case 12:
-                return "Q";
-            case 13:
-                return "K";
-            case 14:
-                return "A";
-        }
+        return "TJQKA"[enumRank - 10];
     }
     /*
         Returns the string from number that represents the
         suit of the card
     */
     fromIntToSuit(enumSuit) {
-        switch (enumSuit) {
-            case 0:
-                return "C";
-            case 1:
-                return "D";
-            case 2:
-                return "H";
-            case 3:
-                return "S";
-        }
+        return "CDHS"[enumSuit];
     }
 }
 //# sourceMappingURL=card.js.map

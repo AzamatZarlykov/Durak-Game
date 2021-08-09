@@ -14,6 +14,7 @@ export class CardView {
     public cardRightX: number = 1080;
 
     public dir: string = "images/deck/";
+
     public cardImages = new Map();
 
     public backCard: string = "2B";
@@ -22,76 +23,24 @@ export class CardView {
     }
 
     /*
-        Retrueves an image for a given card.
-    */
-    public cardImage(card: Card): HTMLImageElement {
-        let strRank: string = this.fromIntToRank(card.rank);
-        let strSuit: string = this.fromIntToSuit(card.suit);
-        let strCard: string = strRank.concat(strSuit);
-
-        if (this.cardImages.has(strCard)) {
-            return this.cardImages.get(strCard);
-        }
-        else {
-            let img = new Image();
-            img.src = this.dir.concat(strCard.concat(".png"));
-
-            console.log(img.src);
-
-            this.cardImages.set(strCard, img);
-            return this.cardImages.get(strCard);
-        }
-    }
-
-    public faceDownCardImage(): HTMLImageElement {
-        if (this.cardImages.has(this.backCard)) {
-            return this.cardImages.get(this.backCard);
-        }
-        else {
-            let img = new Image();
-            img.src = this.dir.concat(this.backCard.concat(".png"));
-            console.log(img.src);
-            this.cardImages.set(this.backCard, img);
-            return this.cardImages.get(this.backCard);
-        }
-    }
-
-    /*
         Returns the string from number that represents the 
         rank of the card
     */
-    private fromIntToRank(enumRank: number): string {
-        if (5 < enumRank && enumRank < 11) {
+    public fromIntToRank(enumRank: number): string {
+        if (5 < enumRank && enumRank < 10) {
             return enumRank.toString();
         }
 
-        switch (enumRank) {
-            case 11:
-                return "J";
-            case 12:
-                return "Q";
-            case 13:
-                return "K";
-            case 14:
-                return "A";
-        }
+        return "TJQKA"[enumRank - 10];
+
     }
 
     /*
         Returns the string from number that represents the
         suit of the card
     */
-    private fromIntToSuit(enumSuit: number): string {
-        switch (enumSuit) {
-            case 0:
-                return "C";
-            case 1:
-                return "D";
-            case 2:
-                return "H";
-            case 3:
-                return "S";
-        }
+    public fromIntToSuit(enumSuit: number): string {
+        return "CDHS"[enumSuit];
     }
 
 }

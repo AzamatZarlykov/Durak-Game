@@ -18,7 +18,7 @@ let joinGameCommand: string = "JoinGame";
 let requestStateGameCommand: string = "RequestStateGame";
 let setTotalPlayersCommand: string = "SetTotalPlayers";
 
-let view: View = new View();
+let view: View;
 
 let allCommands: string[] = [
     informLeavingCommand,
@@ -31,15 +31,15 @@ connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 
 socket = new WebSocket(connectionUrl);
 
-socket.onopen = function (event) : void{
+socket.onopen = function (event): void {
     updateState();
 };
-socket.onclose = function (event) : void{
+socket.onclose = function (event): void {
     updateState();
 };
 socket.onerror = updateState;
 
-socket.onmessage = function (event) : void {
+socket.onmessage = function (event): void {
     let obj = JSON.parse(event.data);
 
 
@@ -85,8 +85,9 @@ socket.onmessage = function (event) : void {
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
 
-                view.drawTable();
-                view.displayStateOfTheGame(obj.gameView, id, nPlayersPlaying);
+                view = new View(obj.gameView, id, nPlayers);
+
+                view.displayStateOfTheGame();
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
@@ -114,7 +115,7 @@ startButton.onclick = function (): void {
     }
 }
 
-function updateState() : void {
+function updateState(): void {
     function disable() {
         startButton.disabled = true;
         view.removeTable();
@@ -149,7 +150,7 @@ function updateState() : void {
 /*
 Sets the total number of players playing in the game on html
 */
-function setPlayingPlayers(count : number) : void {
+function setPlayingPlayers(count: number): void {
     nPlayersPlaying = count;
     console.log("Number Of Players In The Game: " + nPlayersPlaying);
 }
@@ -157,7 +158,7 @@ function setPlayingPlayers(count : number) : void {
 /*
 Returns the JSON object that containts the message to the server
 */
-function constructJSONPayload(message) : string{
+function constructJSONPayload(message): string {
     return JSON.stringify({
         From: id,
         Message: message,
@@ -167,14 +168,14 @@ function constructJSONPayload(message) : string{
 /*
 Sets the total number of players on html
 */
-function setTotalPlayers(count: number) : void {
+function setTotalPlayers(count: number): void {
     nPlayers = count;
 }
 
 /*
 Sets the player ID on html
 */
-function setPlayerID(identifier: number) : void {
+function setPlayerID(identifier: number): void {
     id = identifier;
     console.log("ID of the player is: " + id);
 }

@@ -12,7 +12,7 @@ let informLeavingCommand = "InformLeaving";
 let joinGameCommand = "JoinGame";
 let requestStateGameCommand = "RequestStateGame";
 let setTotalPlayersCommand = "SetTotalPlayers";
-let view = new View();
+let view;
 let allCommands = [
     informLeavingCommand,
     joinGameCommand,
@@ -66,8 +66,8 @@ socket.onmessage = function (event) {
                 console.log("Game started");
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
-                view.drawTable();
-                view.displayStateOfTheGame(obj.gameView, id, nPlayersPlaying);
+                view = new View(obj.gameView, id, nPlayers);
+                view.displayStateOfTheGame();
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):

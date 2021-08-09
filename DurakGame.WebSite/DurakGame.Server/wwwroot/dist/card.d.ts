@@ -1,4 +1,3 @@
-import { Card } from './view.js';
 export declare class CardView {
     cardWidth: number;
     cardHeight: number;
@@ -11,8 +10,6 @@ export declare class CardView {
     cardImages: Map<any, any>;
     backCard: string;
     constructor();
-    cardImage(card: Card): HTMLImageElement;
-    faceDownCardImage(): HTMLImageElement;
-    private fromIntToRank;
-    private fromIntToSuit;
+    fromIntToRank(enumRank: number): string;
+    fromIntToSuit(enumSuit: number): string;
 }
