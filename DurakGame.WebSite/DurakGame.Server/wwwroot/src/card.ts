@@ -1,6 +1,4 @@
-﻿import { Card } from './view.js';
-
-export class CardView {
+﻿export class CardView{
 
 
     public cardWidth: number = 80;
@@ -10,8 +8,10 @@ export class CardView {
     public cardUpperY: number = 80;
 
     public cardLeftX: number = 180;
-    public cardMiddleX: number = 580;
+    public cardMiddleX: number = 600;
     public cardRightX: number = 1080;
+
+    public deckPosY: number = 320;
 
     public dir: string = "images/deck/";
 

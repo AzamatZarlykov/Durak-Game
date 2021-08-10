@@ -57,6 +57,7 @@ export class View {
     constructor(gameView: GameView, id: number, players: number) {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
         let context = canvas.getContext("2d");
+        
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -82,6 +83,7 @@ export class View {
 
         console.log(gameView);
     }
+
     /*
         Display the state of the game from the JSON object(attacking player,
         deck size, discarded heap, defending player, hands etc.)
@@ -92,9 +94,27 @@ export class View {
 
         this.displayPlayers();
 
-        // display the deck of the left side
+        this.displayDeck();
 
         // outline the attacking and defending players' names
+
+    }
+
+    public displayDeck() {
+        // draw the trump card horizontally
+        let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
+        this.context.save();
+        this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
+        this.context.rotate(Math.PI / 2);
+        this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
+        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        this.context.restore();
+
+        // draw the rest of the deck 
+        for (let i = 0; i < this.gameView.deckSize - 1; i++) {
+            img = this.faceDownCardImage();
+            this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight)
+        }
 
     }
 
@@ -229,6 +249,7 @@ export class View {
         this.context.fillRect(150, 40, 1100, 600);
         this.context.strokeRect(150, 40, 1100, 600);
         this.context.save();
+
     }
     /*
         Stops displaying the table and the current number of

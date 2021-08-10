@@ -6,6 +6,7 @@ export declare class CardView {
     cardLeftX: number;
     cardMiddleX: number;
     cardRightX: number;
+    deckPosY: number;
     dir: string;
     cardImages: Map<any, any>;
     backCard: string;

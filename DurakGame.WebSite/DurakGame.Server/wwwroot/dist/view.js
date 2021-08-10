@@ -54,8 +54,23 @@ export class View {
     displayStateOfTheGame() {
         this.drawTable();
         this.displayPlayers();
-        // display the deck of the left side
+        this.displayDeck();
         // outline the attacking and defending players' names
+    }
+    displayDeck() {
+        // draw the trump card horizontally
+        let img = this.cardImage(this.gameView.trumpCard);
+        this.context.save();
+        this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
+        this.context.rotate(Math.PI / 2);
+        this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
+        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        this.context.restore();
+        // draw the rest of the deck 
+        for (let i = 0; i < this.gameView.deckSize - 1; i++) {
+            img = this.faceDownCardImage();
+            this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        }
     }
     /*
         Returns an image for a given card.

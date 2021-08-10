@@ -5,8 +5,9 @@ export class CardView {
         this.cardLowerY = 510;
         this.cardUpperY = 80;
         this.cardLeftX = 180;
-        this.cardMiddleX = 580;
+        this.cardMiddleX = 600;
         this.cardRightX = 1080;
+        this.deckPosY = 320;
         this.dir = "images/deck/";
         this.cardImages = new Map();
         this.backCard = "2B";

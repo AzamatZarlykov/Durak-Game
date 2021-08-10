@@ -49,6 +49,7 @@ export declare class View {
     private positionsAroundTable;
     constructor(gameView: GameView, id: number, players: number);
     displayStateOfTheGame(): void;
+    displayDeck(): void;
     cardImage(card: Card): HTMLImageElement;
     faceDownCardImage(): HTMLImageElement;
     private displayMainPlayersHand;
