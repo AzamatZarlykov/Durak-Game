@@ -1,8 +1,7 @@
 export class CardView {
     constructor(canvas) {
         this.cardWidth = 100;
-        this.cardHeight = 130;
-        this.deckPosY = 320;
+        this.cardHeight = 120;
         this.dir = "images/deck/";
         this.cardImages = new Map();
         this.backCard = "2B";

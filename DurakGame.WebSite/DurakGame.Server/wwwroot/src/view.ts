@@ -57,7 +57,7 @@ export class View {
     constructor(gameView: GameView, id: number, players: number) {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
         let context = canvas.getContext("2d");
-
+        
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
 
@@ -203,7 +203,6 @@ export class View {
             this.displayMainPlayersHand(this.gameView.hand, xCard, yCard);
             model.isCurrent = false;
         } else {
-
             this.displayFaceDownCards(this.gameView.playersView[index], xCard, yCard);
         }
 
@@ -233,7 +232,7 @@ export class View {
         let isAtt: boolean;
         let isDef: boolean;
 
-        const bar = { isCurrent: isMain, isAttacking: isAtt, isDefending: isDef };
+        const bar = { isCurrent: isMain , isAttacking: isAtt, isDefending: isDef};
 
         this.context.fillStyle = 'white';
 
@@ -251,7 +250,7 @@ export class View {
 
             if (this.gameView.attackingPlayer == currentID) {
                 bar.isAttacking = true;
-            } else if (this.gameView.defendingPlayer == currentID) {
+            }else if (this.gameView.defendingPlayer == currentID) {
                 bar.isDefending = true;
             }
 

@@ -1,8 +1,8 @@
 ﻿export class CardView {
     private canvas: HTMLCanvasElement;
 
-    public cardWidth: number;
-    public cardHeight: number;
+    public cardWidth: number = 100;
+    public cardHeight: number = 120;
 
     public cardLowerY: number;
     public cardUpperY: number;

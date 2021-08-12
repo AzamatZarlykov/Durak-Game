@@ -61,10 +61,17 @@ export class View {
             this.displayDeck();
         }
     }
+    /*
+        Dispaly the Suit of the Trump card when there is no deck
+    */
     displayTrumpSuit() {
         let img = this.cardImage(this.gameView.trumpCard);
         this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
     }
+    /*
+        Display the Deck of the game with the trump card at the bottom
+        perpendicular to the rest of the face-down deck
+    */
     displayDeck() {
         let img = this.cardImage(this.gameView.trumpCard);
         this.context.save();
@@ -131,8 +138,6 @@ export class View {
         }
     }
     displayPlayersHelper(model, index, xCard, yCard, x, y, id) {
-        this.context.fillText(this.strPlayer + id, x, y);
-        this.context.lineWidth = 5;
         if (model.isCurrent) {
             this.displayMainPlayersHand(this.gameView.hand, xCard, yCard);
             model.isCurrent = false;
@@ -151,7 +156,9 @@ export class View {
         else {
             this.context.strokeStyle = 'black';
         }
+        this.context.lineWidth = 5;
         this.context.strokeRect(x - 10, y - 20, 75, 30);
+        this.context.fillText(this.strPlayer + id, x, y);
         this.context.save();
     }
     /*
