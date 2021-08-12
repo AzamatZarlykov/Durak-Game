@@ -21,19 +21,19 @@ var Suit;
 export class View {
     constructor(gameView, id, players) {
         this.strPlayer = "Player ";
-        this.lowerY = 630;
-        this.upperY = 200;
-        this.leftX = 250;
-        this.middleX = 650;
-        this.rightX = 1150;
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        context.font = "12px serif";
+        canvas.width = window.innerWidth - 50;
+        canvas.height = window.innerHeight - 50;
+        context.font = "17px serif";
         this.canvas = canvas;
         this.context = context;
-        this.cardView = new CardView();
+        this.cardView = new CardView(this.canvas);
+        this.lowerY = this.canvas.height - 20;
+        this.upperY = 200;
+        this.middleX = this.canvas.width / 2 - 40;
+        this.leftX = 110;
+        this.rightX = this.canvas.width - 170;
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
@@ -54,22 +54,39 @@ export class View {
     displayStateOfTheGame() {
         this.drawTable();
         this.displayPlayers();
-        this.displayDeck();
-        // outline the attacking and defending players' names
+        if (this.gameView.deckSize == 0) {
+            this.displayTrumpSuit();
+        }
+        else {
+            this.displayDeck();
+        }
+        this.outlineAttackingDefendingPlayers();
+    }
+    outlineAttackingDefendingPlayers() {
+    }
+    displayTrumpSuit() {
+        let img = this.cardImage(this.gameView.trumpCard);
+        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
     }
     displayDeck() {
         // draw the trump card horizontally
-        let img = this.cardImage(this.gameView.trumpCard);
-        this.context.save();
-        this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
-        this.context.rotate(Math.PI / 2);
-        this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
-        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
-        this.context.restore();
-        // draw the rest of the deck 
-        for (let i = 0; i < this.gameView.deckSize - 1; i++) {
-            img = this.faceDownCardImage();
-            this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        if (this.gameView.deckSize == 0) {
+            let img = this.cardImage(this.gameView.trumpCard);
+            this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        }
+        else {
+            let img = this.cardImage(this.gameView.trumpCard);
+            this.context.save();
+            this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
+            this.context.rotate(Math.PI / 2);
+            this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
+            this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.restore();
+            // draw the rest of the deck 
+            for (let i = 0; i < this.gameView.deckSize - 1; i++) {
+                img = this.faceDownCardImage();
+                this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+            }
         }
     }
     /*
@@ -111,7 +128,7 @@ export class View {
     displayMainPlayersHand(hand, x, y) {
         for (let i = 0; i < hand.length; i++) {
             let img = this.cardImage(hand[i]);
-            this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.drawImage(img, x + i * 20, y, this.cardView.cardWidth, this.cardView.cardHeight);
         }
     }
     /*
@@ -120,7 +137,7 @@ export class View {
     displayFaceDownCards(playerView, x, y) {
         for (let i = 0; i < playerView.numberOfCards; i++) {
             let img = this.faceDownCardImage();
-            this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.drawImage(img, x + i * 20, y, this.cardView.cardWidth, this.cardView.cardHeight);
         }
     }
     displayPlayersHelper(model, index, xCard, yCard, x, y, id) {
@@ -180,8 +197,8 @@ export class View {
         this.context.fillStyle = 'green';
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 10;
-        this.context.fillRect(150, 40, 1100, 600);
-        this.context.strokeRect(150, 40, 1100, 600);
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.strokeRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.save();
     }
     /*

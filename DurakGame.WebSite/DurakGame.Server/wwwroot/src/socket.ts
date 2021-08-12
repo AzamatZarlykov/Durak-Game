@@ -85,6 +85,9 @@ socket.onmessage = function (event): void {
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
 
+                // hide the button
+                startButton.style.display = 'none';
+
                 view = new View(obj.gameView, id, nPlayers);
 
                 view.displayStateOfTheGame();

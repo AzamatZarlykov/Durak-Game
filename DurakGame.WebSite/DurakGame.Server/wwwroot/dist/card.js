@@ -1,23 +1,25 @@
 export class CardView {
-    constructor() {
-        this.cardWidth = 80;
-        this.cardHeight = 110;
-        this.cardLowerY = 510;
-        this.cardUpperY = 80;
-        this.cardLeftX = 180;
-        this.cardMiddleX = 600;
-        this.cardRightX = 1080;
+    constructor(canvas) {
+        this.cardWidth = 100;
+        this.cardHeight = 130;
         this.deckPosY = 320;
         this.dir = "images/deck/";
         this.cardImages = new Map();
         this.backCard = "2B";
+        this.canvas = canvas;
+        this.cardMiddleX = this.canvas.width / 2 - 100;
+        this.cardLeftX = 50;
+        this.cardRightX = this.canvas.width - 250;
+        this.cardLowerY = this.canvas.height - this.cardHeight - 40;
+        this.cardUpperY = 50;
+        this.deckPosY = this.canvas.height / 2 - 90;
     }
     /*
         Returns the string from number that represents the
         rank of the card
     */
     fromIntToRank(enumRank) {
-        if (5 < enumRank && enumRank < 10) {
+        if (4 < enumRank && enumRank < 10) {
             return enumRank.toString();
         }
         return "TJQKA"[enumRank - 10];

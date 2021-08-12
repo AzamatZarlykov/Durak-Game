@@ -24,7 +24,7 @@ namespace DurakGame.Library.Game
 
         public int discardHeapSize;
 
-        public Card trumpCard => game.GetTrumpCard();
+        public Card trumpCard;
         public int deckSize => game.GetDeck().cardsLeft;
         public int defendingPlayer => game.GetDefendingPlayer();
         public int attackingPlayer => game.GetAttackingPlayer();
@@ -56,6 +56,14 @@ namespace DurakGame.Library.Game
                 pViews.Add(playerView);
             }
             playersView = pViews;
+
+            if (deckSize == 0)
+            {
+                trumpCard = new Card(game.GetTrumpCard().suit, (Rank)5);
+            } else
+            {
+                trumpCard = game.GetTrumpCard();
+            }
         }
     }
 

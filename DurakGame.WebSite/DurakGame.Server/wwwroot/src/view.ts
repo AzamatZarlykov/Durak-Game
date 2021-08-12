@@ -39,12 +39,12 @@ export class View {
 
     private strPlayer: string = "Player ";
 
-    private lowerY: number = 630;
-    private upperY: number = 200;
+    private lowerY: number;
+    private upperY: number;
 
-    private leftX: number = 250;
-    private middleX: number = 650;
-    private rightX: number = 1150;
+    private leftX: number;
+    private middleX: number;
+    private rightX: number;
 
     private cardView: CardView;
     private gameView: GameView;
@@ -58,16 +58,23 @@ export class View {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
         let context = canvas.getContext("2d");
         
+        canvas.width = window.innerWidth - 50;
+        canvas.height = window.innerHeight - 50;
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        context.font = "12px serif";
+        context.font = "17px serif";
 
         this.canvas = canvas;
         this.context = context;
 
-        this.cardView = new CardView()
+        this.cardView = new CardView(this.canvas)
+
+        this.lowerY = this.canvas.height - 20;
+        this.upperY = 200;
+
+        this.middleX = this.canvas.width / 2 - 40;
+        this.leftX = 110;
+        this.rightX = this.canvas.width - 170;
+
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
@@ -94,14 +101,26 @@ export class View {
 
         this.displayPlayers();
 
-        this.displayDeck();
+        if (this.gameView.deckSize == 0) {
+            this.displayTrumpSuit();
+        } else {
+            this.displayDeck();
+        }
 
-        // outline the attacking and defending players' names
+        this.outlineAttackingDefendingPlayers();
 
     }
 
+    public outlineAttackingDefendingPlayers() {
+
+    }
+
+    public displayTrumpSuit() {
+        let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
+        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+    }
+
     public displayDeck() {
-        // draw the trump card horizontally
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.save();
         this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
@@ -115,13 +134,13 @@ export class View {
             img = this.faceDownCardImage();
             this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight)
         }
-
     }
 
     /*
         Returns an image for a given card.
     */
     public cardImage(card: Card): HTMLImageElement {
+
         let strRank: string = this.cardView.fromIntToRank(card.rank);
         let strSuit: string = this.cardView.fromIntToSuit(card.suit);
         let strCard: string = strRank.concat(strSuit);
@@ -162,7 +181,7 @@ export class View {
     private displayMainPlayersHand(hand: Card[], x: number, y: number) {
         for (let i = 0; i < hand.length; i++) {
             let img: HTMLImageElement = this.cardImage(hand[i]);
-            this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.drawImage(img, x + i * 20, y, this.cardView.cardWidth, this.cardView.cardHeight);
         }
     }
 
@@ -173,12 +192,15 @@ export class View {
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number) {
         for (let i = 0; i < playerView.numberOfCards; i++) {
             let img: HTMLImageElement = this.faceDownCardImage();
-            this.context.drawImage(img, x + i * 15, y, this.cardView.cardWidth, this.cardView.cardHeight)
+            this.context.drawImage(img, x + i * 20, y, this.cardView.cardWidth, this.cardView.cardHeight)
         }
     }
 
 
     public displayPlayersHelper(model: { property1: boolean }, index: number, xCard: number, yCard: number, x: number, y: number, id: number) {
+        // create the box around their names
+
+
         this.context.fillText(this.strPlayer + id, x, y);
 
         if (model.property1) {
@@ -246,8 +268,8 @@ export class View {
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 10;
 
-        this.context.fillRect(150, 40, 1100, 600);
-        this.context.strokeRect(150, 40, 1100, 600);
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.strokeRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.save();
 
     }

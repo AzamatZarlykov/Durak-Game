@@ -1,4 +1,5 @@
 export declare class CardView {
+    private canvas;
     cardWidth: number;
     cardHeight: number;
     cardLowerY: number;
@@ -10,7 +11,7 @@ export declare class CardView {
     dir: string;
     cardImages: Map<any, any>;
     backCard: string;
-    constructor();
+    constructor(canvas: HTMLCanvasElement);
     fromIntToRank(enumRank: number): string;
     fromIntToSuit(enumSuit: number): string;
 }

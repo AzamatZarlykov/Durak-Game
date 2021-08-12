@@ -66,6 +66,8 @@ socket.onmessage = function (event) {
                 console.log("Game started");
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
+                // hide the button
+                startButton.style.display = 'none';
                 view = new View(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
