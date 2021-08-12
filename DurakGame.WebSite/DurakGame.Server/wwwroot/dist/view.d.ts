@@ -49,7 +49,6 @@ export declare class View {
     private positionsAroundTable;
     constructor(gameView: GameView, id: number, players: number);
     displayStateOfTheGame(): void;
-    outlineAttackingDefendingPlayers(): void;
     displayTrumpSuit(): void;
     displayDeck(): void;
     cardImage(card: Card): HTMLImageElement;
@@ -57,10 +56,10 @@ export declare class View {
     private displayMainPlayersHand;
     private displayFaceDownCards;
     displayPlayersHelper(model: {
-        property1: boolean;
-    }, index: number, xCard: number, yCard: number, x: number, y: number, id: number): {
-        property1: boolean;
-    };
+        isCurrent: boolean;
+        isAttacking: boolean;
+        isDefending: boolean;
+    }, index: number, xCard: number, yCard: number, x: number, y: number, id: number): void;
     displayPlayers(): void;
     private getPositions;
     drawTable(): void;

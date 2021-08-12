@@ -10,8 +10,8 @@ export class CardView {
         this.cardMiddleX = this.canvas.width / 2 - 100;
         this.cardLeftX = 50;
         this.cardRightX = this.canvas.width - 250;
-        this.cardLowerY = this.canvas.height - this.cardHeight - 40;
-        this.cardUpperY = 50;
+        this.cardLowerY = this.canvas.height - this.cardHeight - 50;
+        this.cardUpperY = 40;
         this.deckPosY = this.canvas.height / 2 - 90;
     }
     /*

@@ -60,33 +60,23 @@ export class View {
         else {
             this.displayDeck();
         }
-        this.outlineAttackingDefendingPlayers();
-    }
-    outlineAttackingDefendingPlayers() {
     }
     displayTrumpSuit() {
         let img = this.cardImage(this.gameView.trumpCard);
         this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
     }
     displayDeck() {
-        // draw the trump card horizontally
-        if (this.gameView.deckSize == 0) {
-            let img = this.cardImage(this.gameView.trumpCard);
-            this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
-        }
-        else {
-            let img = this.cardImage(this.gameView.trumpCard);
-            this.context.save();
-            this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
-            this.context.rotate(Math.PI / 2);
-            this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
-            this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
-            this.context.restore();
-            // draw the rest of the deck 
-            for (let i = 0; i < this.gameView.deckSize - 1; i++) {
-                img = this.faceDownCardImage();
-                this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
-            }
+        let img = this.cardImage(this.gameView.trumpCard);
+        this.context.save();
+        this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
+        this.context.rotate(Math.PI / 2);
+        this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
+        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        this.context.restore();
+        // draw the rest of the deck 
+        for (let i = 0; i < this.gameView.deckSize - 1; i++) {
+            img = this.faceDownCardImage();
+            this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
         }
     }
     /*
@@ -142,21 +132,36 @@ export class View {
     }
     displayPlayersHelper(model, index, xCard, yCard, x, y, id) {
         this.context.fillText(this.strPlayer + id, x, y);
-        if (model.property1) {
+        this.context.lineWidth = 5;
+        if (model.isCurrent) {
             this.displayMainPlayersHand(this.gameView.hand, xCard, yCard);
-            model.property1 = false;
-            return model;
+            model.isCurrent = false;
         }
         else {
             this.displayFaceDownCards(this.gameView.playersView[index], xCard, yCard);
         }
+        if (model.isAttacking) {
+            this.context.strokeStyle = 'lime';
+            model.isAttacking = false;
+        }
+        else if (model.isDefending) {
+            this.context.strokeStyle = 'red';
+            model.isDefending = false;
+        }
+        else {
+            this.context.strokeStyle = 'black';
+        }
+        this.context.strokeRect(x - 10, y - 20, 75, 30);
+        this.context.save();
     }
     /*
         Displays Players arounds the table
     */
     displayPlayers() {
         let isMain;
-        const bar = { property1: isMain };
+        let isAtt;
+        let isDef;
+        const bar = { isCurrent: isMain, isAttacking: isAtt, isDefending: isDef };
         this.context.fillStyle = 'white';
         let position = this.getPositions(this.totalPlayers);
         let currentID;
@@ -165,7 +170,13 @@ export class View {
             currentID = (this.id + i) % this.totalPlayers;
             currentPos = this.positionsAroundTable[position[i] - 1];
             if (currentID == this.id) {
-                bar.property1 = true;
+                bar.isCurrent = true;
+            }
+            if (this.gameView.attackingPlayer == currentID) {
+                bar.isAttacking = true;
+            }
+            else if (this.gameView.defendingPlayer == currentID) {
+                bar.isDefending = true;
             }
             this.displayPlayersHelper(bar, i, currentPos.xCard, currentPos.yCard, currentPos.x, currentPos.y, currentID);
         }

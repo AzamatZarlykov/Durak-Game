@@ -1,8 +1,8 @@
 ﻿export class CardView{
     private canvas: HTMLCanvasElement;
 
-    public cardWidth: number = 100;
-    public cardHeight: number = 130;
+    public cardWidth: number;
+    public cardHeight: number;
 
     public cardLowerY: number;
     public cardUpperY: number;
@@ -11,7 +11,7 @@
     public cardMiddleX: number;
     public cardRightX: number;
 
-    public deckPosY: number = 320;
+    public deckPosY: number;
 
     public dir: string = "images/deck/";
 
@@ -26,8 +26,8 @@
         this.cardLeftX = 50;
         this.cardRightX = this.canvas.width - 250;
 
-        this.cardLowerY = this.canvas.height - this.cardHeight - 40;
-        this.cardUpperY = 50;
+        this.cardLowerY = this.canvas.height - this.cardHeight - 50;
+        this.cardUpperY = 40;
 
         this.deckPosY = this.canvas.height / 2 - 90;
     }

@@ -107,19 +107,20 @@ export class View {
             this.displayDeck();
         }
 
-        this.outlineAttackingDefendingPlayers();
-
     }
 
-    public outlineAttackingDefendingPlayers() {
-
-    }
-
+    /*
+        Dispaly the Suit of the Trump card when there is no deck  
+    */
     public displayTrumpSuit() {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
     }
 
+    /*
+        Display the Deck of the game with the trump card at the bottom
+        perpendicular to the rest of the face-down deck 
+    */
     public displayDeck() {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.save();
@@ -197,19 +198,31 @@ export class View {
     }
 
 
-    public displayPlayersHelper(model: { property1: boolean }, index: number, xCard: number, yCard: number, x: number, y: number, id: number) {
-        // create the box around their names
-
-
-        this.context.fillText(this.strPlayer + id, x, y);
-
-        if (model.property1) {
+    public displayPlayersHelper(model: { isCurrent: boolean, isAttacking: boolean, isDefending: boolean }, index: number, xCard: number, yCard: number, x: number, y: number, id: number) {
+        if (model.isCurrent) {
             this.displayMainPlayersHand(this.gameView.hand, xCard, yCard);
-            model.property1 = false;
-            return model;
+            model.isCurrent = false;
         } else {
+
             this.displayFaceDownCards(this.gameView.playersView[index], xCard, yCard);
         }
+
+        if (model.isAttacking) {
+            this.context.strokeStyle = 'lime';
+            model.isAttacking = false;
+        } else if (model.isDefending) {
+            this.context.strokeStyle = 'red';
+            model.isDefending = false;
+        } else {
+            this.context.strokeStyle = 'black';
+        }
+        this.context.lineWidth = 5;
+
+        this.context.strokeRect(x - 10, y - 20, 75, 30);
+        this.context.fillText(this.strPlayer + id, x, y);
+
+        this.context.save();
+
     }
 
     /*
@@ -217,7 +230,10 @@ export class View {
     */
     public displayPlayers(): void {
         let isMain: boolean;
-        const bar = { property1: isMain };
+        let isAtt: boolean;
+        let isDef: boolean;
+
+        const bar = { isCurrent: isMain , isAttacking: isAtt, isDefending: isDef};
 
         this.context.fillStyle = 'white';
 
@@ -230,7 +246,13 @@ export class View {
             currentPos = this.positionsAroundTable[position[i] - 1];
 
             if (currentID == this.id) {
-                bar.property1 = true;
+                bar.isCurrent = true;
+            }
+
+            if (this.gameView.attackingPlayer == currentID) {
+                bar.isAttacking = true;
+            }else if (this.gameView.defendingPlayer == currentID) {
+                bar.isDefending = true;
             }
 
             this.displayPlayersHelper(bar, i, currentPos.xCard, currentPos.yCard,
