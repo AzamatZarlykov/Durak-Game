@@ -101,7 +101,7 @@ namespace DurakGame.Server.Middleware
                         }
                         // Remove the player from the collection of players 
                         manager.RemoveElementFromSockets(websocket);
-                        
+
                         // Close the connection with the player
                         await websocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
 
@@ -140,7 +140,7 @@ namespace DurakGame.Server.Middleware
             for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
                 gameView = new GameView(game, playerID);
-                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView});
+                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView });
             }
         }
 

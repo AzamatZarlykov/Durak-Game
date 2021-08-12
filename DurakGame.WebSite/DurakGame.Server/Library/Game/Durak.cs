@@ -45,7 +45,7 @@ namespace DurakGame.Library.Game
 
             List<PlayerView> pViews = new List<PlayerView>();
             PlayerView playerView;
-            
+
             for (int i = 0; i < game.GetSizeOfPlayers(); i++)
             {
                 playerView = new PlayerView();
@@ -60,7 +60,8 @@ namespace DurakGame.Library.Game
             if (deckSize == 0)
             {
                 trumpCard = new Card(game.GetTrumpCard().suit, (Rank)5);
-            } else
+            }
+            else
             {
                 trumpCard = game.GetTrumpCard();
             }

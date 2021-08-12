@@ -22,7 +22,7 @@ namespace DurakGame.Server.Middleware
 
         public List<WebSocket> GetAllSockets() => sockets;
 
-        public List<WebSocket> GetPlayingSockets() => startIDsOfPlayers;    
+        public List<WebSocket> GetPlayingSockets() => startIDsOfPlayers;
         public void RemoveElementFromSockets(WebSocket socket)
         {
             sockets.Remove(socket);

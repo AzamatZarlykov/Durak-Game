@@ -1,4 +1,4 @@
-﻿export class CardView{
+﻿export class CardView {
     private canvas: HTMLCanvasElement;
 
     public cardWidth: number;
