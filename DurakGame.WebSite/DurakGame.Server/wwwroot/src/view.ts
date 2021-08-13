@@ -141,7 +141,7 @@ export class View {
 
         // draw the rest of the deck 
         for (let i = 0; i < this.gameView.deckSize - 1; i++) {
-            img = this.faceDownCardImage();
+            img = this.cardImage();
             this.context.drawImage(
                 img, this.cardLeftX + i + 0.5, this.deckPosY,
                 this.cardWidth, this.cardHeight
@@ -173,11 +173,17 @@ export class View {
     /*
         Returns an image for a given card.
     */
-    public cardImage(card: Card): HTMLImageElement {
+    public cardImage(card?: Card): HTMLImageElement {
+        let strCard: string;
 
-        let strRank: string = this.fromIntToRank(card.rank);
-        let strSuit: string = this.fromIntToSuit(card.suit);
-        let strCard: string = strRank.concat(strSuit);
+        if (card) {
+            let strRank: string = this.fromIntToRank(card.rank);
+            let strSuit: string = this.fromIntToSuit(card.suit);
+            strCard = strRank.concat(strSuit);
+        } else {
+            strCard = this.backCard;
+        }
+        
 
         if (this.cardImages.has(strCard)) {
             return this.cardImages.get(strCard);
@@ -189,23 +195,6 @@ export class View {
 
             this.cardImages.set(strCard, img);
             return this.cardImages.get(strCard);
-        }
-    }
-
-    /*
-        Returns an image for a given card.
-    */
-    public faceDownCardImage(): HTMLImageElement {
-        if (this.cardImages.has(this.backCard)) {
-            return this.cardImages.get(this.backCard);
-        }
-        else {
-            let img = new Image();
-            img.onload = () => this.displayStateOfTheGame();
-            img.src = this.dir.concat(this.backCard.concat(".png"));
-
-            this.cardImages.set(this.backCard, img);
-            return this.cardImages.get(this.backCard);
         }
     }
 
@@ -227,7 +216,7 @@ export class View {
     */
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number) {
         for (let i = 0; i < playerView.numberOfCards; i++) {
-            let img: HTMLImageElement = this.faceDownCardImage();
+            let img: HTMLImageElement = this.cardImage();
             this.context.drawImage(
                 img, x + i * 20, y, this.cardWidth, this.cardHeight
             );

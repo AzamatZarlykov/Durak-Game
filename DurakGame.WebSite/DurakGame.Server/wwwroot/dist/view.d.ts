@@ -60,8 +60,7 @@ export declare class View {
     displayDeck(): void;
     fromIntToRank(enumRank: number): string;
     fromIntToSuit(enumSuit: number): string;
-    cardImage(card: Card): HTMLImageElement;
-    faceDownCardImage(): HTMLImageElement;
+    cardImage(card?: Card): HTMLImageElement;
     private displayMainPlayersHand;
     private displayFaceDownCards;
     displayPlayersHelper(currentID: number, index: number, x: number, y: number, id: number): void;
