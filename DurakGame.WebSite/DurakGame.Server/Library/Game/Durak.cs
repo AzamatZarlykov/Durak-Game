@@ -20,7 +20,7 @@ namespace DurakGame.Library.Game
 
         public List<Card> hand = new List<Card>();
 
-        public Durak game;
+        private Durak game;
 
         public int discardHeapSize;
 
@@ -57,14 +57,8 @@ namespace DurakGame.Library.Game
             }
             playersView = pViews;
 
-            if (deckSize == 0)
-            {
-                trumpCard = new Card(game.GetTrumpCard().suit, (Rank)5);
-            }
-            else
-            {
-                trumpCard = game.GetTrumpCard();
-            }
+            trumpCard = deckSize == 0 ? new Card(game.GetTrumpCard().suit, (Rank)5) 
+                                       : game.GetTrumpCard();
         }
     }
 

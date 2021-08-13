@@ -1,4 +1,3 @@
-import { CardView } from './card.js';
 var Rank;
 (function (Rank) {
     Rank[Rank["Six"] = 6] = "Six";
@@ -20,7 +19,11 @@ var Suit;
 })(Suit || (Suit = {}));
 export class View {
     constructor(gameView, id, players) {
-        this.strPlayer = "Player ";
+        this.cardWidth = 100;
+        this.cardHeight = 120;
+        this.dir = "images/deck/";
+        this.backCard = "2B";
+        this.cardImages = new Map();
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
         canvas.width = window.innerWidth - 50;
@@ -28,45 +31,35 @@ export class View {
         context.font = "17px serif";
         this.canvas = canvas;
         this.context = context;
-        this.cardView = new CardView(this.canvas);
-        this.lowerY = this.canvas.height - 20;
-        this.upperY = 200;
-        this.middleX = this.canvas.width / 2 - 40;
-        this.leftX = 110;
-        this.rightX = this.canvas.width - 170;
+        this.cardMiddleX = this.canvas.width / 2 - 100;
+        this.cardLeftX = 50;
+        this.cardRightX = this.canvas.width - 250;
+        this.cardLowerY = this.canvas.height - this.cardHeight - 60;
+        this.cardUpperY = 40;
+        this.deckPosY = this.canvas.height / 2 - 90;
+        this.offset = 160;
+        this.textUpperMargin = 20;
+        this.textLeftMargin = 10;
+        this.boxHeight = 30;
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
         this.positionsAroundTable = [
-            { xCard: this.cardView.cardMiddleX, yCard: this.cardView.cardLowerY, x: this.middleX, y: this.lowerY },
-            { xCard: this.cardView.cardLeftX, yCard: this.cardView.cardLowerY, x: this.leftX, y: this.lowerY },
-            { xCard: this.cardView.cardLeftX, yCard: this.cardView.cardUpperY, x: this.leftX, y: this.upperY },
-            { xCard: this.cardView.cardMiddleX, yCard: this.cardView.cardUpperY, x: this.middleX, y: this.upperY },
-            { xCard: this.cardView.cardRightX, yCard: this.cardView.cardUpperY, x: this.rightX, y: this.upperY },
-            { xCard: this.cardView.cardRightX, yCard: this.cardView.cardLowerY, x: this.rightX, y: this.lowerY }
+            { x: this.cardMiddleX, y: this.cardLowerY },
+            { x: this.cardLeftX, y: this.cardLowerY },
+            { x: this.cardLeftX, y: this.cardUpperY },
+            { x: this.cardMiddleX, y: this.cardUpperY },
+            { x: this.cardRightX, y: this.cardUpperY },
+            { x: this.cardRightX, y: this.cardLowerY }
         ];
         console.log(gameView);
-    }
-    /*
-        Display the state of the game from the JSON object(attacking player,
-        deck size, discarded heap, defending player, hands etc.)
-    */
-    displayStateOfTheGame() {
-        this.drawTable();
-        this.displayPlayers();
-        if (this.gameView.deckSize == 0) {
-            this.displayTrumpSuit();
-        }
-        else {
-            this.displayDeck();
-        }
     }
     /*
         Dispaly the Suit of the Trump card when there is no deck
     */
     displayTrumpSuit() {
         let img = this.cardImage(this.gameView.trumpCard);
-        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        this.context.drawImage(img, this.cardLeftX, this.deckPosY, this.cardWidth, this.cardHeight);
     }
     /*
         Display the Deck of the game with the trump card at the bottom
@@ -75,48 +68,66 @@ export class View {
     displayDeck() {
         let img = this.cardImage(this.gameView.trumpCard);
         this.context.save();
-        this.context.translate(this.cardView.cardLeftX + this.cardView.cardWidth + this.cardView.cardWidth / 2, this.cardView.deckPosY + this.cardView.cardHeight / 2);
+        this.context.translate(this.cardLeftX + this.cardWidth +
+            this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
         this.context.rotate(Math.PI / 2);
-        this.context.translate(-this.cardView.cardLeftX - this.cardView.cardWidth / 2, -this.cardView.deckPosY - this.cardView.cardHeight / 2);
-        this.context.drawImage(img, this.cardView.cardLeftX, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+        this.context.translate(-this.cardLeftX - this.cardWidth / 2, -this.deckPosY - this.cardHeight / 2);
+        this.context.drawImage(img, this.cardLeftX, this.deckPosY, this.cardWidth, this.cardHeight);
         this.context.restore();
         // draw the rest of the deck 
         for (let i = 0; i < this.gameView.deckSize - 1; i++) {
             img = this.faceDownCardImage();
-            this.context.drawImage(img, this.cardView.cardLeftX + i + 0.5, this.cardView.deckPosY, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.drawImage(img, this.cardLeftX + i + 0.5, this.deckPosY, this.cardWidth, this.cardHeight);
         }
+    }
+    /*
+        Returns the string from number that represents the
+        rank of the card
+    */
+    fromIntToRank(enumRank) {
+        if (4 < enumRank && enumRank < 10) {
+            return enumRank.toString();
+        }
+        return "TJQKA"[enumRank - 10];
+    }
+    /*
+        Returns the string from number that represents the
+        suit of the card
+    */
+    fromIntToSuit(enumSuit) {
+        return "CDHS"[enumSuit];
     }
     /*
         Returns an image for a given card.
     */
     cardImage(card) {
-        let strRank = this.cardView.fromIntToRank(card.rank);
-        let strSuit = this.cardView.fromIntToSuit(card.suit);
+        let strRank = this.fromIntToRank(card.rank);
+        let strSuit = this.fromIntToSuit(card.suit);
         let strCard = strRank.concat(strSuit);
-        if (this.cardView.cardImages.has(strCard)) {
-            return this.cardView.cardImages.get(strCard);
+        if (this.cardImages.has(strCard)) {
+            return this.cardImages.get(strCard);
         }
         else {
             let img = new Image();
             img.onload = () => this.displayStateOfTheGame();
-            img.src = this.cardView.dir.concat(strCard.concat(".png"));
-            this.cardView.cardImages.set(strCard, img);
-            return this.cardView.cardImages.get(strCard);
+            img.src = this.dir.concat(strCard.concat(".png"));
+            this.cardImages.set(strCard, img);
+            return this.cardImages.get(strCard);
         }
     }
     /*
         Returns an image for a given card.
     */
     faceDownCardImage() {
-        if (this.cardView.cardImages.has(this.cardView.backCard)) {
-            return this.cardView.cardImages.get(this.cardView.backCard);
+        if (this.cardImages.has(this.backCard)) {
+            return this.cardImages.get(this.backCard);
         }
         else {
             let img = new Image();
             img.onload = () => this.displayStateOfTheGame();
-            img.src = this.cardView.dir.concat(this.cardView.backCard.concat(".png"));
-            this.cardView.cardImages.set(this.cardView.backCard, img);
-            return this.cardView.cardImages.get(this.cardView.backCard);
+            img.src = this.dir.concat(this.backCard.concat(".png"));
+            this.cardImages.set(this.backCard, img);
+            return this.cardImages.get(this.backCard);
         }
     }
     /*
@@ -125,7 +136,7 @@ export class View {
     displayMainPlayersHand(hand, x, y) {
         for (let i = 0; i < hand.length; i++) {
             let img = this.cardImage(hand[i]);
-            this.context.drawImage(img, x + i * 20, y, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.drawImage(img, x + i * 20, y, this.cardWidth, this.cardHeight);
         }
     }
     /*
@@ -134,59 +145,36 @@ export class View {
     displayFaceDownCards(playerView, x, y) {
         for (let i = 0; i < playerView.numberOfCards; i++) {
             let img = this.faceDownCardImage();
-            this.context.drawImage(img, x + i * 20, y, this.cardView.cardWidth, this.cardView.cardHeight);
+            this.context.drawImage(img, x + i * 20, y, this.cardWidth, this.cardHeight);
         }
     }
-    displayPlayersHelper(model, index, xCard, yCard, x, y, id) {
-        if (model.isCurrent) {
-            this.displayMainPlayersHand(this.gameView.hand, xCard, yCard);
-            model.isCurrent = false;
+    /*
+        Given the positions and boolean variables position around the table, display main players
+        and opponenets hand, display attacking and defending players
+    */
+    displayPlayersHelper(currentID, index, x, y, id) {
+        this.context.lineWidth = 5;
+        let textMetrics = this.context.measureText("Player " + id);
+        // the position of the text x position depends on the number of cards
+        let xPosBasedOnCards = this.gameView.playersView[index].numberOfCards * 20 / 2;
+        this.context.fillText("Player " + id, x + xPosBasedOnCards, y + this.offset);
+        if (currentID == this.id) {
+            this.displayMainPlayersHand(this.gameView.hand, x, y);
         }
         else {
-            this.displayFaceDownCards(this.gameView.playersView[index], xCard, yCard);
+            this.displayFaceDownCards(this.gameView.playersView[index], x, y);
         }
-        if (model.isAttacking) {
+        if (currentID == this.gameView.attackingPlayer) {
             this.context.strokeStyle = 'lime';
-            model.isAttacking = false;
         }
-        else if (model.isDefending) {
+        else if (currentID == this.gameView.defendingPlayer) {
             this.context.strokeStyle = 'red';
-            model.isDefending = false;
         }
         else {
             this.context.strokeStyle = 'black';
         }
-        this.context.lineWidth = 5;
-        this.context.strokeRect(x - 10, y - 20, 75, 30);
-        this.context.fillText(this.strPlayer + id, x, y);
+        this.context.strokeRect(x + xPosBasedOnCards - this.textLeftMargin, y - this.textUpperMargin + this.offset, textMetrics.width + 2 * this.textLeftMargin, this.boxHeight);
         this.context.save();
-    }
-    /*
-        Displays Players arounds the table
-    */
-    displayPlayers() {
-        let isMain;
-        let isAtt;
-        let isDef;
-        const bar = { isCurrent: isMain, isAttacking: isAtt, isDefending: isDef };
-        this.context.fillStyle = 'white';
-        let position = this.getPositions(this.totalPlayers);
-        let currentID;
-        let currentPos;
-        for (let i = 0; i < this.totalPlayers; i++) {
-            currentID = (this.id + i) % this.totalPlayers;
-            currentPos = this.positionsAroundTable[position[i] - 1];
-            if (currentID == this.id) {
-                bar.isCurrent = true;
-            }
-            if (this.gameView.attackingPlayer == currentID) {
-                bar.isAttacking = true;
-            }
-            else if (this.gameView.defendingPlayer == currentID) {
-                bar.isDefending = true;
-            }
-            this.displayPlayersHelper(bar, i, currentPos.xCard, currentPos.yCard, currentPos.x, currentPos.y, currentID);
-        }
     }
     /*
         Returns the position of players depending on the
@@ -207,6 +195,27 @@ export class View {
         }
     }
     /*
+        Displays Players arounds the table
+    */
+    displayPlayers() {
+        this.context.fillStyle = 'white';
+        let position = this.getPositions(this.totalPlayers);
+        let currentID;
+        let currentPos;
+        for (let i = 0; i < this.totalPlayers; i++) {
+            currentID = (this.id + i) % this.totalPlayers;
+            currentPos = this.positionsAroundTable[position[i] - 1];
+            this.displayPlayersHelper(currentID, i, currentPos.x, currentPos.y, currentID);
+        }
+    }
+    /*
+        Stops displaying the table and the current number of
+        players joined to the game
+    */
+    removeTable() {
+        this.canvas.style.display = "none";
+    }
+    /*
         Displays the table and the current number of
         players joined to the game
     */
@@ -220,11 +229,18 @@ export class View {
         this.context.save();
     }
     /*
-        Stops displaying the table and the current number of
-        players joined to the game
+        Display the state of the game from the JSON object(attacking player,
+        deck size, discarded heap, defending player, hands etc.)
     */
-    removeTable() {
-        this.canvas.style.display = "none";
+    displayStateOfTheGame() {
+        this.drawTable();
+        this.displayPlayers();
+        if (this.gameView.deckSize == 0) {
+            this.displayTrumpSuit();
+        }
+        else {
+            this.displayDeck();
+        }
     }
 }
 //# sourceMappingURL=view.js.map
