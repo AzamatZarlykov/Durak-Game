@@ -1,4 +1,6 @@
-﻿interface PlayerView {
+﻿import { constructJSONPayload } from "./socket.js";
+
+interface PlayerView {
     numberOfCards: number;
     isAttacking: boolean;
 }
@@ -31,6 +33,15 @@ interface GameView {
     trumpCard: Card;
 }
 
+class MousePos {
+    x: number;
+    y: number;
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
 export class View {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
@@ -58,20 +69,28 @@ export class View {
     private textLeftMargin: number;
 
     private boxHeight: number;
+    private isFirst: boolean;
+    private totalCardWidth: number;
 
+    private mousePos: MousePos;
     private gameView: GameView;
 
     private id: number;
     private totalPlayers: number;
 
-    private positionsAroundTable: { x: number, y: number }[];
+    private socket: WebSocket;
 
-    constructor(gameView: GameView, id: number, players: number) {
+    private positionsAroundTable: { x: number, y: number, tWidth: number }[];
+
+    constructor(gameView: GameView, id: number, players: number, socket: WebSocket) {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
         let context = canvas.getContext("2d");
+        this.socket = socket;
 
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
+
+        console.log("The size of the window : " + (window.innerWidth - 50));
 
         context.font = "17px serif";
 
@@ -79,8 +98,8 @@ export class View {
         this.context = context;
 
         this.cardMiddleX = this.canvas.width / 2 - 100;
-        this.cardLeftX = 50;
-        this.cardRightX = this.canvas.width - 250;
+        this.cardLeftX = 100;
+        this.cardRightX = this.canvas.width - 300;
 
         this.cardLowerY = this.canvas.height - this.cardHeight - 60;
         this.cardUpperY = 40;
@@ -93,29 +112,68 @@ export class View {
         this.textLeftMargin = 10;
 
         this.boxHeight = 30;
+        this.isFirst = true;
+
+        this.mousePos = new MousePos(0, 0);
 
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
 
         this.positionsAroundTable = [
-            { x: this.cardMiddleX, y: this.cardLowerY },
-            { x: this.cardLeftX, y: this.cardLowerY },
-            { x: this.cardLeftX, y: this.cardUpperY },
-            { x: this.cardMiddleX, y: this.cardUpperY },
-            { x: this.cardRightX, y: this.cardUpperY },
-            { x: this.cardRightX, y: this.cardLowerY }
+            { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
+            { x: this.cardLeftX, y: this.cardLowerY, tWidth: 0 },
+            { x: this.cardLeftX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardMiddleX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
         ]
+
+        
+        this.canvas.addEventListener("click", (e) => {
+            this.mousePos.x = e.x;
+            this.mousePos.y = e.y;
+            console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y)
+            // this.SendSelectedCard();
+        });
 
         console.log(gameView);
     }
 
+    /*
+        Returns the index of the selected card position
+    */
+    private GetCardSelected() : void {
 
+    }
+/*
+    *//*
+        Check if the mouse click is within the main players hand
+    *//*
+    private isCardSelected(): boolean {
+        let x: number = this.positionsAroundTable[0].x;
+        let y: number = this.positionsAroundTable[0].y;
+        let w: number = this.positionsAroundTable[0].tWidth;
+        return x - w / 2 <= this.mousePos.x && this.mousePos.x <= x + w / 2 &&
+               y <= this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+    }
+
+    *//*
+        Function that tells which card the attacking player has selected to attack 
+    *//*
+    private SendSelectedCard() : void {
+        if (this.gameView.attackingPlayer == this.id) {
+            if (this.isCardSelected()) {
+                let indexCard: number = this.GetCardSelected();
+            }
+        }
+    }
+*/
 
     /*
         Dispaly the Suit of the Trump card when there is no deck  
     */
-    public displayTrumpSuit() {
+    public displayTrumpSuit() : void {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.drawImage(img, this.cardLeftX, this.deckPosY,
             this.cardWidth, this.cardHeight);
@@ -125,7 +183,7 @@ export class View {
         Display the Deck of the game with the trump card at the bottom
         perpendicular to the rest of the face-down deck 
     */
-    public displayDeck() {
+    public displayDeck(): void{
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.save();
 
@@ -175,7 +233,7 @@ export class View {
     */
     public cardImage(card?: Card): HTMLImageElement {
         let strCard: string;
-
+        
         if (card) {
             let strRank: string = this.fromIntToRank(card.rank);
             let strSuit: string = this.fromIntToSuit(card.suit);
@@ -201,24 +259,28 @@ export class View {
     /*
         displays the cards from the gameView object 
     */
-    private displayMainPlayersHand(hand: Card[], x: number, y: number) {
+    private displayMainPlayersHand(hand: Card[], x: number, y: number, tWidth: number) {
         for (let i = 0; i < hand.length; i++) {
             let img: HTMLImageElement = this.cardImage(hand[i]);
             this.context.drawImage(
-                img, x + i * 20, y, this.cardWidth, this.cardHeight
+                img, x - tWidth / 2 + i * 25 , y, this.cardWidth,
+                this.cardHeight
             );
         }
+
     }
+    // what positions
 
 
     /*
         Displays the face down cards of opponents
     */
-    private displayFaceDownCards(playerView: PlayerView, x: number, y: number) {
+    private displayFaceDownCards(playerView: PlayerView, x: number, y: number, tWidth: number) {
         for (let i = 0; i < playerView.numberOfCards; i++) {
             let img: HTMLImageElement = this.cardImage();
             this.context.drawImage(
-                img, x + i * 20, y, this.cardWidth, this.cardHeight
+                img, x - tWidth / 2 + i * 25 , y, this.cardWidth,
+                this.cardHeight
             );
         }
     }
@@ -227,20 +289,21 @@ export class View {
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
     */
-    public displayPlayersHelper(
-        currentID: number, index: number, x: number, y: number, id: number
-    ) {
-        this.context.lineWidth = 5;
-        let textMetrics: TextMetrics = this.context.measureText("Player " + id);
+    public displayPlayersHelper(currentID: number, index: number, position: number[]) {
+        let pos: { x: number, y: number, tWidth:number };
+        pos = this.positionsAroundTable[position[index] - 1];
 
-        // the position of the text x position depends on the number of cards
-        let xPosBasedOnCards = this.gameView.playersView[index].numberOfCards * 20 / 2;
-        this.context.fillText("Player " + id, x + xPosBasedOnCards, y + this.offset);
+        this.context.lineWidth = 5;
+
+        let textMetrics: TextMetrics = this.context.measureText("Player " + currentID);
+
+        this.context.fillText("Player " + currentID, pos.x - textMetrics.width / 2,
+            pos.y + this.offset);
 
         if (currentID == this.id) {
-            this.displayMainPlayersHand(this.gameView.hand, x, y);
+            this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
         } else {
-            this.displayFaceDownCards(this.gameView.playersView[index], x, y);
+            this.displayFaceDownCards(this.gameView.playersView[index], pos.x, pos.y, pos.tWidth);
         }
 
         if (currentID == this.gameView.attackingPlayer) {
@@ -252,9 +315,10 @@ export class View {
         }
 
         this.context.strokeRect(
-            x + xPosBasedOnCards - this.textLeftMargin, y - this.textUpperMargin + this.offset,
+            pos.x - this.textLeftMargin - textMetrics.width / 2,
+            pos.y - this.textUpperMargin + this.offset,
             textMetrics.width + 2 * this.textLeftMargin, this.boxHeight
-        );
+        ); 
 
         this.context.save();
 
@@ -287,14 +351,25 @@ export class View {
 
         let position: number[] = this.getPositions(this.totalPlayers);
         let currentID: number;
-        let currentPos: { x: number, y: number };
 
         for (let i = 0; i < this.totalPlayers; i++) {
             currentID = (this.id + i) % this.totalPlayers;
-            currentPos = this.positionsAroundTable[position[i] - 1];
 
-            this.displayPlayersHelper(currentID, i, currentPos.x, currentPos.y, currentID);
+            if (this.isFirst) {
+                this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) * 25
+                    + this.cardWidth;
+
+                this.positionsAroundTable[position[i] - 1].x = this.positionsAroundTable[position[i] - 1].x
+                    + this.totalCardWidth / 2;
+
+                this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
+                console.log(this.positionsAroundTable[position[i] - 1]);
+            }
+
+            this.displayPlayersHelper(currentID, i, position);
         }
+        this.isFirst = false;
+
     }
 
     /*

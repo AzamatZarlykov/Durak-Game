@@ -88,7 +88,7 @@ socket.onmessage = function (event): void {
                 // hide the button
                 startButton.style.display = 'none';
 
-                view = new View(obj.gameView, id, nPlayers);
+                view = new View(obj.gameView, id, nPlayers, socket);
 
                 view.displayStateOfTheGame();
                 break;
@@ -161,7 +161,7 @@ function setPlayingPlayers(count: number): void {
 /*
 Returns the JSON object that containts the message to the server
 */
-function constructJSONPayload(message): string {
+export function constructJSONPayload(message): string {
     return JSON.stringify({
         From: id,
         Message: message,

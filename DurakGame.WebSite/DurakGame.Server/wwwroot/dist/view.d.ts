@@ -51,11 +51,16 @@ export declare class View {
     private textUpperMargin;
     private textLeftMargin;
     private boxHeight;
+    private isFirst;
+    private totalCardWidth;
+    private mousePos;
     private gameView;
     private id;
     private totalPlayers;
+    private socket;
     private positionsAroundTable;
-    constructor(gameView: GameView, id: number, players: number);
+    constructor(gameView: GameView, id: number, players: number, socket: WebSocket);
+    private GetCardSelected;
     displayTrumpSuit(): void;
     displayDeck(): void;
     fromIntToRank(enumRank: number): string;
@@ -63,7 +68,7 @@ export declare class View {
     cardImage(card?: Card): HTMLImageElement;
     private displayMainPlayersHand;
     private displayFaceDownCards;
-    displayPlayersHelper(currentID: number, index: number, x: number, y: number, id: number): void;
+    displayPlayersHelper(currentID: number, index: number, position: number[]): void;
     private getPositions;
     displayPlayers(): void;
     removeTable(): void;
