@@ -37,7 +37,7 @@ namespace DurakGame.Library.Game
 
             playerID = id;
 
-            hand = players[id].playersHand;
+            hand = players[id].GetPlayersHand();
 
             discardHeapSize = 0;
 
@@ -50,20 +50,21 @@ namespace DurakGame.Library.Game
             {
                 playerView = new PlayerView();
 
-                playerView.numberOfCards = players[i].playersHand.Count;
+                playerView.numberOfCards = players[i].GetPlayersHand().Count;
                 playerView.isAttacking = (attackingPlayer == i);
 
                 pViews.Add(playerView);
             }
             playersView = pViews;
 
-            trumpCard = deckSize == 0 ? new Card(game.GetTrumpCard().suit, (Rank)5) 
+            trumpCard = deckSize == 0 ? new Card(game.GetTrumpCard().GetSuit(), (Rank)5) 
                                        : game.GetTrumpCard();
         }
     }
 
     public class Durak
     {
+        private Bout myBout;
         private Deck deck;
 
         private Card trumpCard;
@@ -75,7 +76,7 @@ namespace DurakGame.Library.Game
         public bool GameInProgress => players.Count > 1;
 
         private List<Player> players = new List<Player>();
-
+         
         public Durak() { }
 
         public Card GetTrumpCard() => trumpCard;
@@ -100,6 +101,8 @@ namespace DurakGame.Library.Game
 
             // Set the attacking player
             SetAttacker();
+
+            myBout = new Bout();
         }
 
         public void AddPlayers(int totalPlayers)
@@ -115,7 +118,7 @@ namespace DurakGame.Library.Game
         {
             foreach (Player p in players)
             {
-                p.playersHand = deck.DrawUntilSix(0);
+                p.AddCardsToHand(deck.DrawUntilSix(0));
             }
         }
 
@@ -128,12 +131,12 @@ namespace DurakGame.Library.Game
 
             foreach (Player p in players)
             {
-                foreach (Card c in p.playersHand)
+                foreach (Card c in p.GetPlayersHand())
                 {
-                    if (c.suit == trumpCard.suit && (pl == null || c.rank < lowTrump))
+                    if (c.GetSuit() == trumpCard.GetSuit() && (pl == null || c.GetRank() < lowTrump))
                     {
                         pl = p;
-                        lowTrump = c.rank;
+                        lowTrump = c.GetRank();
                     }
                 }
             }
@@ -154,6 +157,53 @@ namespace DurakGame.Library.Game
         public void RemovePlayer(int playerID)
         {
             players.RemoveAt(playerID);
+        }
+
+
+        public void AttackingPhase(int cardIndex)
+        {
+            Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
+            // if no card is played then allow the attacking card
+            if (myBout.GetAttackingCardsSize() == 0)
+            {
+                myBout.AddAttackingCard(attackingCard);
+                players[attackingPlayer].RemoveCardFromHand(attackingCard);
+            } else
+            {
+                if (myBout.CheckExistingRanks(attackingCard.GetRank()))
+                {
+                    myBout.AddAttackingCard(attackingCard);
+                    players[attackingPlayer].RemoveCardFromHand(attackingCard);
+                }
+            }
+        }
+
+        public bool IsTrumpSuit(Card card)
+        {
+            return card.GetSuit() == trumpCard.GetSuit();
+        }
+
+        /*
+            Defending phase works for the simple case when the attacking player
+            attacking only by one card at the time
+        */
+        public void DefendingPhase(int cardIndex)
+        {
+            
+            int attackCardIndex = myBout.GetAttackingCardsSize() - 1;
+
+            Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
+            Card currentCard = myBout.GetAttackingCard(attackCardIndex);
+
+            if (defendingCard.GetSuit() == currentCard.GetSuit() &&
+                defendingCard.GetRank() > currentCard.GetRank() ||
+                IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
+                IsTrumpSuit(currentCard) && defendingCard.GetRank() >
+                currentCard.GetRank()))
+            {
+                myBout.AddDefendingCard(defendingCard);
+                players[attackingPlayer].RemoveCardFromHand(defendingCard);
+            }
         }
     }
 }

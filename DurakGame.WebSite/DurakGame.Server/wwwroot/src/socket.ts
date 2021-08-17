@@ -161,7 +161,7 @@ function setPlayingPlayers(count: number): void {
 /*
 Returns the JSON object that containts the message to the server
 */
-export function constructJSONPayload(message): string {
+function constructJSONPayload(message): string {
     return JSON.stringify({
         From: id,
         Message: message,

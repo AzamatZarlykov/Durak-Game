@@ -61,6 +61,8 @@ export declare class View {
     private positionsAroundTable;
     constructor(gameView: GameView, id: number, players: number, socket: WebSocket);
     private GetCardSelected;
+    private isCardSelected;
+    private SendSelectedCard;
     displayTrumpSuit(): void;
     displayDeck(): void;
     fromIntToRank(enumRank: number): string;

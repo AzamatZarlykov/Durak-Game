@@ -11,13 +11,28 @@ namespace DurakGame.Library.GamePlayer
 
         // private Icon icon;
 
-        public List<Card> playersHand = new List<Card>();
+        private List<Card> playersHand = new List<Card>();
+
+        public List<Card> GetPlayersHand() => playersHand;
+
+        public void AddCardsToHand(List<Card> cards)
+        {
+            for (int i = 0; i < cards.Count; i++)
+            {
+                playersHand.Add(cards[i]);
+            }
+        }
+
+        public void RemoveCardFromHand(Card card)
+        {
+            playersHand.Remove(card);
+        }
 
         public void PrintCards()
         {
             foreach (Card c in playersHand)
             {
-                Console.WriteLine("The rank : " + c.rank + ". The suit : " + c.suit);
+                Console.WriteLine("The rank : " + c.GetRank() + ". The suit : " + c.GetSuit());
             }
         }
     }

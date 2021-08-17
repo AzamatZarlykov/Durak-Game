@@ -1,5 +1,4 @@
-﻿import { constructJSONPayload } from "./socket.js";
-
+﻿
 interface PlayerView {
     numberOfCards: number;
     isAttacking: boolean;
@@ -134,7 +133,7 @@ export class View {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
             console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y)
-            // this.SendSelectedCard();
+            this.SendSelectedCard();
         });
 
         console.log(gameView);
@@ -143,32 +142,43 @@ export class View {
     /*
         Returns the index of the selected card position
     */
-    private GetCardSelected() : void {
+    private GetCardSelected(): number {
+        let x: number = this.positionsAroundTable[0].x;
+        let y: number = this.positionsAroundTable[0].y;
+        let w: number = this.positionsAroundTable[0].tWidth;
 
+        return (this.mousePos.x - ((x - w / 2) + 7)) / 25;
     }
-/*
-    *//*
+
+    /*
         Check if the mouse click is within the main players hand
-    *//*
+    */
     private isCardSelected(): boolean {
         let x: number = this.positionsAroundTable[0].x;
         let y: number = this.positionsAroundTable[0].y;
         let w: number = this.positionsAroundTable[0].tWidth;
-        return x - w / 2 <= this.mousePos.x && this.mousePos.x <= x + w / 2 &&
-               y <= this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+
+        return x - w / 2 + 7 < this.mousePos.x && this.mousePos.x <= x + w / 2 + 7 &&
+               y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
     }
 
-    *//*
+    /*
         Function that tells which card the attacking player has selected to attack 
-    *//*
+    */
     private SendSelectedCard() : void {
         if (this.gameView.attackingPlayer == this.id) {
             if (this.isCardSelected()) {
-                let indexCard: number = this.GetCardSelected();
+                let cardIndex: number = Math.floor(this.GetCardSelected());
+                let strJSON: string = JSON.stringify({
+                    Message: "Attacking",
+                    AttackingCard: cardIndex
+                });
+                this.socket.send(strJSON);
+                console.log(strJSON);
             }
         }
     }
-*/
+
 
     /*
         Dispaly the Suit of the Trump card when there is no deck  
@@ -305,7 +315,6 @@ export class View {
         } else {
             this.displayFaceDownCards(this.gameView.playersView[index], pos.x, pos.y, pos.tWidth);
         }
-
         if (currentID == this.gameView.attackingPlayer) {
             this.context.strokeStyle = 'lime';
         } else if (currentID == this.gameView.defendingPlayer) {
@@ -363,7 +372,6 @@ export class View {
                     + this.totalCardWidth / 2;
 
                 this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
-                console.log(this.positionsAroundTable[position[i] - 1]);
             }
 
             this.displayPlayersHelper(currentID, i, position);

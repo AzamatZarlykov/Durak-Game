@@ -33,6 +33,89 @@ namespace DurakGame.Server.Middleware
             manager = _manager;
         }
 
+        private async Task SendJSON<T>(WebSocket socket, T data)
+        {
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options));
+            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
+        private async Task DistributeJSONToWebSockets<T>(T data)
+        {
+            foreach (var socket in manager.GetAllSockets())
+            {
+                await SendJSON(socket, data);
+            }
+        }
+
+        private async Task InformLeavingToOtherPlayers(int leavingPlayerID)
+        {
+            command = "InformLeaving";
+
+            int totalPlayers = manager.GetTotalPlayers();
+            int sizeOfPlayers = game.GetSizeOfPlayers();
+
+            await DistributeJSONToWebSockets(new { command, leavingPlayerID, sizeOfPlayers, totalPlayers });
+        }
+
+        private async Task UpdateInformationAboutGame(ClientMessage route)
+        {
+            command = "JoinGame";
+
+            int totalPlayers = manager.GetTotalPlayers();
+            if (totalPlayers > 6) totalPlayers = 6;
+
+            game.StartGame(totalPlayers);
+
+            int sizeOfPlayers = game.GetSizeOfPlayers();
+            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+
+            GameView gameView;
+
+            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
+            {
+                gameView = new GameView(game, playerID);
+                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView });
+            }
+        }
+
+        private async Task InformGameState(WebSocket socket)
+        {
+            command = "RequestStateGame";
+
+            bool gameState = game.GameInProgress;
+
+            await SendJSON(socket, new { command, gameState });
+        }
+
+        private async Task ReceiveMessage(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage)
+        {
+            var buffer = new byte[1024 * 4];
+
+            while (socket.State == WebSocketState.Open)
+            {
+                var result = await socket.ReceiveAsync(buffer: new ArraySegment<byte>(buffer),
+                    cancellationToken: CancellationToken.None);
+
+                handleMessage(result, buffer);
+            }
+        }
+
+        // When someone connects, send to everyone how many people are in the server/game
+        private async Task InformPlayerInformationAsync(WebSocket websocket)
+        {
+            command = "SetTotalPlayers";
+
+            manager.AddSocket(websocket);
+
+            int totalPlayers = manager.GetTotalPlayers();
+
+            foreach (var socket in manager.GetAllSockets())
+            {
+                await SendJSON(socket, new { command, totalPlayers });
+            }
+        }
+
         public async Task InvokeAsync(HttpContext context)
         {
             if (context.WebSockets.IsWebSocketRequest)
@@ -57,6 +140,9 @@ namespace DurakGame.Server.Middleware
 
                         switch (route.Message)
                         {
+                            case "RequestStateGame":
+                                await InformGameState(websocket);
+                                break;
                             case "StartGame":
                                 if (game.GameInProgress)
                                 {
@@ -71,8 +157,10 @@ namespace DurakGame.Server.Middleware
                                     await UpdateInformationAboutGame(route);
                                 }
                                 break;
-                            case "RequestStateGame":
-                                await InformGameState(websocket);
+                            case "Attacking":
+
+                                break;
+                            case "Defending":
                                 break;
                             default:
                                 Console.WriteLine("Unknown Message from the client");
@@ -112,89 +200,6 @@ namespace DurakGame.Server.Middleware
             else
             {
                 await next(context);
-            }
-        }
-
-        private async Task DistributeJSONToWebSockets<T>(T data)
-        {
-            foreach (var socket in manager.GetAllSockets())
-            {
-                await SendJSON(socket, data);
-            }
-        }
-
-        private async Task UpdateInformationAboutGame(ClientMessage route)
-        {
-            command = "JoinGame";
-
-            int totalPlayers = manager.GetTotalPlayers();
-            if (totalPlayers > 6) totalPlayers = 6;
-
-            game.StartGame(totalPlayers);
-
-            int sizeOfPlayers = game.GetSizeOfPlayers();
-            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
-
-            GameView gameView;
-
-            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
-            {
-                gameView = new GameView(game, playerID);
-                await SendJSON(playersPlaying[playerID], new { command, playerID, sizeOfPlayers, totalPlayers, gameView });
-            }
-        }
-
-        private async Task InformLeavingToOtherPlayers(int leavingPlayerID)
-        {
-            command = "InformLeaving";
-
-            int totalPlayers = manager.GetTotalPlayers();
-            int sizeOfPlayers = game.GetSizeOfPlayers();
-
-            await DistributeJSONToWebSockets(new { command, leavingPlayerID, sizeOfPlayers, totalPlayers });
-        }
-
-        private async Task InformGameState(WebSocket socket)
-        {
-            command = "RequestStateGame";
-
-            bool gameState = game.GameInProgress;
-
-            await SendJSON(socket, new { command, gameState });
-        }
-
-        // When someone connects, send to everyone how many people are in the server/game
-        private async Task InformPlayerInformationAsync(WebSocket websocket)
-        {
-            command = "SetTotalPlayers";
-
-            manager.AddSocket(websocket);
-
-            int totalPlayers = manager.GetTotalPlayers();
-
-            foreach (var socket in manager.GetAllSockets())
-            {
-                await SendJSON(socket, new { command, totalPlayers });
-            }
-        }
-
-        private async Task SendJSON<T>(WebSocket socket, T data)
-        {
-            var options = new JsonSerializerOptions { IncludeFields = true };
-            var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options));
-            await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-        }
-
-        private async Task ReceiveMessage(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage)
-        {
-            var buffer = new byte[1024 * 4];
-
-            while (socket.State == WebSocketState.Open)
-            {
-                var result = await socket.ReceiveAsync(buffer: new ArraySegment<byte>(buffer),
-                    cancellationToken: CancellationToken.None);
-
-                handleMessage(result, buffer);
             }
         }
     }
