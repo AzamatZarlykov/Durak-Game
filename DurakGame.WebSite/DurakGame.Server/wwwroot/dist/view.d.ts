@@ -32,6 +32,8 @@ interface GameView {
     hand: Card[];
     playersView: PlayerView[];
     trumpCard: Card;
+    attackingCards: Card[];
+    defendingCards: Card[];
 }
 export declare class View {
     private canvas;
@@ -63,6 +65,7 @@ export declare class View {
     private GetCardSelected;
     private isCardSelected;
     private SendSelectedCard;
+    displayDiscardedHeap(): void;
     displayTrumpSuit(): void;
     displayDeck(): void;
     fromIntToRank(enumRank: number): string;

@@ -12,12 +12,14 @@ let informLeavingCommand = "InformLeaving";
 let joinGameCommand = "JoinGame";
 let requestStateGameCommand = "RequestStateGame";
 let setTotalPlayersCommand = "SetTotalPlayers";
+let UpdateGameProcessCommand = "UpdateGameProcess";
 let view;
 let allCommands = [
     informLeavingCommand,
     joinGameCommand,
     requestStateGameCommand,
     setTotalPlayersCommand,
+    UpdateGameProcessCommand,
 ];
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 socket = new WebSocket(connectionUrl);
@@ -63,7 +65,6 @@ socket.onmessage = function (event) {
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             case (joinGameCommand):
-                console.log("Game started");
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
                 // hide the button
@@ -73,15 +74,17 @@ socket.onmessage = function (event) {
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
-                if (obj.command == requestStateGameCommand) {
-                    if (!obj.gameState) {
-                        let data = constructJSONPayload("StartGame");
-                        socket.send(data);
-                    }
-                    else {
-                        console.log("Game is already being played");
-                    }
+                if (!obj.gameState) {
+                    let data = constructJSONPayload("StartGame");
+                    socket.send(data);
                 }
+                else {
+                    console.log("Game is already being played");
+                }
+                break;
+            case (UpdateGameProcessCommand):
+                view = new View(obj.gameView, id, nPlayers, socket);
+                view.displayStateOfTheGame();
                 break;
         }
     }
@@ -139,7 +142,7 @@ function setPlayingPlayers(count) {
 /*
 Returns the JSON object that containts the message to the server
 */
-export function constructJSONPayload(message) {
+function constructJSONPayload(message) {
     return JSON.stringify({
         From: id,
         Message: message,

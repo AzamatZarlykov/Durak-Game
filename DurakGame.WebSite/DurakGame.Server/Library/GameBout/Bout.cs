@@ -17,13 +17,15 @@ namespace DurakGame.Library.Game
         public Bout() { }
         public int GetAttackingCardsSize() => attackingCards.Count();
         public int GetDefendingCardsSize() => defendingCards.Count();
+        public List<Card> GetAttackingCards() => attackingCards;
+        public List<Card> GetDefendingCards() => defendingCards;
 
         public Card GetAttackingCard(int index) => attackingCards[index];
         public bool CheckExistingRanks(Rank rank)
         {
             foreach (Card card in attackingCards)
             {
-                if (card.GetRank() == rank)
+                if (card.rank == rank)
                 {
                     return true;
                 }
@@ -31,7 +33,7 @@ namespace DurakGame.Library.Game
 
             foreach (Card card in defendingCards)
             {
-                if (card.GetRank() == rank)
+                if (card.rank == rank)
                 {
                     return true;
                 }
@@ -43,7 +45,7 @@ namespace DurakGame.Library.Game
         {
             foreach (Card card in attackingCards)
             {
-                if (card.GetSuit() == suit)
+                if (card.suit == suit)
                 {
                     return true;
                 }

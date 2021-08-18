@@ -32,7 +32,7 @@ namespace DurakGame.Library.GamePlayer
         {
             foreach (Card c in playersHand)
             {
-                Console.WriteLine("The rank : " + c.GetRank() + ". The suit : " + c.GetSuit());
+                Console.WriteLine("The rank : " + c.rank + ". The suit : " + c.suit);
             }
         }
     }

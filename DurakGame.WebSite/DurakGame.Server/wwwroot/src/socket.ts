@@ -17,6 +17,7 @@ let informLeavingCommand: string = "InformLeaving";
 let joinGameCommand: string = "JoinGame";
 let requestStateGameCommand: string = "RequestStateGame";
 let setTotalPlayersCommand: string = "SetTotalPlayers";
+let UpdateGameProcessCommand: string = "UpdateGameProcess";
 
 let view: View;
 
@@ -25,6 +26,7 @@ let allCommands: string[] = [
     joinGameCommand,
     requestStateGameCommand,
     setTotalPlayersCommand,
+    UpdateGameProcessCommand,
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -80,8 +82,6 @@ socket.onmessage = function (event): void {
             // each players position on the table
             case (joinGameCommand):
 
-                console.log("Game started");
-
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
 
@@ -94,14 +94,17 @@ socket.onmessage = function (event): void {
                 break;
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
-                if (obj.command == requestStateGameCommand) {
-                    if (!obj.gameState) {
-                        let data: string = constructJSONPayload("StartGame");
-                        socket.send(data);
-                    } else {
-                        console.log("Game is already being played");
-                    }
+                if (!obj.gameState) {
+                    let data: string = constructJSONPayload("StartGame");
+                    socket.send(data);
+                } else {
+                    console.log("Game is already being played");
                 }
+                break;
+            case (UpdateGameProcessCommand):
+                view = new View(obj.gameView, id, nPlayers, socket);
+
+                view.displayStateOfTheGame();
                 break;
         }
     } else {

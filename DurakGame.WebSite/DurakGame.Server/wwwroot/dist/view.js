@@ -75,7 +75,6 @@ export class View {
     */
     GetCardSelected() {
         let x = this.positionsAroundTable[0].x;
-        let y = this.positionsAroundTable[0].y;
         let w = this.positionsAroundTable[0].tWidth;
         return (this.mousePos.x - ((x - w / 2) + 7)) / 25;
     }
@@ -106,6 +105,23 @@ export class View {
         }
     }
     /*
+        Display Discarded Heap
+    */
+    displayDiscardedHeap() {
+        for (let i = 0; i < this.gameView.discardHeapSize; i++) {
+            let img = this.cardImage();
+            this.context.save();
+            this.context.translate(this.cardRightX + this.cardWidth + this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
+            // getting random angle and y position to replicate the real world discarded pile
+            let angle = Math.random() * Math.PI * 2;
+            let yPos = Math.random() * (this.deckPosY + 50 - this.deckPosY - 50) + this.deckPosY - 50;
+            this.context.rotate(angle);
+            this.context.translate(-this.cardRightX - this.cardWidth / 2, -this.deckPosY - this.cardHeight / 2);
+            this.context.drawImage(img, this.cardRightX, yPos, this.cardWidth, this.cardHeight);
+            this.context.restore();
+        }
+    }
+    /*
         Dispaly the Suit of the Trump card when there is no deck
     */
     displayTrumpSuit() {
@@ -119,8 +135,7 @@ export class View {
     displayDeck() {
         let img = this.cardImage(this.gameView.trumpCard);
         this.context.save();
-        this.context.translate(this.cardLeftX + this.cardWidth +
-            this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
+        this.context.translate(this.cardLeftX + this.cardWidth + this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
         this.context.rotate(Math.PI / 2);
         this.context.translate(-this.cardLeftX - this.cardWidth / 2, -this.deckPosY - this.cardHeight / 2);
         this.context.drawImage(img, this.cardLeftX, this.deckPosY, this.cardWidth, this.cardHeight);
@@ -289,6 +304,9 @@ export class View {
         }
         else {
             this.displayDeck();
+        }
+        if (this.gameView.discardHeapSize != 0) {
+            this.displayDiscardedHeap();
         }
     }
 }

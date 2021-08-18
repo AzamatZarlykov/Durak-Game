@@ -30,6 +30,9 @@ interface GameView {
 
     playersView: PlayerView[];
     trumpCard: Card;
+
+    attackingCards: Card[];
+    defendingCards: Card[];
 }
 
 class MousePos {
@@ -144,7 +147,6 @@ export class View {
     */
     private GetCardSelected(): number {
         let x: number = this.positionsAroundTable[0].x;
-        let y: number = this.positionsAroundTable[0].y;
         let w: number = this.positionsAroundTable[0].tWidth;
 
         return (this.mousePos.x - ((x - w / 2) + 7)) / 25;
@@ -179,6 +181,30 @@ export class View {
         }
     }
 
+    /*
+        Display Discarded Heap 
+    */
+    public displayDiscardedHeap(): void {
+        
+        for (let i = 0; i < this.gameView.discardHeapSize; i++) {
+            let img: HTMLImageElement = this.cardImage();
+            this.context.save();
+
+            this.context.translate(this.cardRightX + this.cardWidth + this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
+
+            // getting random angle and y position to replicate the real world discarded pile
+            let angle: number = Math.random() * Math.PI * 2;
+            let yPos: number = Math.random() * (this.deckPosY + 50 - this.deckPosY - 50) + this.deckPosY - 50;
+
+            this.context.rotate(angle);
+            this.context.translate(-this.cardRightX - this.cardWidth / 2,
+                -this.deckPosY - this.cardHeight / 2);
+            this.context.drawImage(img, this.cardRightX, yPos,
+                this.cardWidth, this.cardHeight);
+
+            this.context.restore();
+        }
+    }
 
     /*
         Dispaly the Suit of the Trump card when there is no deck  
@@ -197,8 +223,8 @@ export class View {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.save();
 
-        this.context.translate(this.cardLeftX + this.cardWidth +
-            this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
+        this.context.translate(this.cardLeftX + this.cardWidth + this.cardWidth / 2,
+            this.deckPosY + this.cardHeight / 2);
         this.context.rotate(Math.PI / 2);
         this.context.translate(-this.cardLeftX - this.cardWidth / 2,
             -this.deckPosY - this.cardHeight / 2);
@@ -243,7 +269,6 @@ export class View {
     */
     public cardImage(card?: Card): HTMLImageElement {
         let strCard: string;
-        
         if (card) {
             let strRank: string = this.fromIntToRank(card.rank);
             let strSuit: string = this.fromIntToSuit(card.suit);
@@ -418,6 +443,10 @@ export class View {
             this.displayTrumpSuit();
         } else {
             this.displayDeck();
+        }
+
+        if (this.gameView.discardHeapSize != 0) {
+            this.displayDiscardedHeap();
         }
 
     }
