@@ -66,6 +66,7 @@ export class View {
     private backCard: string = "2B";
 
     private cardImages = new Map();
+    private boutCardPositions = new Map();
 
     private textUpperMargin: number;
     private textLeftMargin: number;
@@ -99,7 +100,7 @@ export class View {
         this.canvas = canvas;
         this.context = context;
 
-        this.cardMiddleX = this.canvas.width / 2 - 100;
+        this.cardMiddleX = this.canvas.width / 2 - this.cardWidth / 2;
         this.cardLeftX = 100;
         this.cardRightX = this.canvas.width - 300;
 
@@ -131,6 +132,42 @@ export class View {
             { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
         ]
 
+        this.boutCardPositions.set(
+            1, [{
+                x: this.cardMiddleX,
+            y: this.deckPosY
+        }]);
+
+        this.boutCardPositions.set(
+            2, [
+            { x: this.cardMiddleX - 2 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX + this.cardWidth, y: this.deckPosY }
+        ]);
+
+        this.boutCardPositions.set(
+            3, [
+                {
+                    x: this.cardMiddleX - 2 * this.cardWidth - this.cardWidth / 2,
+                    y: this.deckPosY
+                },
+                {
+                    x: this.cardMiddleX,
+                    y: this.deckPosY
+                },
+                {
+                    x: this.cardMiddleX + this.cardWidth + this.cardWidth / 2,
+                    y: this.deckPosY
+                }
+        ]);
+
+        this.boutCardPositions.set(
+            4, [
+            { x: this.cardMiddleX - 4 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX - 2 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX + this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX + 2 * this.cardWidth, y: this.deckPosY }
+        ]);
+
         
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
@@ -140,6 +177,30 @@ export class View {
         });
 
         console.log(gameView);
+    }
+
+
+    /*
+        Display attacking and defending cards in the middle of the table 
+    */
+    public displayBout(): void {
+        let pos: { x: number, y: number }[];
+        let attackingCardSize: number = this.gameView.attackingCards.length;
+        let defendingCardSize: number = this.gameView.defendingCards.length;
+
+        for (let i = 0; i < attackingCardSize; i++) {
+            let img: HTMLImageElement = this.cardImage(this.gameView.attackingCards[i]);
+            pos = this.boutCardPositions.get(attackingCardSize % 4);
+
+            this.context.drawImage(img, pos[i].x, pos[i].y, this.cardWidth, this.cardHeight);
+        }
+
+        for (let i = 0; i < defendingCardSize; i++) {
+            let img: HTMLImageElement = this.cardImage(this.gameView.defendingCards[i]);
+            pos = this.boutCardPositions.get(defendingCardSize % 4);
+
+            this.context.drawImage(img, pos[i].x + 20, pos[i].y, this.cardWidth, this.cardHeight);
+        }
     }
 
     /*
@@ -167,18 +228,19 @@ export class View {
     /*
         Function that tells which card the attacking player has selected to attack 
     */
-    private SendSelectedCard() : void {
-        if (this.gameView.attackingPlayer == this.id) {
+    private SendSelectedCard(): void {
+        if (this.gameView.attackingPlayer == this.id  || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex: number = Math.floor(this.GetCardSelected());
+                console.log(cardIndex);
                 let strJSON: string = JSON.stringify({
-                    Message: "Attacking",
-                    AttackingCard: cardIndex
+                    Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
+                    Card: cardIndex
                 });
                 this.socket.send(strJSON);
                 console.log(strJSON);
             }
-        }
+        } 
     }
 
     /*
@@ -445,9 +507,13 @@ export class View {
             this.displayDeck();
         }
 
+        // this.displayDiscardedHeap();
+
+
         if (this.gameView.discardHeapSize != 0) {
             this.displayDiscardedHeap();
         }
 
+        this.displayBout();
     }
 }

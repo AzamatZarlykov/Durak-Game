@@ -50,6 +50,7 @@ export declare class View {
     private dir;
     private backCard;
     private cardImages;
+    private boutCardPositions;
     private textUpperMargin;
     private textLeftMargin;
     private boxHeight;
@@ -62,6 +63,7 @@ export declare class View {
     private socket;
     private positionsAroundTable;
     constructor(gameView: GameView, id: number, players: number, socket: WebSocket);
+    displayBout(): void;
     private GetCardSelected;
     private isCardSelected;
     private SendSelectedCard;

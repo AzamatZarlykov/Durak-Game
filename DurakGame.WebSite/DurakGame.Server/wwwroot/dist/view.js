@@ -30,6 +30,7 @@ export class View {
         this.dir = "images/deck/";
         this.backCard = "2B";
         this.cardImages = new Map();
+        this.boutCardPositions = new Map();
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
         this.socket = socket;
@@ -39,7 +40,7 @@ export class View {
         context.font = "17px serif";
         this.canvas = canvas;
         this.context = context;
-        this.cardMiddleX = this.canvas.width / 2 - 100;
+        this.cardMiddleX = this.canvas.width / 2 - this.cardWidth / 2;
         this.cardLeftX = 100;
         this.cardRightX = this.canvas.width - 300;
         this.cardLowerY = this.canvas.height - this.cardHeight - 60;
@@ -62,6 +63,34 @@ export class View {
             { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
         ];
+        this.boutCardPositions.set(1, [{
+                x: this.cardMiddleX,
+                y: this.deckPosY
+            }]);
+        this.boutCardPositions.set(2, [
+            { x: this.cardMiddleX - 2 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX + this.cardWidth, y: this.deckPosY }
+        ]);
+        this.boutCardPositions.set(3, [
+            {
+                x: this.cardMiddleX - 2 * this.cardWidth - this.cardWidth / 2,
+                y: this.deckPosY
+            },
+            {
+                x: this.cardMiddleX,
+                y: this.deckPosY
+            },
+            {
+                x: this.cardMiddleX + this.cardWidth + this.cardWidth / 2,
+                y: this.deckPosY
+            }
+        ]);
+        this.boutCardPositions.set(4, [
+            { x: this.cardMiddleX - 4 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX - 2 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX + this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX + 2 * this.cardWidth, y: this.deckPosY }
+        ]);
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
@@ -69,6 +98,24 @@ export class View {
             this.SendSelectedCard();
         });
         console.log(gameView);
+    }
+    /*
+        Display attacking and defending cards in the middle of the table
+    */
+    displayBout() {
+        let pos;
+        let attackingCardSize = this.gameView.attackingCards.length;
+        let defendingCardSize = this.gameView.defendingCards.length;
+        for (let i = 0; i < attackingCardSize; i++) {
+            let img = this.cardImage(this.gameView.attackingCards[i]);
+            pos = this.boutCardPositions.get(attackingCardSize % 4);
+            this.context.drawImage(img, pos[i].x, pos[i].y, this.cardWidth, this.cardHeight);
+        }
+        for (let i = 0; i < defendingCardSize; i++) {
+            let img = this.cardImage(this.gameView.defendingCards[i]);
+            pos = this.boutCardPositions.get(defendingCardSize % 4);
+            this.context.drawImage(img, pos[i].x + 20, pos[i].y, this.cardWidth, this.cardHeight);
+        }
     }
     /*
         Returns the index of the selected card position
@@ -92,12 +139,13 @@ export class View {
         Function that tells which card the attacking player has selected to attack
     */
     SendSelectedCard() {
-        if (this.gameView.attackingPlayer == this.id) {
+        if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex = Math.floor(this.GetCardSelected());
+                console.log(cardIndex);
                 let strJSON = JSON.stringify({
-                    Message: "Attacking",
-                    AttackingCard: cardIndex
+                    Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
+                    Card: cardIndex
                 });
                 this.socket.send(strJSON);
                 console.log(strJSON);
@@ -305,9 +353,11 @@ export class View {
         else {
             this.displayDeck();
         }
+        // this.displayDiscardedHeap();
         if (this.gameView.discardHeapSize != 0) {
             this.displayDiscardedHeap();
         }
+        this.displayBout();
     }
 }
 //# sourceMappingURL=view.js.map

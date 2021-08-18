@@ -15,7 +15,7 @@ namespace DurakGame.Server.Middleware
     {
         public int From;
         public string Message;
-        public int AttackingCard; 
+        public int Card; 
     }
 
     public class Middleware
@@ -39,7 +39,13 @@ namespace DurakGame.Server.Middleware
             command = "UpdateGameProcess";
             GameView gameView;
 
-            game.AttackingPhase(route.AttackingCard);
+            if (route.Message == "Attacking")
+            {
+                game.AttackingPhase(route.Card);
+            } else
+            {
+                game.DefendingPhase(route.Card);
+            }
 
             for (int i = 0; i < game.GetPlayers().Count; i++)
             {
@@ -57,6 +63,7 @@ namespace DurakGame.Server.Middleware
             var options = new JsonSerializerOptions { IncludeFields = true };
             var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options));
             Console.WriteLine(JsonSerializer.Serialize(data, options));
+            Console.WriteLine();
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
@@ -186,6 +193,7 @@ namespace DurakGame.Server.Middleware
                                 await UpdateGameProcess(route);
                                 break;
                             case "Defending":
+                                await UpdateGameProcess(route);
                                 break;
                             default:
                                 Console.WriteLine("Unknown Message from the client");

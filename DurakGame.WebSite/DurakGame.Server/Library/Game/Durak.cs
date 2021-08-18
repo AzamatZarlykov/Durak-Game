@@ -168,6 +168,8 @@ namespace DurakGame.Library.Game
 
         public void AttackingPhase(int cardIndex)
         {
+            if (cardIndex > 5) cardIndex = 5;
+
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
             // if no card is played then allow the attacking card
             if (myBout.GetAttackingCardsSize() == 0)
@@ -191,24 +193,25 @@ namespace DurakGame.Library.Game
 
         /*
             Defending phase works for the simple case when the attacking player
-            attacking only by one card at the time
+            attacks only by one card at the time
         */
         public void DefendingPhase(int cardIndex)
         {
-            
+            if (cardIndex > 5) cardIndex = 5;
+
             int attackCardIndex = myBout.GetAttackingCardsSize() - 1;
 
             Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
             Card currentCard = myBout.GetAttackingCard(attackCardIndex);
 
-            if (defendingCard.suit == currentCard.suit &&
-                defendingCard.rank > currentCard.rank ||
-                IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
-                IsTrumpSuit(currentCard) && defendingCard.rank >
-                currentCard.rank))
+            if ((defendingCard.suit == currentCard.suit &&
+                defendingCard.rank > currentCard.rank) ||
+                (IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
+                (IsTrumpSuit(currentCard) && defendingCard.rank >
+                currentCard.rank))))
             {
                 myBout.AddDefendingCard(defendingCard);
-                players[attackingPlayer].RemoveCardFromHand(defendingCard);
+                players[defendingPlayer].RemoveCardFromHand(defendingCard);
             }
         }
     }
