@@ -36,7 +36,6 @@ export class View {
         this.socket = socket;
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
-        console.log("The size of the window : " + (window.innerWidth - 50));
         context.font = "17px serif";
         this.canvas = canvas;
         this.context = context;
@@ -55,6 +54,12 @@ export class View {
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
+        this.button = {
+            x: this.cardMiddleX + this.textLeftMargin + 200,
+            y: this.cardLowerY + this.offset - this.textUpperMargin,
+            w: 50 + 3 * this.textLeftMargin,
+            h: this.boxHeight
+        };
         this.positionsAroundTable = [
             { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
             { x: this.cardLeftX, y: this.cardLowerY, tWidth: 0 },
@@ -96,6 +101,9 @@ export class View {
             this.mousePos.y = e.y;
             console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y);
             this.SendSelectedCard();
+            if (this.inside()) {
+                console.log("AAAAAAAAA");
+            }
         });
         console.log(gameView);
     }
@@ -142,7 +150,10 @@ export class View {
         if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex = Math.floor(this.GetCardSelected());
-                console.log(cardIndex);
+                if (cardIndex > this.gameView.hand.length) {
+                    cardIndex = this.gameView.hand.length - 1;
+                }
+                console.log("Card Index clicked is " + cardIndex);
                 let strJSON = JSON.stringify({
                     Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
                     Card: cardIndex
@@ -244,7 +255,6 @@ export class View {
             this.context.drawImage(img, x - tWidth / 2 + i * 25, y, this.cardWidth, this.cardHeight);
         }
     }
-    // what positions
     /*
         Displays the face down cards of opponents
     */
@@ -253,6 +263,13 @@ export class View {
             let img = this.cardImage();
             this.context.drawImage(img, x - tWidth / 2 + i * 25, y, this.cardWidth, this.cardHeight);
         }
+    }
+    inside() {
+        return this.mousePos.x - 7 > this.button.x && this.mousePos.x - 7 < this.button.x + this.button.w && this.mousePos.y < this.button.y + this.button.h && this.mousePos.y > this.button.y;
+    }
+    createFinishAttackButton() {
+        this.context.fillText("Finished", this.button.x + this.textLeftMargin, this.button.y + this.textUpperMargin);
+        this.context.strokeRect(this.button.x, this.button.y, this.button.w, this.button.h);
     }
     /*
         Given the positions and boolean variables position around the table, display main players
@@ -272,6 +289,8 @@ export class View {
         }
         if (currentID == this.gameView.attackingPlayer) {
             this.context.strokeStyle = 'lime';
+            this.createFinishAttackButton();
+            // this.context.save();
         }
         else if (currentID == this.gameView.defendingPlayer) {
             this.context.strokeStyle = 'red';
@@ -280,7 +299,6 @@ export class View {
             this.context.strokeStyle = 'black';
         }
         this.context.strokeRect(pos.x - this.textLeftMargin - textMetrics.width / 2, pos.y - this.textUpperMargin + this.offset, textMetrics.width + 2 * this.textLeftMargin, this.boxHeight);
-        this.context.save();
     }
     /*
         Returns the position of players depending on the
@@ -354,7 +372,7 @@ export class View {
             this.displayDeck();
         }
         // this.displayDiscardedHeap();
-        if (this.gameView.discardHeapSize != 0) {
+        if (this.gameView.discardHeapSize != 0 && this.gameView.discardHeapChanged) {
             this.displayDiscardedHeap();
         }
         this.displayBout();

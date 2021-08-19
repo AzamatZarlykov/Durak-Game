@@ -21,10 +21,12 @@ namespace DurakGame.Library.Game
         public List<Card> hand = new List<Card>();
 
         private Durak game;
-
-        public int discardHeapSize;
+        
 
         public Card trumpCard;
+        public bool discardHeapChanged;
+        private int prevDiscardedHeapValue;
+        public int discardHeapSize => game.GetDiscardedHeapSize();
         public int deckSize => game.GetDeck().cardsLeft;
         public int defendingPlayer => game.GetDefendingPlayer();
         public int attackingPlayer => game.GetAttackingPlayer();
@@ -43,7 +45,12 @@ namespace DurakGame.Library.Game
             playerID = id;
             hand = players[id].GetPlayersHand();
 
-            discardHeapSize = 0;
+            if (prevDiscardedHeapValue != discardHeapSize)
+            {
+                discardHeapChanged = true;
+            }
+
+            prevDiscardedHeapValue = discardHeapSize;
 
             List<PlayerView> pViews = new List<PlayerView>();
             PlayerView playerView;
@@ -69,7 +76,7 @@ namespace DurakGame.Library.Game
 
     public class Durak
     {
-        private Bout myBout;
+        private Bout bout;
         private Deck deck;
 
         private Card trumpCard;
@@ -77,7 +84,7 @@ namespace DurakGame.Library.Game
         private int defendingPlayer;
 
         private int attackingPlayer;
-
+        private int discardedHeapSize;
         public bool GameInProgress => players.Count > 1;
 
         private List<Player> players = new List<Player>();
@@ -86,11 +93,12 @@ namespace DurakGame.Library.Game
 
         public Card GetTrumpCard() => trumpCard;
         public Deck GetDeck() => deck;
+        public int GetDiscardedHeapSize() => discardedHeapSize;
         public int GetDefendingPlayer() => defendingPlayer;
         public int GetAttackingPlayer() => attackingPlayer;
         public List<Player> GetPlayers() => players;
         public int GetSizeOfPlayers() => players.Count;
-        public Bout GetBoutInformation() => myBout;
+        public Bout GetBoutInformation() => bout;
         public void StartGame(int totalPlayers)
         {
             deck = new Deck();
@@ -107,7 +115,7 @@ namespace DurakGame.Library.Game
             // Set the attacking player
             SetAttacker();
 
-            myBout = new Bout();
+            bout = new Bout();
         }
 
         public void RemovePlayer(int playerID)
@@ -168,21 +176,12 @@ namespace DurakGame.Library.Game
 
         public void AttackingPhase(int cardIndex)
         {
-            if (cardIndex > 5) cardIndex = 5;
-
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
             // if no card is played then allow the attacking card
-            if (myBout.GetAttackingCardsSize() == 0)
+            if (bout.GetAttackingCardsSize() == 0 || bout.CheckExistingRanks(attackingCard.rank))
             {
-                myBout.AddAttackingCard(attackingCard);
+                bout.AddAttackingCard(attackingCard);
                 players[attackingPlayer].RemoveCardFromHand(attackingCard);
-            } else
-            {
-                if (myBout.CheckExistingRanks(attackingCard.rank))
-                {
-                    myBout.AddAttackingCard(attackingCard);
-                    players[attackingPlayer].RemoveCardFromHand(attackingCard);
-                }
             }
         }
 
@@ -197,21 +196,25 @@ namespace DurakGame.Library.Game
         */
         public void DefendingPhase(int cardIndex)
         {
-            if (cardIndex > 5) cardIndex = 5;
-
-            int attackCardIndex = myBout.GetAttackingCardsSize() - 1;
+            int attackCardIndex = bout.GetAttackingCardsSize() - 1;
 
             Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
-            Card currentCard = myBout.GetAttackingCard(attackCardIndex);
+            Card currentCard = bout.GetAttackingCard(attackCardIndex);
 
+            // legal 
             if ((defendingCard.suit == currentCard.suit &&
                 defendingCard.rank > currentCard.rank) ||
                 (IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
                 (IsTrumpSuit(currentCard) && defendingCard.rank >
                 currentCard.rank))))
             {
-                myBout.AddDefendingCard(defendingCard);
+                bout.AddDefendingCard(defendingCard);
                 players[defendingPlayer].RemoveCardFromHand(defendingCard);
+            }
+            // illegal
+            else
+            {
+
             }
         }
     }

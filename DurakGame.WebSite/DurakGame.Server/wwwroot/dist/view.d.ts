@@ -29,6 +29,7 @@ interface GameView {
     defendingPlayer: number;
     deckSize: number;
     discardHeapSize: number;
+    discardHeapChanged: boolean;
     hand: Card[];
     playersView: PlayerView[];
     trumpCard: Card;
@@ -61,6 +62,7 @@ export declare class View {
     private id;
     private totalPlayers;
     private socket;
+    private button;
     private positionsAroundTable;
     constructor(gameView: GameView, id: number, players: number, socket: WebSocket);
     displayBout(): void;
@@ -75,6 +77,8 @@ export declare class View {
     cardImage(card?: Card): HTMLImageElement;
     private displayMainPlayersHand;
     private displayFaceDownCards;
+    private inside;
+    private createFinishAttackButton;
     displayPlayersHelper(currentID: number, index: number, position: number[]): void;
     private getPositions;
     displayPlayers(): void;

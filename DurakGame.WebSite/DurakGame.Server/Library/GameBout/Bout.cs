@@ -21,37 +21,13 @@ namespace DurakGame.Library.Game
         public List<Card> GetDefendingCards() => defendingCards;
 
         public Card GetAttackingCard(int index) => attackingCards[index];
-        public bool CheckExistingRanks(Rank rank)
-        {
-            foreach (Card card in attackingCards)
-            {
-                if (card.rank == rank)
-                {
-                    return true;
-                }
-            }
+        public bool CheckExistingRanks(Rank rank) =>
+            attackingCards.Exists(card => card.rank == rank) ||
+            defendingCards.Exists(card => card.rank == rank);
 
-            foreach (Card card in defendingCards)
-            {
-                if (card.rank == rank)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
-        public bool CheckExistingSuits(Suit suit)
-        {
-            foreach (Card card in attackingCards)
-            {
-                if (card.suit == suit)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        public bool CheckExistingSuits(Suit suit) =>
+            attackingCards.Exists(card => card.suit == suit);
 
         public void AddAttackingCard(Card card)
         {
