@@ -24,7 +24,7 @@ class MousePos {
     }
 }
 export class View {
-    constructor(gameView, id, players, socket) {
+    constructor() {
         this.cardWidth = 100;
         this.cardHeight = 120;
         this.dir = "images/deck/";
@@ -33,7 +33,6 @@ export class View {
         this.boutCardPositions = new Map();
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
-        this.socket = socket;
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
         context.font = "17px serif";
@@ -51,15 +50,6 @@ export class View {
         this.boxHeight = 30;
         this.isFirst = true;
         this.mousePos = new MousePos(0, 0);
-        this.gameView = gameView;
-        this.id = id;
-        this.totalPlayers = players;
-        this.button = {
-            x: this.cardMiddleX + this.textLeftMargin + 200,
-            y: this.cardLowerY + this.offset - this.textUpperMargin,
-            w: 50 + 3 * this.textLeftMargin,
-            h: this.boxHeight
-        };
         this.positionsAroundTable = [
             { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
             { x: this.cardLeftX, y: this.cardLowerY, tWidth: 0 },
@@ -101,10 +91,13 @@ export class View {
             this.mousePos.y = e.y;
             console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y);
             this.SendSelectedCard();
-            if (this.inside()) {
-                console.log("AAAAAAAAA");
-            }
         });
+    }
+    setConnectionFields(gameView, id, players, socket) {
+        this.socket = socket;
+        this.gameView = gameView;
+        this.id = id;
+        this.totalPlayers = players;
         console.log(gameView);
     }
     /*
@@ -150,7 +143,7 @@ export class View {
         if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex = Math.floor(this.GetCardSelected());
-                if (cardIndex > this.gameView.hand.length) {
+                if (cardIndex >= this.gameView.hand.length) {
                     cardIndex = this.gameView.hand.length - 1;
                 }
                 console.log("Card Index clicked is " + cardIndex);
@@ -264,13 +257,6 @@ export class View {
             this.context.drawImage(img, x - tWidth / 2 + i * 25, y, this.cardWidth, this.cardHeight);
         }
     }
-    inside() {
-        return this.mousePos.x - 7 > this.button.x && this.mousePos.x - 7 < this.button.x + this.button.w && this.mousePos.y < this.button.y + this.button.h && this.mousePos.y > this.button.y;
-    }
-    createFinishAttackButton() {
-        this.context.fillText("Finished", this.button.x + this.textLeftMargin, this.button.y + this.textUpperMargin);
-        this.context.strokeRect(this.button.x, this.button.y, this.button.w, this.button.h);
-    }
     /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
@@ -289,8 +275,6 @@ export class View {
         }
         if (currentID == this.gameView.attackingPlayer) {
             this.context.strokeStyle = 'lime';
-            this.createFinishAttackButton();
-            // this.context.save();
         }
         else if (currentID == this.gameView.defendingPlayer) {
             this.context.strokeStyle = 'red';
@@ -376,6 +360,41 @@ export class View {
             this.displayDiscardedHeap();
         }
         this.displayBout();
+    }
+    errorWrite(textStr, x, y, w, h) {
+        let textMetrics = this.context.measureText(textStr);
+        this.context.fillText(textStr, this.cardMiddleX, this.deckPosY - 2 * this.textUpperMargin);
+        this.context.strokeRect(x, y, w, h);
+    }
+    clear(x, y, w, h) {
+        this.context.clearRect(x, y, w, h);
+    }
+    /*
+        Display the error if Attack/Defense is illegal
+    */
+    errorDisplay(type) {
+        this.context.strokeStyle = 'white';
+        let textMetrics;
+        let textStr;
+        switch (type) {
+            case "illegal":
+                textStr = "Illegal Move Made";
+                break;
+            case "wait":
+                textStr = "Wait For The Card";
+                break;
+            default:
+                console.log("Unknown type of the string (Check the error types)");
+                break;
+        }
+        let x = this.cardMiddleX - this.textLeftMargin;
+        let y = this.deckPosY - 3 * this.textUpperMargin;
+        let w = textMetrics.width + 2 * this.textLeftMargin;
+        let h = this.boxHeight;
+        this.errorWrite(textStr, x, y, w, h);
+        setTimeout(function () {
+            this.clear();
+        });
     }
 }
 //# sourceMappingURL=view.js.map

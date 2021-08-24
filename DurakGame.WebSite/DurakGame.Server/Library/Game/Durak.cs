@@ -21,8 +21,8 @@ namespace DurakGame.Library.Game
         public List<Card> hand = new List<Card>();
 
         private Durak game;
-        
 
+        public int turnToMove;
         public Card trumpCard;
         public bool discardHeapChanged;
         private int prevDiscardedHeapValue;
@@ -78,12 +78,15 @@ namespace DurakGame.Library.Game
     {
         private Bout bout;
         private Deck deck;
-
         private Card trumpCard;
 
         private int defendingPlayer;
-
         private int attackingPlayer;
+
+        private bool attackFinished;
+        private bool defenseFinished;
+        private bool boutFinished;
+
         private int discardedHeapSize;
         public bool GameInProgress => players.Count > 1;
 
@@ -95,10 +98,14 @@ namespace DurakGame.Library.Game
         public Deck GetDeck() => deck;
         public int GetDiscardedHeapSize() => discardedHeapSize;
         public int GetDefendingPlayer() => defendingPlayer;
+        public bool GetAttackFinsihed() => attackFinished;
+        public bool GetDefenseFinished() => defenseFinished;
         public int GetAttackingPlayer() => attackingPlayer;
         public List<Player> GetPlayers() => players;
         public int GetSizeOfPlayers() => players.Count;
         public Bout GetBoutInformation() => bout;
+        public bool GetBoutFinished() => boutFinished;
+
         public void StartGame(int totalPlayers)
         {
             deck = new Deck();
@@ -116,6 +123,42 @@ namespace DurakGame.Library.Game
             SetAttacker();
 
             bout = new Bout();
+        }
+        
+        public bool IsAttackPossible()
+        {
+            if (players[defendingPlayer].GetPlayersHand().Count == 0)
+            {
+                return false;
+            }
+
+            foreach (Card c in bout.GetEverything())
+            {
+                if (players[attackingPlayer].GetPlayersHand().Exists(card => card.rank == c.rank))
+                {
+                    boutFinished = false;
+                    return true;
+                }
+            }
+            boutFinished = true;
+            return false;
+        }
+        
+        public void ChangeBattle()
+        {
+            // refill the cards for attacking player 
+            deck.UpdatePlayersHand(players[attackingPlayer]);
+            // refill the cards for defending player 
+            deck.UpdatePlayersHand(players[defendingPlayer]);
+
+            int attCards = bout.GetAttackingCardsSize();
+            int defCards = bout.GetDefendingCardsSize();
+            discardedHeapSize = discardedHeapSize + attCards + defCards;
+
+            attackingPlayer = (attackingPlayer + 1) % players.Count;
+            defendingPlayer = (defendingPlayer + 1) % players.Count;
+
+            bout.RemoveCardsFromBout();
         }
 
         public void RemovePlayer(int playerID)
@@ -174,14 +217,22 @@ namespace DurakGame.Library.Game
         }
 
 
-        public void AttackingPhase(int cardIndex)
+        public bool AttackingPhase(int cardIndex)
         {
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
-            // if no card is played then allow the attacking card
-            if (bout.GetAttackingCardsSize() == 0 || bout.CheckExistingRanks(attackingCard.rank))
+
+
+            
+            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) && defenseFinished))
             {
                 bout.AddAttackingCard(attackingCard);
                 players[attackingPlayer].RemoveCardFromHand(attackingCard);
+
+                attackFinished = true;
+                return true;
+            } else
+            {
+                return false;
             }
         }
 
@@ -194,28 +245,40 @@ namespace DurakGame.Library.Game
             Defending phase works for the simple case when the attacking player
             attacks only by one card at the time
         */
-        public void DefendingPhase(int cardIndex)
+        public bool DefendingPhase(int cardIndex)
         {
-            int attackCardIndex = bout.GetAttackingCardsSize() - 1;
-
-            Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
-            Card currentCard = bout.GetAttackingCard(attackCardIndex);
-
-            // legal 
-            if ((defendingCard.suit == currentCard.suit &&
-                defendingCard.rank > currentCard.rank) ||
-                (IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
-                (IsTrumpSuit(currentCard) && defendingCard.rank >
-                currentCard.rank))))
+            if (attackFinished)
             {
-                bout.AddDefendingCard(defendingCard);
-                players[defendingPlayer].RemoveCardFromHand(defendingCard);
+                int attackCardIndex = bout.GetAttackingCardsSize() - 1;
+
+                Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
+                Card currentCard = bout.GetAttackingCard(attackCardIndex);
+
+                // legal  
+                if ((defendingCard.suit == currentCard.suit &&
+                    defendingCard.rank > currentCard.rank) ||
+                    (IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
+                    (IsTrumpSuit(currentCard) && defendingCard.rank >
+                    currentCard.rank))))
+                {
+                    bout.AddDefendingCard(defendingCard);
+                    players[defendingPlayer].RemoveCardFromHand(defendingCard);
+
+                    // set defense finished to true
+                    defenseFinished = true;
+                    return true;
+                }
+                // illegal
+                else
+                {
+                    return false;
+                }
             }
-            // illegal
             else
             {
-
+                return false;
             }
+
         }
     }
 }

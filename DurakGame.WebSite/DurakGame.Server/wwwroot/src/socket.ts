@@ -18,6 +18,8 @@ let joinGameCommand: string = "JoinGame";
 let requestStateGameCommand: string = "RequestStateGame";
 let setTotalPlayersCommand: string = "SetTotalPlayers";
 let UpdateGameProcessCommand: string = "UpdateGameProcess";
+let IllegalCommand: string = "Illegal";
+let WaitCommand: string = "Wait";
 
 let view: View;
 
@@ -27,6 +29,8 @@ let allCommands: string[] = [
     requestStateGameCommand,
     setTotalPlayersCommand,
     UpdateGameProcessCommand,
+    IllegalCommand,
+    WaitCommand
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -88,8 +92,8 @@ socket.onmessage = function (event): void {
                 // hide the button
                 startButton.style.display = 'none';
 
-                view = new View(obj.gameView, id, nPlayers, socket);
-
+                view = new View();
+                view.setConnectionFields(obj.gameView, id, nPlayers, socket);
                 view.displayStateOfTheGame();
                 break;
             // Handles the message about the state of the game from the server
@@ -101,10 +105,15 @@ socket.onmessage = function (event): void {
                     console.log("Game is already being played");
                 }
                 break;
-            case (UpdateGameProcessCommand):
-                view = new View(obj.gameView, id, nPlayers, socket);
-
+            case (UpdateGameProcessCommand): 
+                view.setConnectionFields(obj.gameView, id, nPlayers, socket);
                 view.displayStateOfTheGame();
+                break;
+            case (IllegalCommand):
+                view.errorDisplay("illegal");
+                break;
+            case (WaitCommand):
+                view.errorDisplay("wait");
                 break;
         }
     } else {

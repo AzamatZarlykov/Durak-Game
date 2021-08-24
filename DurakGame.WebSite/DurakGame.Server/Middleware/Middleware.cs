@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 
 using DurakGame.Library.Game;
+using DurakGame.Library.GameCard;
 
 namespace DurakGame.Server.Middleware
 {
@@ -34,18 +35,50 @@ namespace DurakGame.Server.Middleware
             manager = _manager;
         }
 
-        private async Task UpdateGameProcess(ClientMessage route)
+        private async Task UpdateGameProcess(ClientMessage route, WebSocket socket)
         {
             command = "UpdateGameProcess";
             GameView gameView;
 
             if (route.Message == "Attacking")
             {
-                game.AttackingPhase(route.Card);
-            } else
+                if (!game.AttackingPhase(route.Card))
+                {
+                    command = "Illegal";
+                    await SendJSON(socket, new
+                    {
+                        command
+                    });
+                }
+            } else 
             {
-                game.DefendingPhase(route.Card);
+                if (!game.DefendingPhase(route.Card))
+                {
+                    if (game.GetAttackFinsihed())
+                    {
+                        command = "Illegal";
+                        await SendJSON(socket, new
+                        {
+                            command
+                        });
+                    } else
+                    {
+                        command = "Wait";
+                        await SendJSON(socket, new
+                        {
+                            command
+                        });
+                    }
+                }
+                // bc we want the attack and defense to be finished to check if there is anything 
+                // we can attack with 
+                if (!game.IsAttackPossible())
+                {
+                    game.ChangeBattle();
+                }
             }
+
+            
 
             for (int i = 0; i < game.GetPlayers().Count; i++)
             {
@@ -190,10 +223,10 @@ namespace DurakGame.Server.Middleware
                                 }
                                 break;
                             case "Attacking":
-                                await UpdateGameProcess(route);
+                                await UpdateGameProcess(route, websocket);
                                 break;
                             case "Defending":
-                                await UpdateGameProcess(route);
+                                await UpdateGameProcess(route, websocket);
                                 break;
                             default:
                                 Console.WriteLine("Unknown Message from the client");

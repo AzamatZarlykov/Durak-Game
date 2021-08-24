@@ -62,9 +62,9 @@ export declare class View {
     private id;
     private totalPlayers;
     private socket;
-    private button;
     private positionsAroundTable;
-    constructor(gameView: GameView, id: number, players: number, socket: WebSocket);
+    constructor();
+    setConnectionFields(gameView: GameView, id: number, players: number, socket: WebSocket): void;
     displayBout(): void;
     private GetCardSelected;
     private isCardSelected;
@@ -77,13 +77,14 @@ export declare class View {
     cardImage(card?: Card): HTMLImageElement;
     private displayMainPlayersHand;
     private displayFaceDownCards;
-    private inside;
-    private createFinishAttackButton;
     displayPlayersHelper(currentID: number, index: number, position: number[]): void;
     private getPositions;
     displayPlayers(): void;
     removeTable(): void;
     drawTable(): void;
     displayStateOfTheGame(): void;
+    private errorWrite;
+    private clear;
+    errorDisplay(type: string): void;
 }
 export {};

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using DurakGame.Library.GameCard;
+using DurakGame.Library.GamePlayer;
 
 namespace DurakGame.Library.GameDeck
 {
@@ -10,7 +11,7 @@ namespace DurakGame.Library.GameDeck
     {
         public int cardsLeft => cards.Count;
 
-        public List<Card> cards = new List<Card>();
+        private List<Card> cards = new List<Card>();
 
         // initializes the deck by creating all the ranks with the corresponding suits
         public Deck()
@@ -24,7 +25,7 @@ namespace DurakGame.Library.GameDeck
             }
         }
 
-        public int Length() => cards.Count();
+        public int GetDecksSize() => cards.Count();
 
         // Shuffles the deck of cards using Fisher-Yates shuffle
         // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
@@ -52,7 +53,18 @@ namespace DurakGame.Library.GameDeck
             }
         }
 
-        // Returns the drawn card from the deck
+        public void UpdatePlayersHand(Player player)
+        {
+            while (player.GetPlayersHand().Count != 6)
+            {
+                if (cards.Count > 0)
+                {
+                    player.GetPlayersHand().Add(DrawCard());
+                }
+            }
+        }
+
+        // Returns the drawn card from the deck if there is any left
         public Card DrawCard()
         {
             Card card = cards.Last();

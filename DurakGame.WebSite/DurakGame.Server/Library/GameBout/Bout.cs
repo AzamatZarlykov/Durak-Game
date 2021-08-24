@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 using DurakGame.Library.GameCard;
 
@@ -19,6 +17,15 @@ namespace DurakGame.Library.Game
         public int GetDefendingCardsSize() => defendingCards.Count();
         public List<Card> GetAttackingCards() => attackingCards;
         public List<Card> GetDefendingCards() => defendingCards;
+
+        public List<Card> GetEverything() 
+        {
+            List<Card> newList = new List<Card>();
+
+            newList = attackingCards;
+            newList.AddRange(defendingCards);
+            return newList;
+        }
 
         public Card GetAttackingCard(int index) => attackingCards[index];
         public bool CheckExistingRanks(Rank rank) =>

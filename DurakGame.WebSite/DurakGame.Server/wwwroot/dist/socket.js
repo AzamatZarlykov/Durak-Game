@@ -13,6 +13,8 @@ let joinGameCommand = "JoinGame";
 let requestStateGameCommand = "RequestStateGame";
 let setTotalPlayersCommand = "SetTotalPlayers";
 let UpdateGameProcessCommand = "UpdateGameProcess";
+let IllegalCommand = "Illegal";
+let WaitCommand = "Wait";
 let view;
 let allCommands = [
     informLeavingCommand,
@@ -20,6 +22,8 @@ let allCommands = [
     requestStateGameCommand,
     setTotalPlayersCommand,
     UpdateGameProcessCommand,
+    IllegalCommand,
+    WaitCommand
 ];
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 socket = new WebSocket(connectionUrl);
@@ -69,7 +73,8 @@ socket.onmessage = function (event) {
                 setPlayingPlayers(obj.sizeOfPlayers);
                 // hide the button
                 startButton.style.display = 'none';
-                view = new View(obj.gameView, id, nPlayers, socket);
+                view = new View();
+                view.setConnectionFields(obj.gameView, id, nPlayers, socket);
                 view.displayStateOfTheGame();
                 break;
             // Handles the message about the state of the game from the server
@@ -83,8 +88,14 @@ socket.onmessage = function (event) {
                 }
                 break;
             case (UpdateGameProcessCommand):
-                view = new View(obj.gameView, id, nPlayers, socket);
+                view.setConnectionFields(obj.gameView, id, nPlayers, socket);
                 view.displayStateOfTheGame();
+                break;
+            case (IllegalCommand):
+                view.errorDisplay("illegal");
+                break;
+            case (WaitCommand):
+                view.errorDisplay("wait");
                 break;
         }
     }
