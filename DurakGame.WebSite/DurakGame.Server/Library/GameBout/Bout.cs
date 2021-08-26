@@ -17,8 +17,9 @@ namespace DurakGame.Library.Game
         public int GetDefendingCardsSize() => defendingCards.Count();
         public List<Card> GetAttackingCards() => attackingCards;
         public List<Card> GetDefendingCards() => defendingCards;
+        public Card GetAttackingCard(int index) => attackingCards[index];
 
-        public List<Card> GetEverything() 
+        public List<Card> GetEverything()
         {
             List<Card> newList = new List<Card>();
 
@@ -27,7 +28,6 @@ namespace DurakGame.Library.Game
             return newList;
         }
 
-        public Card GetAttackingCard(int index) => attackingCards[index];
         public bool CheckExistingRanks(Rank rank) =>
             attackingCards.Exists(card => card.rank == rank) ||
             defendingCards.Exists(card => card.rank == rank);

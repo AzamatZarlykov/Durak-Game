@@ -355,24 +355,24 @@ export class View {
         else {
             this.displayDeck();
         }
-        // this.displayDiscardedHeap();
         if (this.gameView.discardHeapSize != 0 && this.gameView.discardHeapChanged) {
             this.displayDiscardedHeap();
         }
         this.displayBout();
     }
-    errorWrite(textStr, x, y, w, h) {
-        let textMetrics = this.context.measureText(textStr);
-        this.context.fillText(textStr, this.cardMiddleX, this.deckPosY - 2 * this.textUpperMargin);
+    errorWrite(textStr, x, y, w, h, textW) {
+        this.context.fillText(textStr, x + this.textLeftMargin, this.deckPosY - 2 * this.textUpperMargin);
         this.context.strokeRect(x, y, w, h);
     }
     clear(x, y, w, h) {
-        this.context.clearRect(x, y, w, h);
+        this.context.fillStyle = 'green';
+        this.context.fillRect(x - 5, y - 5, w + 10, h + 10);
     }
     /*
         Display the error if Attack/Defense is illegal
     */
     errorDisplay(type) {
+        this.context.fillStyle = 'white';
         this.context.strokeStyle = 'white';
         let textMetrics;
         let textStr;
@@ -387,14 +387,13 @@ export class View {
                 console.log("Unknown type of the string (Check the error types)");
                 break;
         }
-        let x = this.cardMiddleX - this.textLeftMargin;
+        textMetrics = this.context.measureText(textStr);
+        let x = this.positionsAroundTable[0].x - this.textLeftMargin - textMetrics.width / 2;
         let y = this.deckPosY - 3 * this.textUpperMargin;
         let w = textMetrics.width + 2 * this.textLeftMargin;
         let h = this.boxHeight;
-        this.errorWrite(textStr, x, y, w, h);
-        setTimeout(function () {
-            this.clear();
-        });
+        this.errorWrite(textStr, x, y, w, h, textMetrics.width);
+        setTimeout(() => this.clear(x, y, w, h), 3000);
     }
 }
 //# sourceMappingURL=view.js.map

@@ -61,20 +61,30 @@ namespace DurakGame.Server.Middleware
                         {
                             command
                         });
-                    } else
+                        return;
+                    }
+                    else if (!game.GetAttackFinsihed())
                     {
                         command = "Wait";
                         await SendJSON(socket, new
                         {
                             command
                         });
+                        return;
                     }
-                }
+
+                    if (!game.IsDefensePossible())
+                    {
+                        command = "Take Cards";
+                        game.ChangeBattle(false);
+                    }
+                } 
+
                 // bc we want the attack and defense to be finished to check if there is anything 
                 // we can attack with 
-                if (!game.IsAttackPossible())
+                if (game.GetDefenseFinished() && !game.IsAttackPossible())
                 {
-                    game.ChangeBattle();
+                    game.ChangeBattle(true);
                 }
             }
 

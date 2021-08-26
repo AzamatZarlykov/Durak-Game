@@ -183,6 +183,8 @@ export class View {
         console.log(gameView);
     }
 
+
+
     /*
         Display attacking and defending cards in the middle of the table 
     */
@@ -511,9 +513,6 @@ export class View {
             this.displayDeck();
         }
 
-        // this.displayDiscardedHeap();
-
-
         if (this.gameView.discardHeapSize != 0 && this.gameView.discardHeapChanged) {
             this.displayDiscardedHeap();
         }
@@ -521,23 +520,23 @@ export class View {
         this.displayBout();
     }
 
-    private errorWrite(textStr: string, x: number, y: number, w: number, h: number) {
-        let textMetrics: TextMetrics = this.context.measureText(textStr);
-
-        this.context.fillText(textStr, this.cardMiddleX,
+    private errorWrite(textStr: string, x: number, y: number, w: number, h: number, textW: number) {
+        this.context.fillText(textStr, x + this.textLeftMargin,
             this.deckPosY - 2 * this.textUpperMargin);
 
         this.context.strokeRect(x, y, w, h);
     }
 
     private clear(x: number, y: number, w: number, h: number): void {
-        this.context.clearRect(x, y, w, h);
+        this.context.fillStyle = 'green';
+        this.context.fillRect(x - 5, y - 5, w + 10, h + 10);
     }
 
     /*
         Display the error if Attack/Defense is illegal
     */
     public errorDisplay(type: string): void{
+        this.context.fillStyle = 'white';
         this.context.strokeStyle = 'white';
 
         let textMetrics: TextMetrics;
@@ -554,15 +553,14 @@ export class View {
                 console.log("Unknown type of the string (Check the error types)");
                 break;
         }
+        textMetrics = this.context.measureText(textStr);
 
-        let x: number = this.cardMiddleX - this.textLeftMargin;
+        let x: number = this.positionsAroundTable[0].x - this.textLeftMargin - textMetrics.width / 2;
         let y: number = this.deckPosY - 3 * this.textUpperMargin;
         let w: number = textMetrics.width + 2 * this.textLeftMargin;
         let h: number = this.boxHeight;
 
-        this.errorWrite(textStr, x, y, w, h);
-        setTimeout(function () {
-            this.clear();
-        })
+        this.errorWrite(textStr, x, y, w, h, textMetrics.width);
+        setTimeout(() => this.clear(x, y, w, h), 3000);
     }
 }

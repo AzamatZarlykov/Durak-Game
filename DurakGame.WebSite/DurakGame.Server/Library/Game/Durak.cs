@@ -22,8 +22,8 @@ namespace DurakGame.Library.Game
 
         private Durak game;
 
-        public int turnToMove;
         public Card trumpCard;
+
         public bool discardHeapChanged;
         private int prevDiscardedHeapValue;
         public int discardHeapSize => game.GetDiscardedHeapSize();
@@ -125,6 +125,25 @@ namespace DurakGame.Library.Game
             bout = new Bout();
         }
         
+        // Checks if the defending player can defend the attacking card with their hand of cards
+        public bool IsDefensePossible()
+        {
+            int attackCardIndex = bout.GetAttackingCardsSize() - 1;
+
+            Card attackingCard = bout.GetAttackingCard(attackCardIndex);
+            
+            foreach (Card defendingCard in players[defendingPlayer].GetPlayersHand())
+            {
+                if (IsLegalDefense(attackingCard, defendingCard))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Check if the attacking player can attack with the card that they have based on cards on 
+        // the bout 
         public bool IsAttackPossible()
         {
             if (players[defendingPlayer].GetPlayersHand().Count == 0)
@@ -143,21 +162,51 @@ namespace DurakGame.Library.Game
             boutFinished = true;
             return false;
         }
+
         
-        public void ChangeBattle()
+        public void ChangeBattle(bool successfulDefense)
         {
-            // refill the cards for attacking player 
-            deck.UpdatePlayersHand(players[attackingPlayer]);
-            // refill the cards for defending player 
-            deck.UpdatePlayersHand(players[defendingPlayer]);
+            int attCards = bout.GetAttackingCardsSize(); 
+            int defCards = bout.GetAttackingCardsSize();
 
-            int attCards = bout.GetAttackingCardsSize();
-            int defCards = bout.GetDefendingCardsSize();
-            discardedHeapSize = discardedHeapSize + attCards + defCards;
+            Console.WriteLine("Size of attacking Cards " + attCards);
+            Console.WriteLine("Size of defending Cards " + defCards);
 
-            attackingPlayer = (attackingPlayer + 1) % players.Count;
-            defendingPlayer = (defendingPlayer + 1) % players.Count;
+/*            foreach (Card c in bout.GetAttackingCards())
+            {
+                Console.WriteLine("Rank " + c.rank + " " + "Suit " + c.suit);
 
+            }
+            Console.WriteLine();
+            foreach (Card r in bout.GetDefendingCards())
+            {
+                Console.WriteLine("Rank " + r.rank + " " + "Suit " + r.suit);
+            }
+            Console.WriteLine();*/
+
+            if (successfulDefense)
+            {
+                // refill the cards for attacking player 
+                deck.UpdatePlayersHand(players[attackingPlayer]);
+                // refill the cards for defending player 
+                deck.UpdatePlayersHand(players[defendingPlayer]);
+
+                discardedHeapSize = discardedHeapSize + attCards + defCards;
+
+                attackingPlayer = (attackingPlayer + 1) % players.Count;
+                defendingPlayer = (defendingPlayer + 1) % players.Count;
+            }
+            else
+            {
+                // refill the cards for attacking player 
+                deck.UpdatePlayersHand(players[attackingPlayer]);
+
+                // add all the cards from the bout to the defending player
+                players[defendingPlayer].AddCardsToHand(bout.GetEverything());
+
+                attackingPlayer = (attackingPlayer + 2) % players.Count;
+                defendingPlayer = (defendingPlayer + 2) % players.Count;
+            }
             bout.RemoveCardsFromBout();
         }
 
@@ -221,8 +270,6 @@ namespace DurakGame.Library.Game
         {
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
 
-
-            
             if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) && defenseFinished))
             {
                 bout.AddAttackingCard(attackingCard);
@@ -241,6 +288,15 @@ namespace DurakGame.Library.Game
             return card.suit == trumpCard.suit;
         }
 
+        private bool IsLegalDefense(Card attackingCard, Card defendingCard)
+        {
+            return (defendingCard.suit == attackingCard.suit &&
+                    defendingCard.rank > attackingCard.rank) ||
+                    (IsTrumpSuit(defendingCard) && (!IsTrumpSuit(attackingCard) ||
+                    (IsTrumpSuit(attackingCard) && defendingCard.rank >
+                    attackingCard.rank)));
+        }
+
         /*
             Defending phase works for the simple case when the attacking player
             attacks only by one card at the time
@@ -252,23 +308,27 @@ namespace DurakGame.Library.Game
                 int attackCardIndex = bout.GetAttackingCardsSize() - 1;
 
                 Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
-                Card currentCard = bout.GetAttackingCard(attackCardIndex);
+                Card attackingCard = bout.GetAttackingCard(attackCardIndex);
 
-                // legal  
-                if ((defendingCard.suit == currentCard.suit &&
-                    defendingCard.rank > currentCard.rank) ||
-                    (IsTrumpSuit(defendingCard) && (!IsTrumpSuit(currentCard) ||
-                    (IsTrumpSuit(currentCard) && defendingCard.rank >
-                    currentCard.rank))))
+                if (IsDefensePossible())
                 {
-                    bout.AddDefendingCard(defendingCard);
-                    players[defendingPlayer].RemoveCardFromHand(defendingCard);
+                    // legal  
+                    if (IsLegalDefense(attackingCard, defendingCard))
+                    {
+                        bout.AddDefendingCard(defendingCard);
+                        players[defendingPlayer].RemoveCardFromHand(defendingCard);
 
-                    // set defense finished to true
-                    defenseFinished = true;
-                    return true;
-                }
-                // illegal
+                        // set defense finished to true
+                        defenseFinished = true;
+                        return true;
+                    }
+                    // illegal
+                    else
+                    {
+                        return false;
+                    }
+                } 
+                // defense is not possible at all
                 else
                 {
                     return false;
