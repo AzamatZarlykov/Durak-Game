@@ -21,11 +21,7 @@ namespace DurakGame.Library.Game
 
         public List<Card> GetEverything()
         {
-            List<Card> newList = new List<Card>();
-
-            newList = attackingCards;
-            newList.AddRange(defendingCards);
-            return newList;
+            return new List<Card>(attackingCards.Concat(defendingCards));
         }
 
         public bool CheckExistingRanks(Rank rank) =>
