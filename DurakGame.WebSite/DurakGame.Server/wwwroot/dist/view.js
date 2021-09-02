@@ -257,15 +257,27 @@ export class View {
         }
     }
     /*
+        Displays the "Your Turn" message to remind the attacking player to attack
+    */
+    displayBox(btnStr, x, y) {
+        this.context.save();
+        this.textMetrics = this.context.measureText(btnStr);
+        this.context.strokeStyle = 'white';
+        this.context.fillText(btnStr, x, y);
+        this.context.strokeRect(x - this.textLeftMargin, y - this.textUpperMargin, this.textMetrics.width + 2 * this.textLeftMargin, this.boxHeight);
+        this.context.restore();
+    }
+    /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
     */
     displayPlayersHelper(currentID, index, position) {
+        let buttonStr;
         let pos;
         pos = this.positionsAroundTable[position[index] - 1];
         this.context.lineWidth = 5;
-        let textMetrics = this.context.measureText("Player " + currentID);
-        this.context.fillText("Player " + currentID, pos.x - textMetrics.width / 2, pos.y + this.offset);
+        this.textMetrics = this.context.measureText("Player " + currentID);
+        this.context.fillText("Player " + currentID, pos.x - this.textMetrics.width / 2, pos.y + this.offset);
         if (currentID == this.id) {
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
         }
@@ -281,7 +293,28 @@ export class View {
         else {
             this.context.strokeStyle = 'black';
         }
-        this.context.strokeRect(pos.x - this.textLeftMargin - textMetrics.width / 2, pos.y - this.textUpperMargin + this.offset, textMetrics.width + 2 * this.textLeftMargin, this.boxHeight);
+        this.context.strokeRect(pos.x - this.textLeftMargin - this.textMetrics.width / 2, pos.y - this.textUpperMargin + this.offset, this.textMetrics.width + 2 * this.textLeftMargin, this.boxHeight);
+        if (this.id == currentID) {
+            // display "Your Turn" if no cards were played 
+            if (this.id == this.gameView.attackingPlayer &&
+                this.gameView.attackingCards.length == 0) {
+                buttonStr = "Your Turn";
+                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
+            }
+            // display "Done" button on the attacking player if attack successfully defeated 
+            // otherwise attack
+            if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
+                this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
+                buttonStr = "Done";
+                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
+            }
+            // display "Take" button on the defending player if cannot defend / just want to
+            if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
+                this.gameView.defendingCards.length) {
+                buttonStr = "Take";
+                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
+            }
+        }
     }
     /*
         Returns the position of players depending on the
@@ -373,7 +406,6 @@ export class View {
     errorDisplay(type) {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'white';
-        let textMetrics;
         let textStr;
         switch (type) {
             case "illegal":
@@ -386,12 +418,12 @@ export class View {
                 console.log("Unknown type of the string (Check the error types)");
                 break;
         }
-        textMetrics = this.context.measureText(textStr);
-        let x = this.positionsAroundTable[0].x - this.textLeftMargin - textMetrics.width / 2;
+        this.textMetrics = this.context.measureText(textStr);
+        let x = this.positionsAroundTable[0].x - this.textLeftMargin - this.textMetrics.width / 2;
         let y = this.deckPosY - 3 * this.textUpperMargin;
-        let w = textMetrics.width + 2 * this.textLeftMargin;
+        let w = this.textMetrics.width + 2 * this.textLeftMargin;
         let h = this.boxHeight;
-        this.errorWrite(textStr, x, y, w, h, textMetrics.width);
+        this.errorWrite(textStr, x, y, w, h, this.textMetrics.width);
         setTimeout(() => this.clear(x, y, w, h), 3000);
     }
 }

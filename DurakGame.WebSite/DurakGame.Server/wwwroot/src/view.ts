@@ -82,6 +82,7 @@ export class View {
     private id: number;
     private totalPlayers: number;
 
+    private textMetrics: TextMetrics
     private socket: WebSocket;
 
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
@@ -129,8 +130,8 @@ export class View {
         this.boutCardPositions.set(
             1, [{
                 x: this.cardMiddleX,
-            y: this.deckPosY
-        }]);
+                y: this.deckPosY
+            }]);
 
         this.boutCardPositions.set(
             2, [
@@ -140,18 +141,18 @@ export class View {
 
         this.boutCardPositions.set(
             3, [
-                {
-                    x: this.cardMiddleX - 2 * this.cardWidth - this.cardWidth / 2,
-                    y: this.deckPosY
-                },
-                {
-                    x: this.cardMiddleX,
-                    y: this.deckPosY
-                },
-                {
-                    x: this.cardMiddleX + this.cardWidth + this.cardWidth / 2,
-                    y: this.deckPosY
-                }
+            {
+                x: this.cardMiddleX - 2 * this.cardWidth - this.cardWidth / 2,
+                y: this.deckPosY
+            },
+            {
+                x: this.cardMiddleX,
+                y: this.deckPosY
+            },
+            {
+                x: this.cardMiddleX + this.cardWidth + this.cardWidth / 2,
+                y: this.deckPosY
+            }
         ]);
 
         this.boutCardPositions.set(
@@ -162,12 +163,12 @@ export class View {
             { x: this.cardMiddleX + 2 * this.cardWidth, y: this.deckPosY }
         ]);
 
-        
+
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
             console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y)
-           
+
             this.SendSelectedCard();
         });
 
@@ -226,14 +227,14 @@ export class View {
         let w: number = this.positionsAroundTable[0].tWidth;
 
         return x - w / 2 + 7 < this.mousePos.x && this.mousePos.x <= x + w / 2 + 7 &&
-               y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+            y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
     }
 
     /*
         Function that tells which card the attacking player has selected to attack 
     */
     private SendSelectedCard(): void {
-        if (this.gameView.attackingPlayer == this.id  || this.gameView.defendingPlayer == this.id) {
+        if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex: number = Math.floor(this.GetCardSelected());
 
@@ -247,18 +248,18 @@ export class View {
                     Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
                     Card: cardIndex
                 });
-                
+
                 this.socket.send(strJSON);
                 console.log(strJSON);
             }
-        } 
+        }
     }
 
     /*
         Display Discarded Heap 
     */
     public displayDiscardedHeap(): void {
-        
+
         for (let i = 0; i < this.gameView.discardHeapSize; i++) {
             let img: HTMLImageElement = this.cardImage();
             this.context.save();
@@ -282,7 +283,7 @@ export class View {
     /*
         Dispaly the Suit of the Trump card when there is no deck  
     */
-    public displayTrumpSuit() : void {
+    public displayTrumpSuit(): void {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.drawImage(img, this.cardLeftX, this.deckPosY,
             this.cardWidth, this.cardHeight);
@@ -292,7 +293,7 @@ export class View {
         Display the Deck of the game with the trump card at the bottom
         perpendicular to the rest of the face-down deck 
     */
-    public displayDeck(): void{
+    public displayDeck(): void {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.save();
 
@@ -349,7 +350,7 @@ export class View {
         } else {
             strCard = this.backCard;
         }
-        
+
 
         if (this.cardImages.has(strCard)) {
             return this.cardImages.get(strCard);
@@ -371,7 +372,7 @@ export class View {
         for (let i = 0; i < hand.length; i++) {
             let img: HTMLImageElement = this.cardImage(hand[i]);
             this.context.drawImage(
-                img, x - tWidth / 2 + i * 25 , y, this.cardWidth,
+                img, x - tWidth / 2 + i * 25, y, this.cardWidth,
                 this.cardHeight
             );
         }
@@ -385,24 +386,46 @@ export class View {
         for (let i = 0; i < playerView.numberOfCards; i++) {
             let img: HTMLImageElement = this.cardImage();
             this.context.drawImage(
-                img, x - tWidth / 2 + i * 25 , y, this.cardWidth,
+                img, x - tWidth / 2 + i * 25, y, this.cardWidth,
                 this.cardHeight
             );
         }
     }
 
     /*
+        Displays the "Your Turn" message to remind the attacking player to attack 
+    */
+    private displayBox(btnStr: string, x: number, y: number): void {
+        this.context.save();
+
+        this.textMetrics = this.context.measureText(btnStr);
+        this.context.strokeStyle = 'white';
+
+        this.context.fillText(btnStr, x, y);
+
+        this.context.strokeRect(x - this.textLeftMargin, y - this.textUpperMargin,
+            this.textMetrics.width + 2 * this.textLeftMargin,
+            this.boxHeight
+        );
+
+        this.context.restore();
+    }
+
+
+    /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
-        let pos: { x: number, y: number, tWidth:number };
+        let buttonStr: string;
+        let pos: { x: number, y: number, tWidth: number };
+
         pos = this.positionsAroundTable[position[index] - 1];
 
         this.context.lineWidth = 5;
-        let textMetrics: TextMetrics = this.context.measureText("Player " + currentID);
+        this.textMetrics = this.context.measureText("Player " + currentID);
 
-        this.context.fillText("Player " + currentID, pos.x - textMetrics.width / 2,
+        this.context.fillText("Player " + currentID, pos.x - this.textMetrics.width / 2,
             pos.y + this.offset);
 
         if (currentID == this.id) {
@@ -419,10 +442,39 @@ export class View {
         }
 
         this.context.strokeRect(
-            pos.x - this.textLeftMargin - textMetrics.width / 2,
+            pos.x - this.textLeftMargin - this.textMetrics.width / 2,
             pos.y - this.textUpperMargin + this.offset,
-            textMetrics.width + 2 * this.textLeftMargin, this.boxHeight
-        ); 
+            this.textMetrics.width + 2 * this.textLeftMargin, this.boxHeight
+        );
+
+        if (this.id == currentID) {
+            // display "Your Turn" if no cards were played 
+            if (this.id == this.gameView.attackingPlayer &&
+                this.gameView.attackingCards.length == 0) {
+                buttonStr = "Your Turn";
+
+                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                    pos.y + this.offset);
+            }
+
+            // display "Done" button on the attacking player if attack successfully defeated 
+            // otherwise attack
+            if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
+                this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
+                buttonStr = "Done";
+                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                    pos.y + this.offset);
+            }
+
+            // display "Take" button on the defending player if cannot defend / just want to
+            if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
+                this.gameView.defendingCards.length) {
+                buttonStr = "Take";
+                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                    pos.y + this.offset);
+            }
+        }
+        
     }
 
     /*
@@ -469,7 +521,6 @@ export class View {
             this.displayPlayersHelper(currentID, i, position);
         }
         this.isFirst = false;
-
     }
 
     /*
@@ -534,11 +585,10 @@ export class View {
     /*
         Display the error if Attack/Defense is illegal
     */
-    public errorDisplay(type: string): void{
+    public errorDisplay(type: string): void {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'white';
 
-        let textMetrics: TextMetrics;
         let textStr: string;
 
         switch (type) {
@@ -552,14 +602,14 @@ export class View {
                 console.log("Unknown type of the string (Check the error types)");
                 break;
         }
-        textMetrics = this.context.measureText(textStr);
+        this.textMetrics = this.context.measureText(textStr);
 
-        let x: number = this.positionsAroundTable[0].x - this.textLeftMargin - textMetrics.width / 2;
+        let x: number = this.positionsAroundTable[0].x - this.textLeftMargin - this.textMetrics.width / 2;
         let y: number = this.deckPosY - 3 * this.textUpperMargin;
-        let w: number = textMetrics.width + 2 * this.textLeftMargin;
+        let w: number = this.textMetrics.width + 2 * this.textLeftMargin;
         let h: number = this.boxHeight;
 
-        this.errorWrite(textStr, x, y, w, h, textMetrics.width);
+        this.errorWrite(textStr, x, y, w, h, this.textMetrics.width);
         setTimeout(() => this.clear(x, y, w, h), 3000);
     }
 }

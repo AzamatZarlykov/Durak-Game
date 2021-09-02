@@ -61,6 +61,7 @@ export declare class View {
     private gameView;
     private id;
     private totalPlayers;
+    private textMetrics;
     private socket;
     private positionsAroundTable;
     constructor();
@@ -77,6 +78,7 @@ export declare class View {
     cardImage(card?: Card): HTMLImageElement;
     private displayMainPlayersHand;
     private displayFaceDownCards;
+    private displayBox;
     displayPlayersHelper(currentID: number, index: number, position: number[]): void;
     private getPositions;
     displayPlayers(): void;
