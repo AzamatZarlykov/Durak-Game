@@ -41,6 +41,10 @@ export declare class View {
     private context;
     private cardWidth;
     private cardHeight;
+    private yourTurnStr;
+    private takeStr;
+    private doneStr;
+    private mouseClickMargin;
     private cardLowerY;
     private cardUpperY;
     private cardLeftX;
@@ -69,7 +73,8 @@ export declare class View {
     displayBout(): void;
     private GetCardSelected;
     private isCardSelected;
-    private SendSelectedCard;
+    private isButtonSelected;
+    private CheckMouseClick;
     displayDiscardedHeap(): void;
     displayTrumpSuit(): void;
     displayDeck(): void;

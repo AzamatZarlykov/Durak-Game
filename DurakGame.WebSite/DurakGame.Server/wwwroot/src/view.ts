@@ -52,6 +52,12 @@ export class View {
     private cardWidth: number = 100;
     private cardHeight: number = 120;
 
+    private yourTurnStr: string = "Your Turn";
+    private takeStr: string = "Take";
+    private doneStr: string = "Done";
+
+    private mouseClickMargin: number = 7
+
     private cardLowerY: number;
     private cardUpperY: number;
 
@@ -169,7 +175,7 @@ export class View {
             this.mousePos.y = e.y;
             console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y)
 
-            this.SendSelectedCard();
+            this.CheckMouseClick();
         });
 
     }
@@ -226,14 +232,39 @@ export class View {
         let y: number = this.positionsAroundTable[0].y;
         let w: number = this.positionsAroundTable[0].tWidth;
 
-        return x - w / 2 + 7 < this.mousePos.x && this.mousePos.x <= x + w / 2 + 7 &&
+        return x - w / 2 + this.mouseClickMargin < this.mousePos.x &&
+            this.mousePos.x <= x + w / 2 + this.mouseClickMargin &&
             y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+    }
+
+    private isButtonSelected(): boolean {
+        let x: number = this.positionsAroundTable[0].x;
+        let y: number = this.positionsAroundTable[0].y;
+        let w: number = this.positionsAroundTable[0].tWidth;
+
+        if (this.id == this.gameView.attackingPlayer) {
+            this.textMetrics = this.context.measureText(this.doneStr);
+
+            return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
+                this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
+                this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin && 
+                y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+        }
+        else if (this.id == this.gameView.defendingPlayer) {
+            this.textMetrics = this.context.measureText(this.takeStr);
+
+            return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
+                this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
+                this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin && 
+                y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+        }
     }
 
     /*
         Function that tells which card the attacking player has selected to attack 
     */
-    private SendSelectedCard(): void {
+    private CheckMouseClick(): void {
+        let strJSON: string;
         if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex: number = Math.floor(this.GetCardSelected());
@@ -244,14 +275,19 @@ export class View {
 
                 console.log("Card Index clicked is " + cardIndex);
 
-                let strJSON: string = JSON.stringify({
+                strJSON = JSON.stringify({
                     Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
                     Card: cardIndex
                 });
-
-                this.socket.send(strJSON);
-                console.log(strJSON);
             }
+            else if (this.isButtonSelected()) {
+                strJSON = JSON.stringify({
+                    Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take",
+                });
+            }
+
+            this.socket.send(strJSON);
+            console.log(strJSON);
         }
     }
 
@@ -451,9 +487,8 @@ export class View {
             // display "Your Turn" if no cards were played 
             if (this.id == this.gameView.attackingPlayer &&
                 this.gameView.attackingCards.length == 0) {
-                buttonStr = "Your Turn";
 
-                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                this.displayBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset);
             }
 
@@ -461,16 +496,14 @@ export class View {
             // otherwise attack
             if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
                 this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
-                buttonStr = "Done";
-                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                this.displayBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset);
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
                 this.gameView.defendingCards.length) {
-                buttonStr = "Take";
-                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                this.displayBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset);
             }
         }

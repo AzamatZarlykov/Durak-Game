@@ -27,6 +27,10 @@ export class View {
     constructor() {
         this.cardWidth = 100;
         this.cardHeight = 120;
+        this.yourTurnStr = "Your Turn";
+        this.takeStr = "Take";
+        this.doneStr = "Done";
+        this.mouseClickMargin = 7;
         this.dir = "images/deck/";
         this.backCard = "2B";
         this.cardImages = new Map();
@@ -90,7 +94,7 @@ export class View {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
             console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y);
-            this.SendSelectedCard();
+            this.CheckMouseClick();
         });
     }
     setConnectionFields(gameView, id, players, socket) {
@@ -132,13 +136,32 @@ export class View {
         let x = this.positionsAroundTable[0].x;
         let y = this.positionsAroundTable[0].y;
         let w = this.positionsAroundTable[0].tWidth;
-        return x - w / 2 + 7 < this.mousePos.x && this.mousePos.x <= x + w / 2 + 7 &&
+        return x - w / 2 + this.mouseClickMargin < this.mousePos.x &&
+            this.mousePos.x <= x + w / 2 + this.mouseClickMargin &&
             y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+    }
+    isButtonSelected() {
+        let x = this.positionsAroundTable[0].x;
+        let y = this.positionsAroundTable[0].y;
+        let w = this.positionsAroundTable[0].tWidth;
+        if (this.id == this.gameView.attackingPlayer) {
+            this.textMetrics = this.context.measureText(this.doneStr);
+            console.log("DONE");
+            return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
+                this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
+                this.textLeftMargin + this.textMetrics.width - this.mouseClickMargin;
+        }
+        else if (this.id == this.gameView.defendingPlayer) {
+            this.textMetrics = this.context.measureText(this.takeStr);
+            return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
+                this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
+                this.textLeftMargin + this.textMetrics.width - this.mouseClickMargin;
+        }
     }
     /*
         Function that tells which card the attacking player has selected to attack
     */
-    SendSelectedCard() {
+    CheckMouseClick() {
         if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex = Math.floor(this.GetCardSelected());
@@ -152,6 +175,14 @@ export class View {
                 });
                 this.socket.send(strJSON);
                 console.log(strJSON);
+            }
+            else if (this.isButtonSelected()) {
+                if (this.id == this.gameView.defendingPlayer) {
+                    console.log("TAKE CARDS");
+                }
+                else if (this.id == this.gameView.attackingPlayer) {
+                    console.log("DONE");
+                }
             }
         }
     }
@@ -298,21 +329,18 @@ export class View {
             // display "Your Turn" if no cards were played 
             if (this.id == this.gameView.attackingPlayer &&
                 this.gameView.attackingCards.length == 0) {
-                buttonStr = "Your Turn";
-                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
+                this.displayBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
             }
             // display "Done" button on the attacking player if attack successfully defeated 
             // otherwise attack
             if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
                 this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
-                buttonStr = "Done";
-                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
+                this.displayBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
             }
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
                 this.gameView.defendingCards.length) {
-                buttonStr = "Take";
-                this.displayBox(buttonStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
+                this.displayBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth, pos.y + this.offset);
             }
         }
     }

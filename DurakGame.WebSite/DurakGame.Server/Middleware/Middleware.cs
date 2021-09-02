@@ -238,6 +238,12 @@ namespace DurakGame.Server.Middleware
                             case "Defending":
                                 await UpdateGameProcess(route, websocket);
                                 break;
+                            case "Done":
+
+                                break;
+                            case "Take":
+
+                                break;
                             default:
                                 Console.WriteLine("Unknown Message from the client");
                                 break;
