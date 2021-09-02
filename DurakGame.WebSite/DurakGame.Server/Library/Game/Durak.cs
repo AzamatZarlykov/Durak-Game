@@ -24,8 +24,9 @@ namespace DurakGame.Library.Game
 
         public Card trumpCard;
 
+        public int prevDiscardedHeapValue;
         public bool discardHeapChanged;
-        private int prevDiscardedHeapValue;
+
         public int discardHeapSize => game.GetDiscardedHeapSize();
         public int deckSize => game.GetDeck().cardsLeft;
         public int defendingPlayer => game.GetDefendingPlayer();
@@ -35,25 +36,23 @@ namespace DurakGame.Library.Game
         public List<Card> attackingCards;
         public List<Card> defendingCards;
 
-
         public GameView(Durak game, int id)
         {
             this.game = game;
 
             List<Player> players = game.GetPlayers();
-            
+
             playerID = id;
             hand = players[id].GetPlayersHand();
+
+            List<PlayerView> pViews = new List<PlayerView>();
+            PlayerView playerView;
 
             if (prevDiscardedHeapValue != discardHeapSize)
             {
                 discardHeapChanged = true;
             }
-
             prevDiscardedHeapValue = discardHeapSize;
-
-            List<PlayerView> pViews = new List<PlayerView>();
-            PlayerView playerView;
 
             for (int i = 0; i < game.GetSizeOfPlayers(); i++)
             {
@@ -87,7 +86,7 @@ namespace DurakGame.Library.Game
         private bool defenseFinished;
         private bool boutFinished;
 
-        private int discardedHeapSize;
+        public int discardedHeapSize;
         public bool GameInProgress => players.Count > 1;
 
         private List<Player> players = new List<Player>();
@@ -168,21 +167,6 @@ namespace DurakGame.Library.Game
         {
             int attCards = bout.GetAttackingCardsSize(); 
             int defCards = bout.GetAttackingCardsSize();
-
-            Console.WriteLine("Size of attacking Cards " + attCards);
-            Console.WriteLine("Size of defending Cards " + defCards);
-
-/*            foreach (Card c in bout.GetAttackingCards())
-            {
-                Console.WriteLine("Rank " + c.rank + " " + "Suit " + c.suit);
-
-            }
-            Console.WriteLine();
-            foreach (Card r in bout.GetDefendingCards())
-            {
-                Console.WriteLine("Rank " + r.rank + " " + "Suit " + r.suit);
-            }
-            Console.WriteLine();*/
 
             if (successfulDefense)
             {
@@ -270,7 +254,8 @@ namespace DurakGame.Library.Game
         {
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
 
-            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) && defenseFinished))
+            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) 
+                && defenseFinished))
             {
                 bout.AddAttackingCard(attackingCard);
                 players[attackingPlayer].RemoveCardFromHand(attackingCard);

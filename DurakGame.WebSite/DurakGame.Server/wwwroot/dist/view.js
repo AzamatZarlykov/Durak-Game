@@ -114,7 +114,6 @@ export class View {
         }
         for (let i = 0; i < defendingCardSize; i++) {
             let img = this.cardImage(this.gameView.defendingCards[i]);
-            pos = this.boutCardPositions.get(defendingCardSize % 4);
             this.context.drawImage(img, pos[i].x + 20, pos[i].y, this.cardWidth, this.cardHeight);
         }
     }
