@@ -123,6 +123,9 @@ namespace DurakGame.Library.Game
 
             bout = new Bout();
         }
+
+        public void SetAttackFinsihed(bool value) => attackFinished = value;
+        
         
         // Checks if the defending player can defend the attacking card with their hand of cards
         public bool IsDefensePossible()

@@ -145,23 +145,28 @@ export class View {
         let y = this.positionsAroundTable[0].y;
         let w = this.positionsAroundTable[0].tWidth;
         if (this.id == this.gameView.attackingPlayer) {
+            console.log("INSIDE FUNCTION");
             this.textMetrics = this.context.measureText(this.doneStr);
-            console.log("DONE");
             return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
                 this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
-                this.textLeftMargin + this.textMetrics.width - this.mouseClickMargin;
+                this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin &&
+                y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
+                y + this.cardHeight + this.offset - this.mouseClickMargin;
         }
         else if (this.id == this.gameView.defendingPlayer) {
             this.textMetrics = this.context.measureText(this.takeStr);
             return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
                 this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
-                this.textLeftMargin + this.textMetrics.width - this.mouseClickMargin;
+                this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin &&
+                y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
+                y + this.cardHeight + this.offset - this.mouseClickMargin;
         }
     }
     /*
         Function that tells which card the attacking player has selected to attack
     */
     CheckMouseClick() {
+        let strJSON;
         if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
             if (this.isCardSelected()) {
                 let cardIndex = Math.floor(this.GetCardSelected());
@@ -169,21 +174,18 @@ export class View {
                     cardIndex = this.gameView.hand.length - 1;
                 }
                 console.log("Card Index clicked is " + cardIndex);
-                let strJSON = JSON.stringify({
+                strJSON = JSON.stringify({
                     Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
                     Card: cardIndex
                 });
-                this.socket.send(strJSON);
-                console.log(strJSON);
             }
             else if (this.isButtonSelected()) {
-                if (this.id == this.gameView.defendingPlayer) {
-                    console.log("TAKE CARDS");
-                }
-                else if (this.id == this.gameView.attackingPlayer) {
-                    console.log("DONE");
-                }
+                strJSON = JSON.stringify({
+                    Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take"
+                });
             }
+            this.socket.send(strJSON);
+            console.log(strJSON);
         }
     }
     /*

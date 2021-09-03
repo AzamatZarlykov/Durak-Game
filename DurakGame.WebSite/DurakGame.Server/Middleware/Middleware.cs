@@ -40,56 +40,64 @@ namespace DurakGame.Server.Middleware
             command = "UpdateGameProcess";
             GameView gameView;
 
-            if (route.Message == "Attacking")
+            switch (route.Message)
             {
-                if (!game.AttackingPhase(route.Card))
-                {
-                    command = "Illegal";
-                    await SendJSON(socket, new
-                    {
-                        command
-                    });
-                }
-            } else 
-            {
-                if (!game.DefendingPhase(route.Card))
-                {
-                    if (game.GetAttackFinsihed())
+                case "Attacking":
+                    if (!game.AttackingPhase(route.Card))
                     {
                         command = "Illegal";
                         await SendJSON(socket, new
                         {
                             command
                         });
-                        return;
                     }
-                    else if (!game.GetAttackFinsihed())
+                    break;
+                case "Defending":
+                    if (!game.DefendingPhase(route.Card))
                     {
-                        command = "Wait";
-                        await SendJSON(socket, new
+                        if (game.GetAttackFinsihed())
                         {
-                            command
-                        });
-                        return;
+                            command = "Illegal";
+                            await SendJSON(socket, new
+                            {
+                                command
+                            });
+                            return;
+                        }
+                        else if (!game.GetAttackFinsihed())
+                        {
+                            command = "Wait";
+                            await SendJSON(socket, new
+                            {
+                                command
+                            });
+                            return;
+                        }
+
+                        if (!game.IsDefensePossible())
+                        {
+                            command = "Take Cards";
+                            game.ChangeBattle(false);
+                        }
                     }
 
-                    if (!game.IsDefensePossible())
+                    // bc we want the attack and defense to be finished to check if there is anything 
+                    // we can attack with 
+                    if (game.GetDefenseFinished() && !game.IsAttackPossible())
                     {
-                        command = "Take Cards";
-                        game.ChangeBattle(false);
+                        game.ChangeBattle(true);
                     }
-                } 
-
-                // bc we want the attack and defense to be finished to check if there is anything 
-                // we can attack with 
-                if (game.GetDefenseFinished() && !game.IsAttackPossible())
-                {
+                    break;
+                case "Done":
+                    game.SetAttackFinsihed(true);
                     game.ChangeBattle(true);
-                }
+                    break;
+                case "Take":
+                    game.ChangeBattle(false);
+                    break;
             }
 
-            
-
+            // Distribute updated GameView to players
             for (int i = 0; i < game.GetPlayers().Count; i++)
             {
                 gameView = new GameView(game, i);
@@ -209,6 +217,7 @@ namespace DurakGame.Server.Middleware
                     {
                         // Storing the message from the client into json string e.g {"command":"SetPlayerID";"playerID":1;"totalPlayers":3}
                         string jsonMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        Console.WriteLine(jsonMessage);
                         // Deserialize from json string to an object 
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
@@ -239,10 +248,10 @@ namespace DurakGame.Server.Middleware
                                 await UpdateGameProcess(route, websocket);
                                 break;
                             case "Done":
-
+                                await UpdateGameProcess(route, websocket);
                                 break;
                             case "Take":
-
+                                await UpdateGameProcess(route, websocket);
                                 break;
                             default:
                                 Console.WriteLine("Unknown Message from the client");

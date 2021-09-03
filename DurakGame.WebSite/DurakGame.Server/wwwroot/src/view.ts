@@ -243,12 +243,14 @@ export class View {
         let w: number = this.positionsAroundTable[0].tWidth;
 
         if (this.id == this.gameView.attackingPlayer) {
+            console.log("INSIDE FUNCTION");
             this.textMetrics = this.context.measureText(this.doneStr);
 
             return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
                 this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
                 this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin && 
-                y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+                y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
+                y + this.cardHeight + this.offset - this.mouseClickMargin;
         }
         else if (this.id == this.gameView.defendingPlayer) {
             this.textMetrics = this.context.measureText(this.takeStr);
@@ -256,7 +258,8 @@ export class View {
             return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
                 this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
                 this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin && 
-                y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+                y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
+                y + this.cardHeight + this.offset - this.mouseClickMargin;
         }
     }
 
@@ -282,7 +285,7 @@ export class View {
             }
             else if (this.isButtonSelected()) {
                 strJSON = JSON.stringify({
-                    Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take",
+                    Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take"
                 });
             }
 
