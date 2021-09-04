@@ -55,7 +55,7 @@ namespace DurakGame.Server.Middleware
                 case "Defending":
                     if (!game.DefendingPhase(route.Card))
                     {
-                        if (game.GetAttackFinsihed())
+                        if (game.GetAttackFinished())
                         {
                             command = "Illegal";
                             await SendJSON(socket, new
@@ -64,7 +64,7 @@ namespace DurakGame.Server.Middleware
                             });
                             return;
                         }
-                        else if (!game.GetAttackFinsihed())
+                        else
                         {
                             command = "Wait";
                             await SendJSON(socket, new
@@ -73,13 +73,6 @@ namespace DurakGame.Server.Middleware
                             });
                             return;
                         }
-                    }
-
-                    // bc we want the attack and defense to be finished to check if there is anything 
-                    // we can attack with 
-                    if (game.GetDefenseFinished() && !game.IsAttackPossible())
-                    {
-                        game.ChangeBattle(true);
                     }
                     break;
                 case "Done":

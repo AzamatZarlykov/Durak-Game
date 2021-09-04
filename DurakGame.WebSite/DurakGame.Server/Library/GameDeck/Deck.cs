@@ -57,10 +57,7 @@ namespace DurakGame.Library.GameDeck
         {
             while (player.GetPlayersHand().Count < 6)
             {
-                if (cards.Count > 0)
-                {
-                    player.GetPlayersHand().Add(DrawCard());
-                }
+                player.GetPlayersHand().Add(DrawCard());
             }
         }
 

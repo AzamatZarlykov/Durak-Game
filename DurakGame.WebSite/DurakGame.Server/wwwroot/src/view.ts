@@ -189,9 +189,6 @@ export class View {
 
         console.log(gameView);
     }
-
-
-
     /*
         Display attacking and defending cards in the middle of the table 
     */
@@ -237,29 +234,26 @@ export class View {
             y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
     }
 
-    private isButtonSelected(): boolean {
+    private withinTheButton(text: string) {
         let x: number = this.positionsAroundTable[0].x;
         let y: number = this.positionsAroundTable[0].y;
         let w: number = this.positionsAroundTable[0].tWidth;
 
-        if (this.id == this.gameView.attackingPlayer) {
-            console.log("INSIDE FUNCTION");
-            this.textMetrics = this.context.measureText(this.doneStr);
+        this.textMetrics = this.context.measureText(text);
 
-            return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
-                this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
-                this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin && 
-                y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
-                y + this.cardHeight + this.offset - this.mouseClickMargin;
+        return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
+            this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
+            this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin &&
+            y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
+            y + this.cardHeight + this.offset - this.mouseClickMargin;
+    }
+
+    private isButtonSelected(): boolean {
+        if (this.id == this.gameView.attackingPlayer) {
+            return this.withinTheButton(this.doneStr);
         }
         else if (this.id == this.gameView.defendingPlayer) {
-            this.textMetrics = this.context.measureText(this.takeStr);
-
-            return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
-                this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
-                this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin && 
-                y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
-                y + this.cardHeight + this.offset - this.mouseClickMargin;
+            return this.withinTheButton(this.takeStr);
         }
     }
 
@@ -473,7 +467,7 @@ export class View {
         if (currentID == this.id) {
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
         } else {
-            this.displayFaceDownCards(this.gameView.playersView[index], pos.x, pos.y, pos.tWidth);
+            this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
         }
         if (currentID == this.gameView.attackingPlayer) {
             this.context.strokeStyle = 'lime';
