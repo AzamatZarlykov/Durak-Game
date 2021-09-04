@@ -93,9 +93,10 @@ export class View {
 
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
 
-    constructor() {
+    constructor(socket: WebSocket) {
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
         let context = canvas.getContext("2d");
+        this.socket = socket;
 
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
@@ -180,8 +181,7 @@ export class View {
 
     }
 
-    public setConnectionFields(gameView: GameView, id: number, players: number, socket: WebSocket) {
-        this.socket = socket;
+    public setConnectionFields(gameView: GameView, id: number, players: number) {
 
         this.gameView = gameView;
         this.id = id;
@@ -287,6 +287,10 @@ export class View {
                 strJSON = JSON.stringify({
                     Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take"
                 });
+            }
+            else {
+                // if you click anywhere else just ignore
+                return;
             }
 
             this.socket.send(strJSON);
@@ -456,7 +460,6 @@ export class View {
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
-        let buttonStr: string;
         let pos: { x: number, y: number, tWidth: number };
 
         pos = this.positionsAroundTable[position[index] - 1];

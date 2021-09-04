@@ -68,8 +68,8 @@ export declare class View {
     private textMetrics;
     private socket;
     private positionsAroundTable;
-    constructor();
-    setConnectionFields(gameView: GameView, id: number, players: number, socket: WebSocket): void;
+    constructor(socket: WebSocket);
+    setConnectionFields(gameView: GameView, id: number, players: number): void;
     displayBout(): void;
     private GetCardSelected;
     private isCardSelected;

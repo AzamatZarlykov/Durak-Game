@@ -75,8 +75,8 @@ socket.onmessage = function (event) {
                 setPlayingPlayers(obj.sizeOfPlayers);
                 // hide the button
                 startButton.style.display = 'none';
-                view = new View();
-                view.setConnectionFields(obj.gameView, id, nPlayers, socket);
+                view = new View(socket);
+                view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
             // Handles the message about the state of the game from the server
@@ -90,7 +90,7 @@ socket.onmessage = function (event) {
                 }
                 break;
             case (UpdateGameProcessCommand):
-                view.setConnectionFields(obj.gameView, id, nPlayers, socket);
+                view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
             case (IllegalCommand):

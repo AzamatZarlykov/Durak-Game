@@ -73,12 +73,6 @@ namespace DurakGame.Server.Middleware
                             });
                             return;
                         }
-
-                        if (!game.IsDefensePossible())
-                        {
-                            command = "Take Cards";
-                            game.ChangeBattle(false);
-                        }
                     }
 
                     // bc we want the attack and defense to be finished to check if there is anything 

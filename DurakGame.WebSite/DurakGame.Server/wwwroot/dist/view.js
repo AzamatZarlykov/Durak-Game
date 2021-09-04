@@ -24,7 +24,7 @@ class MousePos {
     }
 }
 export class View {
-    constructor() {
+    constructor(socket) {
         this.cardWidth = 100;
         this.cardHeight = 120;
         this.yourTurnStr = "Your Turn";
@@ -37,6 +37,7 @@ export class View {
         this.boutCardPositions = new Map();
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
+        this.socket = socket;
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
         context.font = "17px serif";
@@ -97,8 +98,7 @@ export class View {
             this.CheckMouseClick();
         });
     }
-    setConnectionFields(gameView, id, players, socket) {
-        this.socket = socket;
+    setConnectionFields(gameView, id, players) {
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
@@ -183,6 +183,10 @@ export class View {
                 strJSON = JSON.stringify({
                     Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take"
                 });
+            }
+            else {
+                // if you click anywhere else just ignore
+                return;
             }
             this.socket.send(strJSON);
             console.log(strJSON);
@@ -305,7 +309,6 @@ export class View {
         and opponenets hand, display attacking and defending players
     */
     displayPlayersHelper(currentID, index, position) {
-        let buttonStr;
         let pos;
         pos = this.positionsAroundTable[position[index] - 1];
         this.context.lineWidth = 5;

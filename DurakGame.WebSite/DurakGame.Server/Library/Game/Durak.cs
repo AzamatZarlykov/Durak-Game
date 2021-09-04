@@ -252,7 +252,6 @@ namespace DurakGame.Library.Game
             defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
         }
 
-
         public bool AttackingPhase(int cardIndex)
         {
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
@@ -298,31 +297,22 @@ namespace DurakGame.Library.Game
                 Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
                 Card attackingCard = bout.GetAttackingCard(attackCardIndex);
 
-                if (IsDefensePossible())
+                // legal  
+                if (IsLegalDefense(attackingCard, defendingCard))
                 {
-                    // legal  
-                    if (IsLegalDefense(attackingCard, defendingCard))
-                    {
-                        bout.AddDefendingCard(defendingCard);
-                        players[defendingPlayer].RemoveCardFromHand(defendingCard);
+                    bout.AddDefendingCard(defendingCard);
+                    players[defendingPlayer].RemoveCardFromHand(defendingCard);
 
-                        // set defense finished to true
-                        defenseFinished = true;
-                        return true;
-                    }
-                    // illegal
-                    else
-                    {
-                        return false;
-                    }
-                } 
-                // defense is not possible at all
+                    // set defense finished to true
+                    defenseFinished = true;
+                    return true;
+                }
+                // illegal
                 else
                 {
                     return false;
                 }
-            }
-            else
+            } else
             {
                 return false;
             }
