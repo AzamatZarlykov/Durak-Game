@@ -1,30 +1,23 @@
-﻿import { View } from './view.js';
-
-let playingTable = document.getElementById("playingTable") as HTMLDivElement;
-let startButton = document.getElementById("startGameButton") as HTMLButtonElement;
-
-let socket: WebSocket;
-let connectionUrl: string;
-
-let scheme: string = document.location.protocol === "https:" ? "wss" : "ws";
-let port: string = document.location.port ? (":" + document.location.port) : "";
-
-let id: number; // id of the player 
-let nPlayers: number; // total number of players on the webpage
-let nPlayersPlaying: number; // total number of players playing on the table
-
-let informLeavingCommand: string = "InformLeaving";
-let joinGameCommand: string = "JoinGame";
-let requestStateGameCommand: string = "RequestStateGame";
-let setTotalPlayersCommand: string = "SetTotalPlayers";
-let UpdateGameProcessCommand: string = "UpdateGameProcess";
-let IllegalCommand: string = "Illegal";
-let WaitCommand: string = "Wait";
-let TakeCardsCommand: string = "Take Cards";
-
-let view: View;
-
-let allCommands: string[] = [
+import { View } from './view.js';
+let playingTable = document.getElementById("playingTable");
+let startButton = document.getElementById("startGameButton");
+let socket;
+let connectionUrl;
+let scheme = document.location.protocol === "https:" ? "wss" : "ws";
+let port = document.location.port ? (":" + document.location.port) : "";
+let id; // id of the player 
+let nPlayers; // total number of players on the webpage
+let nPlayersPlaying; // total number of players playing on the table
+let informLeavingCommand = "InformLeaving";
+let joinGameCommand = "JoinGame";
+let requestStateGameCommand = "RequestStateGame";
+let setTotalPlayersCommand = "SetTotalPlayers";
+let UpdateGameProcessCommand = "UpdateGameProcess";
+let IllegalCommand = "Illegal";
+let WaitCommand = "Wait";
+let TakeCardsCommand = "Take Cards";
+let view;
+let allCommands = [
     informLeavingCommand,
     joinGameCommand,
     requestStateGameCommand,
@@ -34,29 +27,21 @@ let allCommands: string[] = [
     WaitCommand,
     TakeCardsCommand,
 ];
-
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
-
 socket = new WebSocket(connectionUrl);
-
-socket.onopen = function (event): void {
+socket.onopen = function (event) {
     updateState();
 };
-socket.onclose = function (event): void {
+socket.onclose = function (event) {
     updateState();
 };
 socket.onerror = updateState;
-
-socket.onmessage = function (event): void {
+socket.onmessage = function (event) {
     let obj = JSON.parse(event.data);
-
-
     if (allCommands.indexOf(obj.command) > -1) {
-
         if ([informLeavingCommand, setTotalPlayersCommand, joinGameCommand].includes(obj.command)) {
             setTotalPlayers(obj.totalPlayers);
         }
-
         switch (obj.command) {
             // Handles the event when the player leaves when the game is on. It updates the value of
             // number of people playing and rearranges the position
@@ -64,22 +49,21 @@ socket.onmessage = function (event): void {
             case (informLeavingCommand):
                 if (playingTable.hidden == false) {
                     setPlayingPlayers(obj.sizeOfPlayers);
-
                     if (nPlayersPlaying > 1) {
                         setPlayingPlayers(nPlayersPlaying);
                         // view.displayPlayers(id, nPlayersPlaying);
-                    } else {
+                    }
+                    else {
                         // when 1 person left the game is over. Close the board and tell server that game
                         // has finished
                         view.removeTable();
-                        
                         // no players playing
                         setPlayingPlayers(0);
-
                         console.log("The game is over");
                     }
                     console.log("Player " + obj.leavingPlayerID + " left the game");
-                } else {
+                }
+                else {
                     console.log("Player" + obj.leavingPlayerID + " left the server");
                 }
                 break;
@@ -87,13 +71,10 @@ socket.onmessage = function (event): void {
             // game to join the playing room. This statement displays number of playing players and displays
             // each players position on the table
             case (joinGameCommand):
-
                 setPlayerID(obj.playerID);
                 setPlayingPlayers(obj.sizeOfPlayers);
-
                 // hide the button
                 startButton.style.display = 'none';
-
                 view = new View(socket);
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
@@ -101,13 +82,14 @@ socket.onmessage = function (event): void {
             // Handles the message about the state of the game from the server
             case (requestStateGameCommand):
                 if (!obj.gameState) {
-                    let data: string = constructJSONPayload("StartGame");
+                    let data = constructJSONPayload("StartGame");
                     socket.send(data);
-                } else {
+                }
+                else {
                     console.log("Game is already being played");
                 }
                 break;
-            case (UpdateGameProcessCommand): 
+            case (UpdateGameProcessCommand):
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
@@ -121,21 +103,21 @@ socket.onmessage = function (event): void {
                 view.displayStateOfTheGame();
                 break;
         }
-    } else {
+    }
+    else {
         console.log("Unknown command from the server");
     }
 };
-
-startButton.onclick = function (): void {
+startButton.onclick = function () {
     if (nPlayers > 1) {
-        let data: string = constructJSONPayload(requestStateGameCommand);
+        let data = constructJSONPayload(requestStateGameCommand);
         socket.send(data);
-    } else {
+    }
+    else {
         console.log("Not enough people on the server to play");
     }
-}
-
-function updateState(): void {
+};
+function updateState() {
     function disable() {
         startButton.disabled = true;
         view.removeTable();
@@ -143,10 +125,10 @@ function updateState(): void {
     function enable() {
         startButton.disabled = false;
     }
-
     if (!socket) {
         disable();
-    } else {
+    }
+    else {
         switch (socket.readyState) {
             case WebSocket.CLOSED:
                 disable();
@@ -166,36 +148,33 @@ function updateState(): void {
         }
     }
 }
-
 /*
 Sets the total number of players playing in the game on html
 */
-function setPlayingPlayers(count: number): void {
+function setPlayingPlayers(count) {
     nPlayersPlaying = count;
     console.log("Number Of Players In The Game: " + nPlayersPlaying);
 }
-
 /*
 Returns the JSON object that containts the message to the server
 */
-function constructJSONPayload(message: string): string {
+function constructJSONPayload(message) {
     return JSON.stringify({
         From: id,
         Message: message,
     });
 }
-
 /*
 Sets the total number of players on html
 */
-function setTotalPlayers(count: number): void {
+function setTotalPlayers(count) {
     nPlayers = count;
 }
-
 /*
 Sets the player ID on html
 */
-function setPlayerID(identifier: number): void {
+function setPlayerID(identifier) {
     id = identifier;
     console.log("ID of the player is: " + id);
 }
+//# sourceMappingURL=socket.js.map

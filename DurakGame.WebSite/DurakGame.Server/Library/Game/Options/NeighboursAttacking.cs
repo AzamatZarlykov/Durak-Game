@@ -26,10 +26,11 @@ namespace DurakGame.Library.Game
 
         public override void ChangeBattle(bool successfulDefense)
         {
-            // when the first player finishes the attack( when clicks the DONE button) 
-            // let the second attacker( the one on the left side of the defender) to attack
-            // once the attack is over ask the right attacker again if there is anything they 
-            // want to add if yes, repeat the previous step if no then the bout is over and 
+            // when the first player finishes the attack( when clicks the DONE button) or the
+            // defender takes the first attacked card ask the attacker if he is DONE if no add
+            // extra cards, if yes let the second attacker( the one on the left side of the defender)
+            // to attack once the attack is over ask the right attacker again if there is anything
+            // they want to add if yes, repeat the previous step if no then the bout is over and 
             // the change battle is called 
 
             Console.WriteLine("ATTACKING FINISHED " + attackFinished);
