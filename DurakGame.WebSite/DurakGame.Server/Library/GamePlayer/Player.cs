@@ -28,6 +28,11 @@ namespace DurakGame.Library.GamePlayer
             playersHand.Remove(card);
         }
 
+        public void RemoveAllCardsFromHand()
+        {
+            playersHand.Clear();
+        }
+
         public void PrintCards()
         {
             foreach (Card c in playersHand)

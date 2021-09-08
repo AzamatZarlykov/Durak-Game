@@ -27,6 +27,8 @@ interface GameView {
     discardHeapSize: number;
     discardHeapChanged: boolean;
 
+    durak: number;
+
     hand: Card[];
 
     playersView: PlayerView[];
@@ -55,7 +57,8 @@ export class View {
     private yourTurnStr: string = "Your Turn";
     private takeStr: string = "Take";
     private doneStr: string = "Done";
-
+    private winnerStr: string = "Winner";
+    private durakStr: string = "Durak is ";
     private mouseClickMargin: number = 7
 
     private cardLowerY: number;
@@ -106,9 +109,9 @@ export class View {
         this.canvas = canvas;
         this.context = context;
 
-        this.cardMiddleX = this.canvas.width / 2 - this.cardWidth / 2;
-        this.cardLeftX = 100;
-        this.cardRightX = this.canvas.width - 300;
+        this.cardMiddleX = this.canvas.width / 2;
+        this.cardLeftX = this.canvas.width / 3;
+        this.cardRightX = this.canvas.width - this.cardLeftX;
 
         this.cardLowerY = this.canvas.height - this.cardHeight - 60;
         this.cardUpperY = 40;
@@ -189,6 +192,27 @@ export class View {
 
         console.log(gameView);
     }
+
+    public displayDurak(): void {
+
+    }
+
+    private drawBox(text: string, x: number, y: number, strokeStyle: string, textStyle: string) {
+        this.textMetrics = this.context.measureText(text);
+
+        this.context.save()
+
+        this.context.fillStyle = textStyle;
+        this.context.strokeStyle = strokeStyle;
+
+        this.context.fillText(text, x - this.textMetrics.width / 2, y);
+        this.context.strokeRect(x - this.textMetrics.width / 2 - this.textLeftMargin,
+            y - this.textUpperMargin, this.textMetrics.width + 2 * this.textLeftMargin,
+            this.boxHeight);
+
+        this.context.restore();
+    }
+
     /*
         Display attacking and defending cards in the middle of the table 
     */
@@ -218,7 +242,7 @@ export class View {
         let x: number = this.positionsAroundTable[0].x;
         let w: number = this.positionsAroundTable[0].tWidth;
 
-        return (this.mousePos.x - ((x - w / 2) + 7)) / 25;
+        return (this.mousePos.x - ((x - w / 2) + this.mouseClickMargin)) / 25;
     }
 
     /*
@@ -406,48 +430,39 @@ export class View {
         displays the cards from the gameView object 
     */
     private displayMainPlayersHand(hand: Card[], x: number, y: number, tWidth: number) {
-        for (let i = 0; i < hand.length; i++) {
-            let img: HTMLImageElement = this.cardImage(hand[i]);
-            this.context.drawImage(
-                img, x - tWidth / 2 + i * 25, y, this.cardWidth,
-                this.cardHeight
-            );
+        if (hand.length != 0) {
+            for (let i = 0; i < hand.length; i++) {
+                let img: HTMLImageElement = this.cardImage(hand[i]);
+                this.context.drawImage(
+                    img, x - tWidth / 2 + i * 25, y, this.cardWidth,
+                    this.cardHeight
+                );
+            }
+        } else {
+            this.drawBox("Winner", x, y, 'white', 'white');
         }
-
     }
 
     /*
         Displays the face down cards of opponents
     */
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number, tWidth: number) {
-        for (let i = 0; i < playerView.numberOfCards; i++) {
-            let img: HTMLImageElement = this.cardImage();
-            this.context.drawImage(
-                img, x - tWidth / 2 + i * 25, y, this.cardWidth,
-                this.cardHeight
-            );
+        if (playerView.numberOfCards != 0) {
+            for (let i = 0; i < playerView.numberOfCards; i++) {
+                let img: HTMLImageElement = this.cardImage();
+                this.context.drawImage(
+                    img, x - tWidth / 2 + i * 25, y, this.cardWidth,
+                    this.cardHeight
+                );
+            }
+        } else {
+            this.drawBox("Winner", x, y, 'white', 'white');
         }
     }
 
-    /*
-        Displays the "Your Turn" message to remind the attacking player to attack 
-    */
-    private displayBox(btnStr: string, x: number, y: number): void {
-        this.context.save();
-
-        this.textMetrics = this.context.measureText(btnStr);
-        this.context.strokeStyle = 'white';
-
-        this.context.fillText(btnStr, x, y);
-
-        this.context.strokeRect(x - this.textLeftMargin, y - this.textUpperMargin,
-            this.textMetrics.width + 2 * this.textLeftMargin,
-            this.boxHeight
-        );
-
-        this.context.restore();
+    private IsEndGame(): boolean {
+        return this.gameView.attackingPlayer == this.gameView.defendingPlayer;
     }
-
 
     /*
         Given the positions and boolean variables position around the table, display main players
@@ -458,11 +473,10 @@ export class View {
 
         pos = this.positionsAroundTable[position[index] - 1];
 
+        console.log("Position object " + pos);
+
         this.context.lineWidth = 5;
         this.textMetrics = this.context.measureText("Player " + currentID);
-
-        this.context.fillText("Player " + currentID, pos.x - this.textMetrics.width / 2,
-            pos.y + this.offset);
 
         if (currentID == this.id) {
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
@@ -477,37 +491,38 @@ export class View {
             this.context.strokeStyle = 'black';
         }
 
-        this.context.strokeRect(
-            pos.x - this.textLeftMargin - this.textMetrics.width / 2,
-            pos.y - this.textUpperMargin + this.offset,
-            this.textMetrics.width + 2 * this.textLeftMargin, this.boxHeight
-        );
+        this.drawBox("Player " + currentID, pos.x,
+            pos.y + this.offset, this.context.strokeStyle, 'white');
 
         if (this.id == currentID) {
             // display "Your Turn" if no cards were played 
             if (this.id == this.gameView.attackingPlayer &&
                 this.gameView.attackingCards.length == 0) {
 
-                this.displayBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset);
+                this.drawBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                    pos.y + this.offset, 'white', 'white');
             }
 
             // display "Done" button on the attacking player if attack successfully defeated 
             // otherwise attack
             if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
                 this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
-                this.displayBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset);
+                this.drawBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                    pos.y + this.offset, 'white', 'white');
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
                 this.gameView.defendingCards.length) {
-                this.displayBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset);
+                this.drawBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
+                    pos.y + this.offset, 'white', 'white');
             }
         }
-        
+
+        if (this.IsEndGame()) {
+            this.drawBox(this.durakStr + this.gameView.defendingPlayer, innerWidth / 2 - 50,
+                this.deckPosY, 'white', 'white');
+        }
     }
 
     /*
@@ -541,7 +556,15 @@ export class View {
         for (let i = 0; i < this.totalPlayers; i++) {
             currentID = (this.id + i) % this.totalPlayers;
 
-            if (this.isFirst) {
+            this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) * 25
+                + this.cardWidth;
+
+            this.positionsAroundTable[position[i] - 1].x = this.positionsAroundTable[position[i] - 1].x
+                + this.totalCardWidth / 2;
+
+            this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
+
+/*            if (this.isFirst) {
                 this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) * 25
                     + this.cardWidth;
 
@@ -549,7 +572,7 @@ export class View {
                     + this.totalCardWidth / 2;
 
                 this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
-            }
+            }*/
 
             this.displayPlayersHelper(currentID, i, position);
         }
@@ -585,7 +608,7 @@ export class View {
         deck size, discarded heap, defending player, hands etc.)
     */
     public displayStateOfTheGame(): void {
-
+        console.log("WORKING");
         this.drawTable();
 
         this.displayPlayers();

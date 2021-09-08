@@ -24,6 +24,8 @@ let TakeCardsCommand: string = "Take Cards";
 
 let view: View;
 
+console.log("WORKING SOCKET");
+
 let allCommands: string[] = [
     informLeavingCommand,
     joinGameCommand,
@@ -32,7 +34,7 @@ let allCommands: string[] = [
     UpdateGameProcessCommand,
     IllegalCommand,
     WaitCommand,
-    TakeCardsCommand
+    TakeCardsCommand,
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";

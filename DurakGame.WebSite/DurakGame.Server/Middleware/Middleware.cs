@@ -27,7 +27,7 @@ namespace DurakGame.Server.Middleware
 
         private readonly ConnectionManager manager;
 
-        private Durak game = new Durak();
+        private Durak game = new OneSideAttacking();
 
         public Middleware(RequestDelegate _next, ConnectionManager _manager)
         {
@@ -76,14 +76,19 @@ namespace DurakGame.Server.Middleware
                     }
                     break;
                 case "Done":
-                    game.SetAttackFinsihed(true);
+                    // game.SetAttackFinsihed(true);
                     game.ChangeBattle(true);
                     break;
                 case "Take":
                     game.ChangeBattle(false);
                     break;
             }
-
+/*
+            if (game.GetAttackingPlayer() == game.GetDefendingPlayer())
+            {
+                game.EndGame();
+            }
+*/
             // Distribute updated GameView to players
             for (int i = 0; i < game.GetPlayers().Count; i++)
             {
