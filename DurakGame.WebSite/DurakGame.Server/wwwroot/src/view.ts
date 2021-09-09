@@ -558,7 +558,10 @@ export class View {
         let position: number[] = this.getPositions(this.totalPlayers);
         let currentID: number;
 
+
         for (let i = 0; i < this.totalPlayers; i++) {
+            currentID = (this.id + i) % this.totalPlayers;
+
             if (this.isFirst) {
                 this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) * 25
                     + this.cardWidth;
