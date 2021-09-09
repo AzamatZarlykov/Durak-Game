@@ -349,4 +349,4 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-DurakGame.WebSite/DurakGame.Server/wwwroot/dist
+DurakGame.WebSite/DurakGame.Server/wwwroot/dist/*
