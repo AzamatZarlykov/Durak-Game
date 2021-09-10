@@ -51,8 +51,9 @@ export class View {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
 
-    private cardWidth: number = 100;
-    private cardHeight: number = 120;
+    private cardWidth: number;
+    private cardHeight: number;
+    private cardCorner: number;
 
     private yourTurnStr: string = "Your Turn";
     private takeStr: string = "Take";
@@ -68,6 +69,7 @@ export class View {
     private cardMiddleX: number;
     private cardRightX: number;
 
+    private deckPosX: number;
     private deckPosY: number;
 
     private offset: number;
@@ -94,6 +96,8 @@ export class View {
     private textMetrics: TextMetrics
     private socket: WebSocket;
 
+    private fontSize: number = 12;
+
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
 
     constructor(socket: WebSocket) {
@@ -101,32 +105,44 @@ export class View {
         let context = canvas.getContext("2d");
         this.socket = socket;
 
+        this.textUpperMargin = 20;
+        this.textLeftMargin = 10;
+
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
 
-        context.font = "17px serif";
+        console.log(canvas.width);
+        console.log(canvas.height);
+
 
         this.canvas = canvas;
         this.context = context;
 
+        this.context.font = "bold 20px Serif";
+
+        console.log(this.context.font);
+
+        this.cardWidth = this.canvas.width / 20;
+        this.cardHeight = this.cardWidth + this.cardWidth / 5;
+        this.cardCorner = this.cardWidth / 4;
+
         this.cardMiddleX = this.canvas.width / 2;
-        this.cardLeftX = this.canvas.width / 3;
-        this.cardRightX = this.canvas.width - this.cardLeftX;
+        this.cardLeftX = this.canvas.width / 7;
+        this.cardRightX = this.canvas.width / 7 * 6;
 
-        this.cardLowerY = this.canvas.height - this.cardHeight - 60;
-        this.cardUpperY = 40;
+        this.boxHeight = this.fontSize + this.textUpperMargin;
 
+        this.cardUpperY = this.canvas.height / 40;
+        this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
+
+        this.deckPosX = this.canvas.width / 7 * 0.5;
         this.deckPosY = this.canvas.height / 2 - 90;
 
-        this.offset = 160;
-
-        this.textUpperMargin = 20;
-        this.textLeftMargin = 10;
-
-        this.boxHeight = 30;
-        this.isFirst = true;
+        this.offset = this.cardHeight + this.boxHeight;
 
         this.mousePos = new MousePos(0, 0);
+
+        this.isFirst = true;
 
         this.positionsAroundTable = [
             { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
@@ -190,18 +206,11 @@ export class View {
         this.id = id;
         this.totalPlayers = players;
 
-
-
         console.log(gameView);
-        console.log(this.gameView);
-
     }
 
-    public displayDurak(): void {
-
-    }
-
-    private drawBox(text: string, x: number, y: number, strokeStyle: string, textStyle: string) {
+    private drawBox(text: string, x: number, y: number, width: number, strokeStyle: string,
+        textStyle: string) {
         this.textMetrics = this.context.measureText(text);
 
         this.context.save()
@@ -209,8 +218,8 @@ export class View {
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
-        this.context.fillText(text, x - this.textMetrics.width / 2, y);
-        this.context.strokeRect(x - this.textMetrics.width / 2 - this.textLeftMargin,
+        this.context.fillText(text, x - this.textMetrics.width / 2 + width / 2, y);
+        this.context.strokeRect(x - this.textMetrics.width / 2 - this.textLeftMargin + width / 2,
             y - this.textUpperMargin, this.textMetrics.width + 2 * this.textLeftMargin,
             this.boxHeight);
 
@@ -246,7 +255,7 @@ export class View {
         let x: number = this.positionsAroundTable[0].x;
         let w: number = this.positionsAroundTable[0].tWidth;
 
-        return (this.mousePos.x - ((x - w / 2) + this.mouseClickMargin)) / 25;
+        return (this.mousePos.x - ((x - w / 2) + this.mouseClickMargin)) / this.cardCorner;
     }
 
     /*
@@ -362,12 +371,12 @@ export class View {
         let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
         this.context.save();
 
-        this.context.translate(this.cardLeftX + this.cardWidth + this.cardWidth / 2,
+        this.context.translate(this.deckPosX + this.cardWidth + this.cardWidth / 2,
             this.deckPosY + this.cardHeight / 2);
         this.context.rotate(Math.PI / 2);
-        this.context.translate(-this.cardLeftX - this.cardWidth / 2,
+        this.context.translate(-this.deckPosX - this.cardWidth / 2,
             -this.deckPosY - this.cardHeight / 2);
-        this.context.drawImage(img, this.cardLeftX, this.deckPosY,
+        this.context.drawImage(img, this.deckPosX, this.deckPosY,
             this.cardWidth, this.cardHeight);
 
         this.context.restore();
@@ -376,7 +385,7 @@ export class View {
         for (let i = 0; i < this.gameView.deckSize - 1; i++) {
             img = this.cardImage();
             this.context.drawImage(
-                img, this.cardLeftX + i + 0.5, this.deckPosY,
+                img, this.deckPosX + i + this.cardWidth * 1 / 150, this.deckPosY,
                 this.cardWidth, this.cardHeight
             );
         }
@@ -438,12 +447,12 @@ export class View {
             for (let i = 0; i < hand.length; i++) {
                 let img: HTMLImageElement = this.cardImage(hand[i]);
                 this.context.drawImage(
-                    img, x - tWidth / 2 + i * 25, y, this.cardWidth,
+                    img, x  + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
                 );
             }
         } else {
-            this.drawBox("Winner", x, y, 'white', 'white');
+            this.drawBox("Winner", x, y, tWidth, 'white', 'white');
         }
     }
 
@@ -451,17 +460,16 @@ export class View {
         Displays the face down cards of opponents
     */
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number, tWidth: number) {
-        console.log("Number of cards " + playerView.numberOfCards);
         if (playerView.numberOfCards != 0) {
             for (let i = 0; i < playerView.numberOfCards; i++) {
                 let img: HTMLImageElement = this.cardImage();
                 this.context.drawImage(
-                    img, x - tWidth / 2 + i * 25, y, this.cardWidth,
+                    img, x + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
                 );
             }
         } else {
-            this.drawBox("Winner", x, y, 'white', 'white');
+            this.drawBox("Winner", x, y, tWidth, 'white', 'white');
         }
     }
 
@@ -478,10 +486,7 @@ export class View {
 
         pos = this.positionsAroundTable[position[index] - 1];
 
-        console.log(pos);
-
         this.context.lineWidth = 5;
-        this.textMetrics = this.context.measureText("Player " + currentID);
 
         if (currentID == this.id) {
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
@@ -497,7 +502,7 @@ export class View {
         }
 
         this.drawBox("Player " + currentID, pos.x,
-            pos.y + this.offset, this.context.strokeStyle, 'white');
+            pos.y + this.offset, pos.tWidth, this.context.strokeStyle, 'white');
 
         if (this.id == currentID) {
             // display "Your Turn" if no cards were played 
@@ -505,7 +510,7 @@ export class View {
                 this.gameView.attackingCards.length == 0) {
 
                 this.drawBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset, 'white', 'white');
+                    pos.y + this.offset, pos.tWidth, 'white', 'white');
             }
 
             // display "Done" button on the attacking player if attack successfully defeated 
@@ -513,20 +518,20 @@ export class View {
             if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
                 this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
                 this.drawBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset, 'white', 'white');
+                    pos.y + this.offset, pos.tWidth, 'white', 'white');
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
                 this.gameView.defendingCards.length) {
                 this.drawBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset, 'white', 'white');
+                    pos.y + this.offset, pos.tWidth, 'white', 'white');
             }
         }
 
         if (this.IsEndGame()) {
             this.drawBox(this.durakStr + this.gameView.defendingPlayer, innerWidth / 2 - 50,
-                this.deckPosY, 'white', 'white');
+                this.deckPosY, pos.tWidth, 'white', 'white');
         }
     }
 
@@ -558,16 +563,15 @@ export class View {
         let position: number[] = this.getPositions(this.totalPlayers);
         let currentID: number;
 
-
         for (let i = 0; i < this.totalPlayers; i++) {
             currentID = (this.id + i) % this.totalPlayers;
 
             if (this.isFirst) {
-                this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) * 25
-                    + this.cardWidth;
+                this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) *
+                    this.cardCorner + this.cardWidth;
 
-                this.positionsAroundTable[position[i] - 1].x = this.positionsAroundTable[position[i] - 1].x
-                    + this.totalCardWidth / 2;
+                this.positionsAroundTable[position[i] - 1].x =
+                    this.positionsAroundTable[position[i] - 1].x - this.totalCardWidth / 2;
 
                 this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
             }
