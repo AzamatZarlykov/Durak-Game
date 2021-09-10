@@ -255,7 +255,7 @@ export class View {
         let x: number = this.positionsAroundTable[0].x;
         let w: number = this.positionsAroundTable[0].tWidth;
 
-        return (this.mousePos.x - ((x - w / 2) + this.mouseClickMargin)) / this.cardCorner;
+        return (this.mousePos.x - x - this.mouseClickMargin) / this.cardCorner;
     }
 
     /*
@@ -266,8 +266,8 @@ export class View {
         let y: number = this.positionsAroundTable[0].y;
         let w: number = this.positionsAroundTable[0].tWidth;
 
-        return x - w / 2 + this.mouseClickMargin < this.mousePos.x &&
-            this.mousePos.x <= x + w / 2 + this.mouseClickMargin &&
+        return x + this.mouseClickMargin < this.mousePos.x &&
+            this.mousePos.x <= x + w + this.mouseClickMargin &&
             y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
     }
 
@@ -278,11 +278,11 @@ export class View {
 
         this.textMetrics = this.context.measureText(text);
 
-        return x + w / 2 + this.cardWidth - this.textLeftMargin + this.mouseClickMargin <
-            this.mousePos.x && this.mousePos.x <= x + w / 2 + this.cardWidth +
-            this.textLeftMargin + this.textMetrics.width + this.mouseClickMargin &&
-            y + this.offset - this.mouseClickMargin < this.mousePos.y && this.mousePos.y <=
-            y + this.cardHeight + this.offset - this.mouseClickMargin;
+        return x + w + this.cardWidth - this.textMetrics.width / 2 <
+            this.mousePos.x && this.mousePos.x <= x + w + this.cardWidth -
+            this.textMetrics.width / 2 + this.textLeftMargin + this.textMetrics.width +
+            this.context.lineWidth && y + this.offset - this.mouseClickMargin < this.mousePos.y &&
+            this.mousePos.y <= y + this.cardHeight + this.offset - this.mouseClickMargin;
     }
 
     private isButtonSelected(): boolean {
@@ -313,6 +313,8 @@ export class View {
                     Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
                     Card: cardIndex
                 });
+
+
             }
             else if (this.isButtonSelected()) {
                 strJSON = JSON.stringify({
@@ -323,7 +325,6 @@ export class View {
                 // if you click anywhere else just ignore
                 return;
             }
-
             this.socket.send(strJSON);
             console.log(strJSON);
         }
