@@ -45,6 +45,16 @@ namespace DurakGame.Server.Middleware
                 case "Attacking":
                     if (!game.AttackingPhase(route.Card))
                     {
+                        if (!game.IsDefenseOver())
+                        {
+                            command = "Wait";
+                            await SendJSON(socket, new
+                            {
+                                command
+                            });
+                            return;
+                        }
+
                         command = "Illegal";
                         await SendJSON(socket, new
                         {
@@ -64,15 +74,13 @@ namespace DurakGame.Server.Middleware
                             });
                             return;
                         }
-                        else
+
+                        command = "Wait";
+                        await SendJSON(socket, new
                         {
-                            command = "Wait";
-                            await SendJSON(socket, new
-                            {
-                                command
-                            });
-                            return;
-                        }
+                            command
+                        });
+                        return;
                     }
                     break;
                 case "Done":
@@ -83,12 +91,7 @@ namespace DurakGame.Server.Middleware
                     game.ChangeBattle(false);
                     break;
             }
-/*
-            if (game.GetAttackingPlayer() == game.GetDefendingPlayer())
-            {
-                game.EndGame();
-            }
-*/
+
             // Distribute updated GameView to players
             for (int i = 0; i < game.GetPlayers().Count; i++)
             {

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+
+using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.Game
 {
     class NeighboursAttacking : Durak
     {
-        public static bool secondAttackFinished;
+        public bool secondAttackFinished;
         private bool secondAttackerIsAttackingPlayer;
         private int attackingPlayerOne;
 
@@ -125,6 +126,77 @@ namespace DurakGame.Library.Game
 
                 GetNextPlayingPlayer(2);
             } 
+        }
+
+        public override bool AttackingPhase(int cardIndex)
+        {
+            Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
+
+            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank)
+                && defenseFinished))
+            {
+                bout.AddAttackingCard(attackingCard);
+                isBoutChanged = true;
+                players[attackingPlayer].RemoveCardFromHand(attackingCard);
+
+                if (attackFinished)
+                {
+                    attackFinished = false;
+                    secondAttackFinished = true;
+                }
+                else
+                {
+                    attackFinished = true;
+                    secondAttackFinished = false;
+                }
+
+                return true;
+            }
+            else
+            {
+                isBoutChanged = false;
+                return false;
+            }
+        }
+
+        public override bool DefendingPhase(int cardIndex)
+        {
+            // set defense finished to true
+            defenseFinished = true;
+            if (attackFinished || secondAttackFinished)
+            {
+                int attackCardIndex = bout.GetAttackingCardsSize() - 1;
+
+                Card attackingCard;
+                Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
+
+                if (bout.GetAttackingCardsSize() != 0)
+                {
+                    attackingCard = bout.GetAttackingCard(attackCardIndex);
+                }
+                else
+                {
+                    return false;
+                }
+
+                // legal  
+                if (IsLegalDefense(attackingCard, defendingCard))
+                {
+                    bout.AddDefendingCard(defendingCard);
+                    players[defendingPlayer].RemoveCardFromHand(defendingCard);
+
+                    return true;
+                }
+                // illegal
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

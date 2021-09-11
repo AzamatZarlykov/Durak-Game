@@ -209,6 +209,14 @@ export class View {
         console.log(gameView);
     }
 
+    private isDefending(): boolean {
+        return this.gameView.defendingPlayer == this.id;
+    }
+
+    private isAttacking(): boolean {
+        return this.gameView.attackingPlayer == this.id;
+    }
+
     private drawBox(text: string, x: number, y: number, width: number, strokeStyle: string,
         textStyle: string) {
         this.textMetrics = this.context.measureText(text);
@@ -281,15 +289,16 @@ export class View {
         return x + w + this.cardWidth - this.textMetrics.width / 2 <
             this.mousePos.x && this.mousePos.x <= x + w + this.cardWidth -
             this.textMetrics.width / 2 + this.textLeftMargin + this.textMetrics.width +
-            this.context.lineWidth && y + this.offset - this.mouseClickMargin < this.mousePos.y &&
-            this.mousePos.y <= y + this.cardHeight + this.offset - this.mouseClickMargin;
+            this.context.lineWidth && y + this.offset - this.textUpperMargin +
+            this.context.lineWidth < this.mousePos.y && this.mousePos.y <= y + this.offset +
+            this.boxHeight - this.textUpperMargin + this.context.lineWidth;
     }
 
     private isButtonSelected(): boolean {
-        if (this.id == this.gameView.attackingPlayer) {
+        if (this.isAttacking()) {
             return this.withinTheButton(this.doneStr);
         }
-        else if (this.id == this.gameView.defendingPlayer) {
+        else if (this.isDefending()) {
             return this.withinTheButton(this.takeStr);
         }
     }
@@ -299,7 +308,7 @@ export class View {
     */
     private CheckMouseClick(): void {
         let strJSON: string;
-        if (this.gameView.attackingPlayer == this.id || this.gameView.defendingPlayer == this.id) {
+        if (this.isAttacking() || this.isDefending()) {
             if (this.isCardSelected()) {
                 let cardIndex: number = Math.floor(this.GetCardSelected());
 
@@ -310,21 +319,18 @@ export class View {
                 console.log("Card Index clicked is " + cardIndex);
 
                 strJSON = JSON.stringify({
-                    Message: this.gameView.attackingPlayer == this.id ? "Attacking" : "Defending",
+                    Message: this.isAttacking() ? "Attacking" : "Defending",
                     Card: cardIndex
                 });
-
-
             }
             else if (this.isButtonSelected()) {
                 strJSON = JSON.stringify({
-                    Message: this.gameView.attackingPlayer == this.id ? "Done" : "Take"
+                    Message: this.isAttacking() ? "Done" : "Take"
                 });
-            }
-            else {
-                // if you click anywhere else just ignore
+            } else {
                 return;
             }
+
             this.socket.send(strJSON);
             console.log(strJSON);
         }
@@ -507,8 +513,7 @@ export class View {
 
         if (this.id == currentID) {
             // display "Your Turn" if no cards were played 
-            if (this.id == this.gameView.attackingPlayer &&
-                this.gameView.attackingCards.length == 0) {
+            if (this.isAttacking() && this.gameView.attackingCards.length == 0) {
 
                 this.drawBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset, pos.tWidth, 'white', 'white');
@@ -516,7 +521,7 @@ export class View {
 
             // display "Done" button on the attacking player if attack successfully defeated 
             // otherwise attack
-            if (this.id == this.gameView.attackingPlayer && this.gameView.attackingCards.length ==
+            if (this.isAttacking() && this.gameView.attackingCards.length ==
                 this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
                 this.drawBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset, pos.tWidth, 'white', 'white');
@@ -651,10 +656,11 @@ export class View {
 
         switch (type) {
             case "illegal":
-                textStr = "Illegal Move Made";
+                textStr = "Illegal Card Played";
                 break;
             case "wait":
-                textStr = "Wait For The Card";
+                textStr = this.isAttacking() ? "Wait For The Defending Player" :
+                    "Wait For The Attacking Player";
                 break;
             default:
                 console.log("Unknown type of the string (Check the error types)");
@@ -662,7 +668,7 @@ export class View {
         }
         this.textMetrics = this.context.measureText(textStr);
 
-        let x: number = this.positionsAroundTable[0].x - this.textLeftMargin - this.textMetrics.width / 2;
+        let x: number = this.positionsAroundTable[0].x - this.textLeftMargin;
         let y: number = this.deckPosY - 3 * this.textUpperMargin;
         let w: number = this.textMetrics.width + 2 * this.textLeftMargin;
         let h: number = this.boxHeight;

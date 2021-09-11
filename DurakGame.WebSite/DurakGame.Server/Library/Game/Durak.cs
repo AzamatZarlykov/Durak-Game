@@ -209,42 +209,15 @@ namespace DurakGame.Library.Game
             defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
         }
 
-        public bool AttackingPhase(int cardIndex)
-        {
-            Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
-
-            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) 
-                && defenseFinished))
-            {
-                bout.AddAttackingCard(attackingCard);
-                isBoutChanged = true;
-                players[attackingPlayer].RemoveCardFromHand(attackingCard);
-
-                if (attackFinished)
-                {
-                    attackFinished = false;
-                    NeighboursAttacking.secondAttackFinished = true;
-                }
-                else
-                {
-                    attackFinished = true;
-                    NeighboursAttacking.secondAttackFinished = false;
-                }
-
-                return true;
-            } else
-            {
-                isBoutChanged = false;
-                return false;
-            }
-        }
+        public abstract bool AttackingPhase(int cardIndex);
+        
 
         public bool IsTrumpSuit(Card card)
         {
             return card.suit == trumpCard.suit;
         }
 
-        private bool IsLegalDefense(Card attackingCard, Card defendingCard)
+        protected bool IsLegalDefense(Card attackingCard, Card defendingCard)
         {
             return (defendingCard.suit == attackingCard.suit &&
                     defendingCard.rank > attackingCard.rank) ||
@@ -257,36 +230,11 @@ namespace DurakGame.Library.Game
             Defending phase works for the simple case when the attacking player
             attacks only by one card at the time
         */
-        public bool DefendingPhase(int cardIndex)
+        public abstract bool DefendingPhase(int cardIndex);
+        
+        public bool IsDefenseOver()
         {
-            // set defense finished to true
-            defenseFinished = true;
-            if (attackFinished || NeighboursAttacking.secondAttackFinished)
-            {
-
-
-                int attackCardIndex = bout.GetAttackingCardsSize() - 1;
-
-                Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
-                Card attackingCard = bout.GetAttackingCard(attackCardIndex);
-
-                // legal  
-                if (IsLegalDefense(attackingCard, defendingCard))
-                {
-                    bout.AddDefendingCard(defendingCard);
-                    players[defendingPlayer].RemoveCardFromHand(defendingCard);
-                   
-                    return true;
-                }
-                // illegal
-                else
-                {
-                    return false;
-                }
-            } else
-            {
-                return false;
-            }
+            return bout.GetAttackingCardsSize() % 2 == 0;
         }
     }
 }

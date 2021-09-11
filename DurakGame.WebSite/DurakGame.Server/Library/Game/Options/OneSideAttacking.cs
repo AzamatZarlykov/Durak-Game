@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+
+using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.Game
 {
@@ -42,7 +43,64 @@ namespace DurakGame.Library.Game
 
                 GetNextPlayingPlayer(2);
             }
+            attackFinished = false;
+            defenseFinished = false;
             bout.RemoveCardsFromBout();
+        }
+
+        public override bool AttackingPhase(int cardIndex)
+        {
+            // if the attack started wait for the defense
+            if (!IsDefenseOver())
+            {
+                return false;
+            }
+
+            Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
+
+            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) 
+                && defenseFinished))
+            {
+                bout.AddAttackingCard(attackingCard);
+                players[attackingPlayer].RemoveCardFromHand(attackingCard);
+
+                attackFinished = true;
+
+                return true;
+            } else
+            {
+                return false;
+            }
+        }
+
+        public override bool DefendingPhase(int cardIndex)
+        {
+            // wait for the attack
+            if (!attackFinished)
+            {
+                return false;
+            }
+           
+            int attackCardIndex = bout.GetAttackingCardsSize() - 1;
+
+            Card attackingCard;
+            Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
+
+
+            attackingCard = bout.GetAttackingCard(attackCardIndex);
+
+            
+            if (!IsLegalDefense(attackingCard, defendingCard))
+            {
+                return false;
+            }
+
+            bout.AddDefendingCard(defendingCard);
+            players[defendingPlayer].RemoveCardFromHand(defendingCard);
+            // set defense finished to true
+            defenseFinished = true;
+
+            return true;
         }
     }
 }
