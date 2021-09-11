@@ -65,6 +65,7 @@ namespace DurakGame.Library.Game
                 players[attackingPlayer].RemoveCardFromHand(attackingCard);
 
                 attackFinished = true;
+                defenseFinished = false;
 
                 return true;
             } else
@@ -98,6 +99,7 @@ namespace DurakGame.Library.Game
             bout.AddDefendingCard(defendingCard);
             players[defendingPlayer].RemoveCardFromHand(defendingCard);
             // set defense finished to true
+            attackFinished = false;
             defenseFinished = true;
 
             return true;

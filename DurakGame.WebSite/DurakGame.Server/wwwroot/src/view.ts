@@ -96,49 +96,20 @@ export class View {
     private textMetrics: TextMetrics
     private socket: WebSocket;
 
-    private fontSize: number = 12;
+    private defaultWidth: number = 2510;
+    private defaultFontSize: number = 20;
+
+    private fontSize: number;
 
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
 
     constructor(socket: WebSocket) {
-        let canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        let context = canvas.getContext("2d");
         this.socket = socket;
 
-        this.textUpperMargin = 20;
-        this.textLeftMargin = 10;
+        let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+        let context = canvas.getContext("2d");
 
-        canvas.width = window.innerWidth - 50;
-        canvas.height = window.innerHeight - 50;
-
-        console.log(canvas.width);
-        console.log(canvas.height);
-
-
-        this.canvas = canvas;
-        this.context = context;
-
-        this.context.font = "bold 20px Serif";
-
-        console.log(this.context.font);
-
-        this.cardWidth = this.canvas.width / 20;
-        this.cardHeight = this.cardWidth + this.cardWidth / 5;
-        this.cardCorner = this.cardWidth / 4;
-
-        this.cardMiddleX = this.canvas.width / 2;
-        this.cardLeftX = this.canvas.width / 7;
-        this.cardRightX = this.canvas.width / 7 * 6;
-
-        this.boxHeight = this.fontSize + this.textUpperMargin;
-
-        this.cardUpperY = this.canvas.height / 40;
-        this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
-
-        this.deckPosX = this.canvas.width / 7 * 0.5;
-        this.deckPosY = this.canvas.height / 2 - 90;
-
-        this.offset = this.cardHeight + this.boxHeight;
+        this.windowObjectsResize(canvas, context);
 
         this.mousePos = new MousePos(0, 0);
 
@@ -189,7 +160,6 @@ export class View {
             { x: this.cardMiddleX + 2 * this.cardWidth, y: this.deckPosY }
         ]);
 
-
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
@@ -197,6 +167,8 @@ export class View {
 
             this.CheckMouseClick();
         });
+
+        window.addEventListener("resize", () => this.reportWindowResize(this.canvas, this.context));
 
     }
 
@@ -207,6 +179,56 @@ export class View {
         this.totalPlayers = players;
 
         console.log(gameView);
+    }
+
+    private reportWindowResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
+        this.windowObjectsResize(canvas, context);
+        this.displayStateOfTheGame();
+    }
+
+    private windowObjectsResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
+        console.log("WINDOW CHANGES");
+
+        canvas.width = window.innerWidth - 50;
+        canvas.height = window.innerHeight - 50;
+
+        console.log(canvas.width);
+        console.log(canvas.height);
+
+        this.canvas = canvas;
+        this.context = context;
+
+        this.textUpperMargin = this.canvas.height / 60;
+        this.textLeftMargin = this.canvas.width / 251;
+
+        this.context.font = this.getFont();
+
+        console.log(this.context.font);
+
+        this.cardWidth = this.canvas.width / 20;
+        this.cardHeight = this.cardWidth + this.cardWidth / 5;
+        this.cardCorner = this.cardWidth / 4;
+
+        this.cardMiddleX = this.canvas.width / 2;
+        this.cardLeftX = this.canvas.width / 7;
+        this.cardRightX = this.canvas.width / 7 * 6;
+
+        this.boxHeight = this.fontSize + this.textUpperMargin;
+
+        this.cardUpperY = this.canvas.height / 40;
+        this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
+
+        this.deckPosX = this.canvas.width / 7 * 0.5;
+        this.deckPosY = this.canvas.height / 2 - 90;
+
+        this.offset = this.cardHeight + this.boxHeight;
+    }
+
+    private getFont(): string {
+        let ration: number = this.defaultFontSize / this.defaultWidth;
+        let size: number = this.canvas.width * ration;
+        this.fontSize = size;
+        return "bold " + (size | 0) + "px Serif";
     }
 
     private isDefending(): boolean {
@@ -345,11 +367,13 @@ export class View {
             let img: HTMLImageElement = this.cardImage();
             this.context.save();
 
-            this.context.translate(this.cardRightX + this.cardWidth + this.cardWidth / 2, this.deckPosY + this.cardHeight / 2);
+            this.context.translate(this.cardRightX + this.cardWidth + this.cardWidth / 2,
+                this.deckPosY + this.cardHeight / 2);
 
             // getting random angle and y position to replicate the real world discarded pile
             let angle: number = Math.random() * Math.PI * 2;
-            let yPos: number = Math.random() * (this.deckPosY + 50 - this.deckPosY - 50) + this.deckPosY - 50;
+            let yPos: number = Math.random() * (this.deckPosY + this.canvas.width / 24 -
+                this.deckPosY - this.canvas.width / 24) + this.deckPosY - this.canvas.width / 24;
 
             this.context.rotate(angle);
             this.context.translate(-this.cardRightX - this.cardWidth / 2,

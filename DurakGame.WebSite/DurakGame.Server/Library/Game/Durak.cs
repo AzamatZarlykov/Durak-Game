@@ -86,7 +86,7 @@ namespace DurakGame.Library.Game
         protected int attackingPlayer;
 
         protected bool attackFinished;
-        protected bool defenseFinished;
+        public bool defenseFinished;
 
         protected int durak;
 
@@ -234,7 +234,7 @@ namespace DurakGame.Library.Game
         
         public bool IsDefenseOver()
         {
-            return bout.GetAttackingCardsSize() % 2 == 0;
+            return bout.GetEverything().Count % 2 == 0;
         }
     }
 }

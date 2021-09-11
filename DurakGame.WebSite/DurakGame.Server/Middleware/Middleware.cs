@@ -60,6 +60,7 @@ namespace DurakGame.Server.Middleware
                         {
                             command
                         });
+                        return;
                     }
                     break;
                 case "Defending":
@@ -84,7 +85,6 @@ namespace DurakGame.Server.Middleware
                     }
                     break;
                 case "Done":
-                    // game.SetAttackFinsihed(true);
                     game.ChangeBattle(true);
                     break;
                 case "Take":
