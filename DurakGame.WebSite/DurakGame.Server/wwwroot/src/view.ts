@@ -102,6 +102,7 @@ export class View {
     private fontSize: number;
 
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
+    private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number }[];
 
     constructor(socket: WebSocket) {
         this.socket = socket;
@@ -114,15 +115,6 @@ export class View {
         this.mousePos = new MousePos(0, 0);
 
         this.isFirst = true;
-
-        this.positionsAroundTable = [
-            { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
-            { x: this.cardLeftX, y: this.cardLowerY, tWidth: 0 },
-            { x: this.cardLeftX, y: this.cardUpperY, tWidth: 0 },
-            { x: this.cardMiddleX, y: this.cardUpperY, tWidth: 0 },
-            { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
-            { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
-        ]
 
         this.boutCardPositions.set(
             1, [{
@@ -178,6 +170,7 @@ export class View {
         this.id = id;
         this.totalPlayers = players;
 
+
         console.log(gameView);
     }
 
@@ -222,6 +215,26 @@ export class View {
         this.deckPosY = this.canvas.height / 2 - 90;
 
         this.offset = this.cardHeight + this.boxHeight;
+
+        this.positionsAroundTable = [
+            { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
+            { x: this.cardLeftX, y: this.cardLowerY, tWidth: 0 },
+            { x: this.cardLeftX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardMiddleX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
+        ]
+
+        this.positionsAroundTableDuplicate = [
+            { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
+            { x: this.cardLeftX, y: this.cardLowerY, tWidth: 0 },
+            { x: this.cardLeftX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardMiddleX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
+            { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
+        ]
+
+        this.displayPlayers();
     }
 
     private getFont(): string {
@@ -346,6 +359,8 @@ export class View {
                 });
             }
             else if (this.isButtonSelected()) {
+                this.isFirst = true;
+
                 strJSON = JSON.stringify({
                     Message: this.isAttacking() ? "Done" : "Take"
                 });
@@ -596,19 +611,17 @@ export class View {
         for (let i = 0; i < this.totalPlayers; i++) {
             currentID = (this.id + i) % this.totalPlayers;
 
-            if (this.isFirst) {
-                this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) *
-                    this.cardCorner + this.cardWidth;
+            // calculate the total width of cards 
+            this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) *
+                this.cardCorner + this.cardWidth;
+            // subtract from given x point in the window the half of the width of cards
+            this.positionsAroundTable[position[i] - 1].x =
+                this.positionsAroundTableDuplicate[position[i] - 1].x - this.totalCardWidth / 2;
 
-                this.positionsAroundTable[position[i] - 1].x =
-                    this.positionsAroundTable[position[i] - 1].x - this.totalCardWidth / 2;
-
-                this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
-            }
+            this.positionsAroundTable[position[i] - 1].tWidth = this.totalCardWidth;
 
             this.displayPlayersHelper(currentID, i, position);
         }
-        this.isFirst = false;
     }
 
     /*

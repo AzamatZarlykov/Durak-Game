@@ -20,7 +20,6 @@ let setTotalPlayersCommand: string = "SetTotalPlayers";
 let UpdateGameProcessCommand: string = "UpdateGameProcess";
 let IllegalCommand: string = "Illegal";
 let WaitCommand: string = "Wait";
-let TakeCardsCommand: string = "Take Cards";
 
 let view: View;
 
@@ -32,7 +31,6 @@ let allCommands: string[] = [
     UpdateGameProcessCommand,
     IllegalCommand,
     WaitCommand,
-    TakeCardsCommand,
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -116,9 +114,6 @@ socket.onmessage = function (event): void {
                 break;
             case (WaitCommand):
                 view.errorDisplay("wait");
-                break;
-            case (TakeCardsCommand):
-                view.displayStateOfTheGame();
                 break;
         }
     } else {

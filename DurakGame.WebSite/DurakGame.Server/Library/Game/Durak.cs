@@ -226,10 +226,6 @@ namespace DurakGame.Library.Game
                     attackingCard.rank)));
         }
 
-        /*
-            Defending phase works for the simple case when the attacking player
-            attacks only by one card at the time
-        */
         public abstract bool DefendingPhase(int cardIndex);
         
         public bool IsDefenseOver()
