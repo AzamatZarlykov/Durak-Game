@@ -112,14 +112,15 @@ socket.onmessage = function (event): void {
                 view.displayStateOfTheGame();
                 break;
             case (IllegalCommand):
-                view.errorDisplay("illegal");
+                view.displayMessage("illegal");
                 break;
             case (WaitCommand):
-                view.errorDisplay("wait");
+                view.displayMessage("wait");
                 break;
             case (TakeCardsCommand):
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
+                view.displayMessage("takeCards");
                 break;
         }
     } else {

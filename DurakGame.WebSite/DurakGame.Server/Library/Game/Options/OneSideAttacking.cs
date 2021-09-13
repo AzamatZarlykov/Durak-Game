@@ -55,7 +55,6 @@ namespace DurakGame.Library.Game
             // if the attack started wait for the defense
             if (!IsDefenseOver() && !takingCards)
             {
-                Console.WriteLine("ERROR");
                 return false;
             }
 

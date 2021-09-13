@@ -24,7 +24,7 @@ namespace DurakGame.Library.Game
 
         public Card trumpCard;
 
-        public int prevDiscardedHeapValue;
+        private int prevDiscardedHeapValue;
         public bool discardHeapChanged;
 
         public bool takingCards;
@@ -234,6 +234,20 @@ namespace DurakGame.Library.Game
         public bool IsDefenseOver()
         {
             return bout.GetEverything().Count % 2 == 0;
+        }
+
+        // Check if the attacking player can attack with the card that they have based on cards on 
+        // the bout 
+        public bool IsAttackPossible()
+        {
+            foreach (Card c in bout.GetEverything())
+            {
+                if (players[attackingPlayer].GetPlayersHand().Exists(card => card.rank == c.rank))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

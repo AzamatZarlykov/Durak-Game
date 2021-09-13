@@ -81,6 +81,7 @@ export class View {
 
     private cardImages = new Map();
     private boutCardPositions = new Map();
+    private discardedPilePositions = new Map();
 
     private textUpperMargin: number;
     private textLeftMargin: number;
@@ -262,18 +263,19 @@ export class View {
         this.context.restore();
     }
 
-    private displayBoutHelper(pos: { x: number, y: number }[], yOffset: number, from: number, toAttacking: number, toDefending: number): void {
+    private displayBoutHelper(pos: { x: number, y: number }[], yOffset: number, from: number,
+        toAttacking: number, toDefending: number): void {
 
         for (let i = from; i < toAttacking; i++) {
-            let img: HTMLImageElement = this.cardImage(this.gameView.attackingCards[i]);
+            let img: HTMLImageElement = this.getCardImage(this.gameView.attackingCards[i]);
 
             this.context.drawImage(img, pos[i % 4].x, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
         }
 
         for (let i = from; i < toDefending; i++) {
-            let img: HTMLImageElement = this.cardImage(this.gameView.defendingCards[i]);
+            let img: HTMLImageElement = this.getCardImage(this.gameView.defendingCards[i]);
 
-            this.context.drawImage(img, pos[i % 4].x + this.canvas.width / 117, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
+            this.context.drawImage(img, pos[i % 4].x + 20, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
         }
     }
 
@@ -281,7 +283,6 @@ export class View {
         Display attacking and defending cards in the middle of the table 
     */
     public displayBout(): void {
-        console.log("BOUT DRAWN");
         let pos: { x: number, y: number }[];
         let attackingCardSize: number = this.gameView.attackingCards.length;
         let defendingCardSize: number = this.gameView.defendingCards.length;
@@ -360,8 +361,12 @@ export class View {
     */
     private CheckMouseClick(): void {
         let strJSON: string;
-        if (this.isAttacking() || this.isDefending()) {
+        if (this.isAttacking() || this.isDefending() ) {
             if (this.isCardSelected()) {
+                if (this.isDefending() && this.gameView.takingCards) {
+                    this.displayMessage("tookCards");
+                    return;
+                }
                 let cardIndex: number = Math.floor(this.GetCardSelected());
 
                 if (cardIndex >= this.gameView.hand.length) {
@@ -392,12 +397,12 @@ export class View {
         Display Discarded Heap 
     */
     public displayDiscardedHeap(): void {
-
         for (let i = 0; i < this.gameView.discardHeapSize; i++) {
-            let img: HTMLImageElement = this.cardImage();
-            this.context.save();
+            let coordinates: { angle: number, y: number };
+            let img: HTMLImageElement = this.getCardImage();
 
-            this.context.translate(this.cardRightX + this.cardWidth + this.cardWidth / 2,
+            this.context.save();
+            this.context.translate(this.cardRightX + this.cardWidth,
                 this.deckPosY + this.cardHeight / 2);
 
             // getting random angle and y position to replicate the real world discarded pile
@@ -405,9 +410,18 @@ export class View {
             let yPos: number = Math.random() * (this.deckPosY + this.canvas.width / 24 -
                 this.deckPosY - this.canvas.width / 24) + this.deckPosY - this.canvas.width / 24;
 
-            this.context.rotate(angle);
-            this.context.translate(-this.cardRightX - this.cardWidth / 2,
-                -this.deckPosY - this.cardHeight / 2);
+            if (this.discardedPilePositions.get(i)) {
+                coordinates = this.discardedPilePositions.get(i);
+
+                this.context.rotate(coordinates.angle);
+            } else {
+                this.discardedPilePositions.set(i, { angle, yPos });
+
+                this.context.rotate(angle);
+            }
+
+            this.context.translate(-this.cardRightX, -this.deckPosY - this.cardHeight / 2);
+
             this.context.drawImage(img, this.cardRightX, yPos,
                 this.cardWidth, this.cardHeight);
 
@@ -419,7 +433,7 @@ export class View {
         Dispaly the Suit of the Trump card when there is no deck  
     */
     public displayTrumpSuit(): void {
-        let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
+        let img: HTMLImageElement = this.getCardImage(this.gameView.trumpCard);
         this.context.drawImage(img, this.cardLeftX, this.deckPosY,
             this.cardWidth, this.cardHeight);
     }
@@ -429,7 +443,7 @@ export class View {
         perpendicular to the rest of the face-down deck 
     */
     public displayDeck(): void {
-        let img: HTMLImageElement = this.cardImage(this.gameView.trumpCard);
+        let img: HTMLImageElement = this.getCardImage(this.gameView.trumpCard);
         this.context.save();
 
         this.context.translate(this.deckPosX + this.cardWidth + this.cardWidth / 2,
@@ -444,7 +458,7 @@ export class View {
 
         // draw the rest of the deck 
         for (let i = 0; i < this.gameView.deckSize - 1; i++) {
-            img = this.cardImage();
+            img = this.getCardImage();
             this.context.drawImage(
                 img, this.deckPosX + i + this.cardWidth * 1 / 150, this.deckPosY,
                 this.cardWidth, this.cardHeight
@@ -476,7 +490,7 @@ export class View {
     /*
         Returns an image for a given card.
     */
-    public cardImage(card?: Card): HTMLImageElement {
+    public getCardImage(card?: Card): HTMLImageElement {
         let strCard: string;
         if (card) {
             let strRank: string = this.fromIntToRank(card.rank);
@@ -506,7 +520,7 @@ export class View {
     private displayMainPlayersHand(hand: Card[], x: number, y: number, tWidth: number) {
         if (hand.length != 0) {
             for (let i = 0; i < hand.length; i++) {
-                let img: HTMLImageElement = this.cardImage(hand[i]);
+                let img: HTMLImageElement = this.getCardImage(hand[i]);
                 this.context.drawImage(
                     img, x  + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
@@ -523,7 +537,7 @@ export class View {
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number, tWidth: number) {
         if (playerView.numberOfCards != 0) {
             for (let i = 0; i < playerView.numberOfCards; i++) {
-                let img: HTMLImageElement = this.cardImage();
+                let img: HTMLImageElement = this.getCardImage();
                 this.context.drawImage(
                     img, x + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
@@ -679,6 +693,7 @@ export class View {
             this.displayDeck();
         }
 
+
         if (this.gameView.discardHeapSize != 0 && this.gameView.discardHeapChanged) {
             this.displayDiscardedHeap();
         }
@@ -696,12 +711,14 @@ export class View {
     private clear(x: number, y: number, w: number, h: number): void {
         this.context.fillStyle = 'green';
         this.context.fillRect(x - 5, y - 5, w + 10, h + 10);
+
+        this.displayPlayers();
     }
 
     /*
         Display the error if Attack/Defense is illegal
     */
-    public errorDisplay(type: string): void {
+    public displayMessage(type: string): void {
         this.context.fillStyle = 'white';
         this.context.strokeStyle = 'white';
 
@@ -714,6 +731,12 @@ export class View {
             case "wait":
                 textStr = this.isAttacking() ? "Wait For The Defending Player" :
                     "Wait For The Attacking Player";
+                break;
+            case "tookCards":
+                textStr = "Cannot Defend. You Decided To Take The Cards";
+                break;
+            case "takeCards":
+                textStr = "Player " + this.gameView.defendingPlayer + " Takes The Cards";
                 break;
             default:
                 console.log("Unknown type of the string (Check the error types)");

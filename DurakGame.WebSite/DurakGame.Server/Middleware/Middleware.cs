@@ -45,17 +45,7 @@ namespace DurakGame.Server.Middleware
                 case "Attacking":
                     if (!game.AttackingPhase(route.Card))
                     {
-                        if (!game.IsDefenseOver())
-                        {
-                            command = "Wait";
-                            await SendJSON(socket, new
-                            {
-                                command
-                            });
-                            return;
-                        }
-
-                        command = "Illegal";
+                        command = !game.IsDefenseOver() && !game.takingCards ? "Wait" : "Illegal";
                         await SendJSON(socket, new
                         {
                             command
@@ -66,17 +56,7 @@ namespace DurakGame.Server.Middleware
                 case "Defending":
                     if (!game.DefendingPhase(route.Card))
                     {
-                        if (game.GetAttackFinished())
-                        {
-                            command = "Illegal";
-                            await SendJSON(socket, new
-                            {
-                                command
-                            });
-                            return;
-                        }
-
-                        command = "Wait";
+                        command = game.GetAttackFinished() ? "Illegal" : "Wait";
                         await SendJSON(socket, new
                         {
                             command
@@ -85,18 +65,17 @@ namespace DurakGame.Server.Middleware
                     }
                     break;
                 case "Done":
-                    if (game.takingCards)
-                    {
-                        game.ChangeBattle(false);
-                    }else
-                    {
-                        game.ChangeBattle(true);
-                    }
+                    game.ChangeBattle(!game.takingCards);
                     break;
                 case "Take":
                     command = "TakeCards";
                     game.takingCards = true;
                     break;
+            }
+
+            if (game.takingCards && !game.IsAttackPossible())
+            {
+                game.ChangeBattle(false);
             }
 
             // Distribute updated GameView to players
