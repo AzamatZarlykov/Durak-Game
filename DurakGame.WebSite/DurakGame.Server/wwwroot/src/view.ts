@@ -84,7 +84,6 @@ export class View {
     private textLeftMargin: number;
 
     private boxHeight: number;
-    private isFirst: boolean;
     private totalCardWidth: number;
 
     private mousePos: MousePos;
@@ -96,10 +95,7 @@ export class View {
     private textMetrics: TextMetrics
     private socket: WebSocket;
 
-    private defaultWidth: number = 2510;
     private defaultFontSize: number = 20;
-
-    private fontSize: number;
 
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number }[];
@@ -114,43 +110,7 @@ export class View {
 
         this.mousePos = new MousePos(0, 0);
 
-        this.isFirst = true;
-
-        this.boutCardPositions.set(
-            1, [{
-                x: this.cardMiddleX,
-                y: this.deckPosY
-            }]);
-
-        this.boutCardPositions.set(
-            2, [
-            { x: this.cardMiddleX - 2 * this.cardWidth, y: this.deckPosY },
-            { x: this.cardMiddleX + this.cardWidth, y: this.deckPosY }
-        ]);
-
-        this.boutCardPositions.set(
-            3, [
-            {
-                x: this.cardMiddleX - 2 * this.cardWidth - this.cardWidth / 2,
-                y: this.deckPosY
-            },
-            {
-                x: this.cardMiddleX,
-                y: this.deckPosY
-            },
-            {
-                x: this.cardMiddleX + this.cardWidth + this.cardWidth / 2,
-                y: this.deckPosY
-            }
-        ]);
-
-        this.boutCardPositions.set(
-            4, [
-            { x: this.cardMiddleX - 4 * this.cardWidth, y: this.deckPosY },
-            { x: this.cardMiddleX - 2 * this.cardWidth, y: this.deckPosY },
-            { x: this.cardMiddleX + this.cardWidth, y: this.deckPosY },
-            { x: this.cardMiddleX + 2 * this.cardWidth, y: this.deckPosY }
-        ]);
+        this.setBoutPositions();
 
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
@@ -174,8 +134,47 @@ export class View {
         console.log(gameView);
     }
 
+    private setBoutPositions(): void {
+        this.boutCardPositions.set(
+            1, [{
+                x: this.cardMiddleX - this.cardWidth / 2,
+                y: this.deckPosY
+            }]);
+
+        this.boutCardPositions.set(
+            2, [
+            { x: this.cardMiddleX - this.cardWidth - this.cardWidth / 2, y: this.deckPosY },
+            { x: this.cardMiddleX + this.cardWidth - this.cardWidth / 2, y: this.deckPosY }
+        ]);
+
+        this.boutCardPositions.set(
+            3, [
+            {
+                x: this.cardMiddleX - 2 * this.cardWidth - this.cardWidth / 2,
+                y: this.deckPosY
+            },
+            {
+                x: this.cardMiddleX - this.cardWidth / 2,
+                y: this.deckPosY
+            },
+            {
+                x: this.cardMiddleX + this.cardWidth + this.cardWidth / 2,
+                y: this.deckPosY
+            }
+        ]);
+
+        this.boutCardPositions.set(
+            4, [
+            { x: this.cardMiddleX - 3 * this.cardWidth, y: this.deckPosY },
+            { x: this.cardMiddleX - this.cardWidth - this.cardWidth / 2, y: this.deckPosY },
+            { x: this.cardMiddleX + this.cardWidth / 2, y: this.deckPosY },
+            { x: this.cardMiddleX + 2 * this.cardWidth, y: this.deckPosY }
+        ]);
+    }
+
     private reportWindowResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
         this.windowObjectsResize(canvas, context);
+        this.setBoutPositions();
         this.displayStateOfTheGame();
     }
 
@@ -191,30 +190,31 @@ export class View {
         this.canvas = canvas;
         this.context = context;
 
-        this.textUpperMargin = this.canvas.height / 60;
+        this.textUpperMargin = 20;
         this.textLeftMargin = this.canvas.width / 251;
 
-        this.context.font = this.getFont();
+        this.context.font = "bold " + this.defaultFontSize + "px Serif";
 
         console.log(this.context.font);
 
-        this.cardWidth = this.canvas.width / 20;
-        this.cardHeight = this.cardWidth + this.cardWidth / 5;
+        this.cardWidth = 117;
+        this.cardHeight = 140
+
         this.cardCorner = this.cardWidth / 4;
 
         this.cardMiddleX = this.canvas.width / 2;
         this.cardLeftX = this.canvas.width / 7;
         this.cardRightX = this.canvas.width / 7 * 6;
 
-        this.boxHeight = this.fontSize + this.textUpperMargin;
+        this.boxHeight = this.defaultFontSize + this.textUpperMargin;
 
         this.cardUpperY = this.canvas.height / 40;
         this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
 
-        this.deckPosX = this.canvas.width / 7 * 0.5;
+        this.deckPosX = this.canvas.width / 10 * 0.5;
         this.deckPosY = this.canvas.height / 2 - 90;
 
-        this.offset = this.cardHeight + this.boxHeight;
+        this.offset = this.cardHeight + 30;
 
         this.positionsAroundTable = [
             { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
@@ -233,15 +233,6 @@ export class View {
             { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
         ]
-
-        this.displayPlayers();
-    }
-
-    private getFont(): string {
-        let ration: number = this.defaultFontSize / this.defaultWidth;
-        let size: number = this.canvas.width * ration;
-        this.fontSize = size;
-        return "bold " + (size | 0) + "px Serif";
     }
 
     private isDefending(): boolean {
@@ -269,26 +260,50 @@ export class View {
         this.context.restore();
     }
 
+    private displayBoutHelper(pos: { x: number, y: number }[], yOffset: number, from: number, toAttacking: number, toDefending: number): void {
+
+        for (let i = from; i < toAttacking; i++) {
+            let img: HTMLImageElement = this.cardImage(this.gameView.attackingCards[i]);
+
+            this.context.drawImage(img, pos[i % 4].x, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
+        }
+
+        for (let i = from; i < toDefending; i++) {
+            let img: HTMLImageElement = this.cardImage(this.gameView.defendingCards[i]);
+
+            this.context.drawImage(img, pos[i % 4].x + this.canvas.width / 117, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
+        }
+    }
+
     /*
         Display attacking and defending cards in the middle of the table 
     */
     public displayBout(): void {
+        console.log("BOUT DRAWN");
         let pos: { x: number, y: number }[];
         let attackingCardSize: number = this.gameView.attackingCards.length;
         let defendingCardSize: number = this.gameView.defendingCards.length;
 
-        for (let i = 0; i < attackingCardSize; i++) {
-            let img: HTMLImageElement = this.cardImage(this.gameView.attackingCards[i]);
-            pos = this.boutCardPositions.get(attackingCardSize % 4);
+        let count: number = Math.floor(attackingCardSize / 4);
+        let from: number = -4;
+        let toAttacking: number = 0;
+        let toDefending: number = 0;
 
-            this.context.drawImage(img, pos[i].x, pos[i].y, this.cardWidth, this.cardHeight);
+        while (count > 0) {
+            from = from + 4;
+            toAttacking = toAttacking + 4;
+            toDefending = toDefending + 4 - (attackingCardSize - defendingCardSize);
+            pos = this.boutCardPositions.get(4);
+            this.displayBoutHelper(pos, count * 25, from, toAttacking, toDefending);
+            count = count - 1;
         }
 
-        for (let i = 0; i < defendingCardSize; i++) {
-            let img: HTMLImageElement = this.cardImage(this.gameView.defendingCards[i]);
+        from = from + 4;
+        toAttacking = toAttacking + attackingCardSize % 4;
+        toDefending = toDefending + defendingCardSize % 4;
 
-            this.context.drawImage(img, pos[i].x + 20, pos[i].y, this.cardWidth, this.cardHeight);
-        }
+        pos = this.boutCardPositions.get(attackingCardSize % 4);
+        this.displayBoutHelper(pos, 0, from, toAttacking, toDefending);
     }
 
     /*
@@ -359,8 +374,6 @@ export class View {
                 });
             }
             else if (this.isButtonSelected()) {
-                this.isFirst = true;
-
                 strJSON = JSON.stringify({
                     Message: this.isAttacking() ? "Done" : "Take"
                 });
@@ -515,7 +528,7 @@ export class View {
                 );
             }
         } else {
-            this.drawBox("Winner", x, y, tWidth, 'white', 'white');
+            this.drawBox(this.winnerStr, x, y, tWidth, 'white', 'white');
         }
     }
 
@@ -612,7 +625,7 @@ export class View {
             currentID = (this.id + i) % this.totalPlayers;
 
             // calculate the total width of cards 
-            this.totalCardWidth = (this.gameView.playersView[i].numberOfCards - 1) *
+            this.totalCardWidth = (this.gameView.playersView[currentID].numberOfCards - 1) *
                 this.cardCorner + this.cardWidth;
             // subtract from given x point in the window the half of the width of cards
             this.positionsAroundTable[position[i] - 1].x =
