@@ -36,6 +36,8 @@ interface GameView {
 
     attackingCards: Card[];
     defendingCards: Card[];
+
+    takingCards: boolean;
 }
 
 class MousePos {
@@ -573,15 +575,16 @@ export class View {
 
             // display "Done" button on the attacking player if attack successfully defeated 
             // otherwise attack
-            if (this.isAttacking() && this.gameView.attackingCards.length ==
-                this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0) {
+            if (this.isAttacking() && (this.gameView.attackingCards.length ==
+                this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0 ||
+                this.gameView.takingCards)) {
                 this.drawBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset, pos.tWidth, 'white', 'white');
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
-                this.gameView.defendingCards.length) {
+                this.gameView.defendingCards.length && !this.gameView.takingCards) {
                 this.drawBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset, pos.tWidth, 'white', 'white');
             }

@@ -85,10 +85,17 @@ namespace DurakGame.Server.Middleware
                     }
                     break;
                 case "Done":
-                    game.ChangeBattle(true);
+                    if (game.takingCards)
+                    {
+                        game.ChangeBattle(false);
+                    }else
+                    {
+                        game.ChangeBattle(true);
+                    }
                     break;
                 case "Take":
-                    game.ChangeBattle(false);
+                    command = "TakeCards";
+                    game.takingCards = true;
                     break;
             }
 

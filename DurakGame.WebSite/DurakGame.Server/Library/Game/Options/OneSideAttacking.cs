@@ -45,21 +45,23 @@ namespace DurakGame.Library.Game
             }
             attackFinished = false;
             defenseFinished = false;
+            takingCards = false;
+
             bout.RemoveCardsFromBout();
         }
 
         public override bool AttackingPhase(int cardIndex)
         {
             // if the attack started wait for the defense
-            if (!IsDefenseOver())
+            if (!IsDefenseOver() && !takingCards)
             {
+                Console.WriteLine("ERROR");
                 return false;
             }
 
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
 
-            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank) 
-                && defenseFinished))
+            if (bout.GetAttackingCardsSize() == 0 || bout.CheckExistingRanks(attackingCard.rank))
             {
                 bout.AddAttackingCard(attackingCard);
                 players[attackingPlayer].RemoveCardFromHand(attackingCard);

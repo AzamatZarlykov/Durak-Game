@@ -27,6 +27,7 @@ namespace DurakGame.Library.Game
         public int prevDiscardedHeapValue;
         public bool discardHeapChanged;
 
+        public bool takingCards;
         public int durak => game.GetDurak();
         public int discardHeapSize => game.GetDiscardedHeapSize();
         public int deckSize => game.GetDeck().cardsLeft;
@@ -71,6 +72,8 @@ namespace DurakGame.Library.Game
 
             attackingCards = game.GetBoutInformation().GetAttackingCards();
             defendingCards = game.GetBoutInformation().GetDefendingCards();
+
+            takingCards = game.takingCards;
         }
     }
 
@@ -84,6 +87,8 @@ namespace DurakGame.Library.Game
 
         protected int defendingPlayer;
         protected int attackingPlayer;
+
+        public bool takingCards;
 
         protected bool attackFinished;
         public bool defenseFinished;
@@ -109,7 +114,6 @@ namespace DurakGame.Library.Game
         public int GetSizeOfPlayers() => players.Count;
         public Bout GetBoutInformation() => bout;
         public bool IsBoutGoing() => bout.GetAttackingCardsSize() > 0;
-
         public void StartGame(int totalPlayers)
         {
             deck = new Deck();
@@ -131,7 +135,6 @@ namespace DurakGame.Library.Game
 
         public bool IsAttackerWinner() => !IsBoutGoing() && 
             players[attackingPlayer].GetPlayersHand().Count == 0;
-        
 
         public void SetAttackFinished(bool value) => attackFinished = value;
 
