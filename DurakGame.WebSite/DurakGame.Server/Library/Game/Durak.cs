@@ -8,6 +8,7 @@ using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.Game
 {
+    public enum State { AttackerTurn, DefenderTurn, DefenderTaking }
     public class PlayerView
     {
         public int numberOfCards;
@@ -73,7 +74,10 @@ namespace DurakGame.Library.Game
             attackingCards = game.GetBoutInformation().GetAttackingCards();
             defendingCards = game.GetBoutInformation().GetDefendingCards();
 
-            takingCards = game.takingCards;
+            if (game.state == State.DefenderTaking)
+            {
+                takingCards = true;
+            }
         }
     }
 
@@ -88,10 +92,12 @@ namespace DurakGame.Library.Game
         protected int defendingPlayer;
         protected int attackingPlayer;
 
-        public bool takingCards;
+        public State state;
+
+/*        public bool takingCards;
 
         protected bool attackFinished;
-        public bool defenseFinished;
+        public bool defenseFinished;*/
 
         protected int durak;
 
@@ -107,8 +113,7 @@ namespace DurakGame.Library.Game
         public int GetDiscardedHeapSize() => discardedHeapSize;
         public int GetDurak() => durak;
         public int GetDefendingPlayer() => defendingPlayer;
-        public bool GetAttackFinished() => attackFinished;
-        public bool GetDefenseFinished() => defenseFinished;
+        public State GetStateOfTheGame() => state;
         public int GetAttackingPlayer() => attackingPlayer;
         public List<Player> GetPlayers() => players;
         public int GetSizeOfPlayers() => players.Count;
@@ -136,7 +141,7 @@ namespace DurakGame.Library.Game
         public bool IsAttackerWinner() => !IsBoutGoing() && 
             players[attackingPlayer].GetPlayersHand().Count == 0;
 
-        public void SetAttackFinished(bool value) => attackFinished = value;
+       // public void SetAttackFinished(bool value) => attackFinished = value;
 
         protected void GetNextPlayingPlayer(int increment)
         {
@@ -249,5 +254,6 @@ namespace DurakGame.Library.Game
             }
             return false;
         }
+
     }
 }

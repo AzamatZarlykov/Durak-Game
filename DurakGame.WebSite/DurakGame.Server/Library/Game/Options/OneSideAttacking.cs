@@ -43,9 +43,7 @@ namespace DurakGame.Library.Game
 
                 GetNextPlayingPlayer(2);
             }
-            attackFinished = false;
-            defenseFinished = false;
-            takingCards = false;
+            state = State.AttackerTurn;
 
             bout.RemoveCardsFromBout();
         }
@@ -53,7 +51,7 @@ namespace DurakGame.Library.Game
         public override bool AttackingPhase(int cardIndex)
         {
             // if the attack started wait for the defense
-            if (!IsDefenseOver() && !takingCards)
+            if (!IsDefenseOver() && !(state == State.DefenderTaking))
             {
                 return false;
             }
@@ -65,8 +63,10 @@ namespace DurakGame.Library.Game
                 bout.AddAttackingCard(attackingCard);
                 players[attackingPlayer].RemoveCardFromHand(attackingCard);
 
-                attackFinished = true;
-                defenseFinished = false;
+                if (state != State.DefenderTaking)
+                {
+                    state = State.DefenderTurn;
+                }
 
                 return true;
             } else
@@ -78,7 +78,7 @@ namespace DurakGame.Library.Game
         public override bool DefendingPhase(int cardIndex)
         {
             // wait for the attack
-            if (!attackFinished)
+            if (!(state == State.DefenderTurn))
             {
                 return false;
             }
@@ -99,9 +99,9 @@ namespace DurakGame.Library.Game
 
             bout.AddDefendingCard(defendingCard);
             players[defendingPlayer].RemoveCardFromHand(defendingCard);
+
             // set defense finished to true
-            attackFinished = false;
-            defenseFinished = true;
+            state = State.AttackerTurn;
 
             return true;
         }

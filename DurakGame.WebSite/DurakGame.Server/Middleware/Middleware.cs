@@ -45,7 +45,8 @@ namespace DurakGame.Server.Middleware
                 case "Attacking":
                     if (!game.AttackingPhase(route.Card))
                     {
-                        command = !game.IsDefenseOver() && !game.takingCards ? "Wait" : "Illegal";
+                        command = !game.IsDefenseOver() && !(game.state == State.DefenderTaking)
+                            ? "Wait" : "Illegal";
                         await SendJSON(socket, new
                         {
                             command
@@ -56,7 +57,7 @@ namespace DurakGame.Server.Middleware
                 case "Defending":
                     if (!game.DefendingPhase(route.Card))
                     {
-                        command = game.GetAttackFinished() ? "Illegal" : "Wait";
+                        command = game.state == State.DefenderTurn ? "Illegal" : "Wait";
                         await SendJSON(socket, new
                         {
                             command
@@ -65,15 +66,15 @@ namespace DurakGame.Server.Middleware
                     }
                     break;
                 case "Done":
-                    game.ChangeBattle(!game.takingCards);
+                    game.ChangeBattle(!(game.state == State.DefenderTaking));
                     break;
                 case "Take":
                     command = "TakeCards";
-                    game.takingCards = true;
+                    game.state = State.DefenderTaking;
                     break;
             }
 
-            if (game.takingCards && !game.IsAttackPossible())
+            if (game.state == State.DefenderTaking && !game.IsAttackPossible())
             {
                 game.ChangeBattle(false);
             }
