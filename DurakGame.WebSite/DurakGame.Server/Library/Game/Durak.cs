@@ -94,11 +94,6 @@ namespace DurakGame.Library.Game
 
         public State state;
 
-/*        public bool takingCards;
-
-        protected bool attackFinished;
-        public bool defenseFinished;*/
-
         protected int durak;
 
         protected int discardedHeapSize;
@@ -225,7 +220,7 @@ namespace DurakGame.Library.Game
             return card.suit == trumpCard.suit;
         }
 
-        protected bool IsLegalDefense(Card attackingCard, Card defendingCard)
+        public bool IsLegalDefense(Card attackingCard, Card defendingCard)
         {
             return (defendingCard.suit == attackingCard.suit &&
                     defendingCard.rank > attackingCard.rank) ||
@@ -248,6 +243,23 @@ namespace DurakGame.Library.Game
             foreach (Card c in bout.GetEverything())
             {
                 if (players[attackingPlayer].GetPlayersHand().Exists(card => card.rank == c.rank))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Checks if the defending player can defend the attacking card with their hand of cards
+        public bool IsDefensePossible()
+        {
+            int attackCardIndex = bout.GetAttackingCardsSize() - 1;
+
+            Card attackingCard = bout.GetAttackingCard(attackCardIndex);
+
+            foreach (Card defendingCard in players[defendingPlayer].GetPlayersHand())
+            {
+                if (IsLegalDefense(attackingCard, defendingCard))
                 {
                     return true;
                 }

@@ -24,7 +24,7 @@ namespace DurakGame.Library.Game
             return new List<Card>(attackingCards.Concat(defendingCards));
         }
 
-        public bool CheckExistingRanks(Rank rank) =>
+        public bool ContainsRank(Rank rank) =>
             attackingCards.Exists(card => card.rank == rank) ||
             defendingCards.Exists(card => card.rank == rank);
 

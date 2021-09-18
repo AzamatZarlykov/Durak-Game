@@ -8,6 +8,7 @@ namespace DurakGame.Library.GamePlayer
     public class Player
     {
         public string name;
+        public bool autoPlay;
 
         // private Icon icon;
 

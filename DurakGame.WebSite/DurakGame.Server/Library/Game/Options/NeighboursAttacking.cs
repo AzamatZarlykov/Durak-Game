@@ -132,7 +132,7 @@ namespace DurakGame.Library.Game
         {
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
 
-            if (bout.GetAttackingCardsSize() == 0 || (bout.CheckExistingRanks(attackingCard.rank)
+            if (bout.GetAttackingCardsSize() == 0 || (bout.ContainsRank(attackingCard.rank)
                 && defenseFinished))
             {
                 bout.AddAttackingCard(attackingCard);

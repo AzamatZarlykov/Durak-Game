@@ -181,6 +181,94 @@ namespace DurakGame.Server.Middleware
             }
         }
 
+        private async Task MessageHandle(ClientMessage route, WebSocket websocket)
+        {
+            switch (route.Message)
+            {
+                case "RequestStateGame":
+                    await InformGameState(websocket);
+                    break;
+                case "StartGame":
+                    if (game.GameInProgress)
+                    {
+                        Console.WriteLine("Game is being played");
+                    }
+                    else
+                    {
+                        // Send the information about the game 
+                        // to all players that are playing the game:
+                        // IDs, total number of players, list of theirs
+                        // ids and who started the game
+                        await InformJoiningGame();
+                    }
+                    break;
+                case "Attacking":
+                    await UpdateGameProcess(route, websocket);
+                    break;
+                case "Defending":
+                    await UpdateGameProcess(route, websocket);
+                    break;
+                case "Done":
+                    await UpdateGameProcess(route, websocket);
+                    break;
+                case "Take":
+                    await UpdateGameProcess(route, websocket);
+                    break;
+                default:
+                    Console.WriteLine("Unknown Message from the client");
+                    break;
+            }
+        }
+
+        private string DecideMove(string a, string b)
+        {
+            float choice;
+            Random random = new Random();
+
+            choice = random.Next(0, 2);
+            if (choice <= .6)
+            {
+                return a;
+            }
+            else
+            {
+                return b;
+            }
+        }
+
+        private int PickCardIndexHelper(bool isAttacking)
+        {
+            Random r = new Random();
+
+            if (isAttacking)
+            {
+                return r.Next(0, game.GetPlayers()[game.GetAttackingPlayer()]
+                    .GetPlayersHand().Count);
+            }
+            else
+            {
+                return r.Next(0, game.GetPlayers()[game.GetDefendingPlayer()]
+                    .GetPlayersHand().Count);
+            }
+        }
+
+        private int PickCardIndex(bool isAttacking = true)
+        {
+            int cardIndex = PickCardIndexHelper(isAttacking);
+
+            Card card = game.GetPlayers()[game.GetAttackingPlayer()].GetPlayersHand()[cardIndex];
+            // Pick a card
+            while (!game.GetBoutInformation().ContainsRank(card.rank) && isAttacking || 
+                !game.IsLegalDefense(game.GetBoutInformation().GetAttackingCards()[^1], card) && 
+                !isAttacking)
+            {
+                cardIndex = PickCardIndex(isAttacking);
+
+                card = game.GetPlayers()[game.GetAttackingPlayer()].GetPlayersHand()[cardIndex];
+            }
+            return cardIndex;
+        }
+
         public async Task InvokeAsync(HttpContext context)
         {
             if (context.WebSockets.IsWebSocketRequest)
@@ -204,41 +292,59 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        switch (route.Message)
+
+                        if (route.Message == "Testing")
                         {
-                            case "RequestStateGame":
-                                await InformGameState(websocket);
-                                break;
-                            case "StartGame":
-                                if (game.GameInProgress)
+                            game.GetPlayers()[route.From].autoPlay = true;
+                        }
+
+                        if (game.GetPlayers()[route.From].autoPlay)
+                        {
+                            string randomMove = "";
+
+                            if (route.From == game.GetAttackingPlayer())
+                            {
+                                if (game.GetBoutInformation().GetAttackingCardsSize() == 0)
                                 {
-                                    Console.WriteLine("Game is being played");
+                                    randomMove = "Attacking";
+                                } 
+                                else if (!game.IsAttackPossible())
+                                {
+                                    randomMove = "Done";
                                 }
                                 else
                                 {
-                                    // Send the information about the game 
-                                    // to all players that are playing the game:
-                                    // IDs, total number of players, list of theirs
-                                    // ids and who started the game
-                                    await InformJoiningGame();
+                                    randomMove = DecideMove("Attacking", "Done");
                                 }
-                                break;
-                            case "Attacking":
-                                await UpdateGameProcess(route, websocket);
-                                break;
-                            case "Defending":
-                                await UpdateGameProcess(route, websocket);
-                                break;
-                            case "Done":
-                                await UpdateGameProcess(route, websocket);
-                                break;
-                            case "Take":
-                                await UpdateGameProcess(route, websocket);
-                                break;
-                            default:
-                                Console.WriteLine("Unknown Message from the client");
-                                break;
+                            }
+                            else if (route.From == game.GetDefendingPlayer())
+                            {
+                                if (!game.IsDefensePossible())
+                                {
+                                    randomMove = "Take";
+                                } 
+                                else
+                                {
+                                    randomMove = DecideMove("Defending", "Take");
+                                }
+                            }
+
+                            if(randomMove == "Attacking")
+                            {
+                                route.Card = PickCardIndex(isAttacking: true);
+                            } else if (randomMove == "Defending")
+                            {
+                                route.Card = PickCardIndex(isAttacking: false);
+                            }
+
+                            route.Message = randomMove;
+
+                            await MessageHandle(route, websocket);
+                        } else
+                        {
+                            await MessageHandle(route, websocket);
                         }
+
                         return;
                     }
                     // Handling the client when they decide to leave/close the connection

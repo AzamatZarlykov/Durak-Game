@@ -123,8 +123,14 @@ export class View {
             this.CheckMouseClick();
         });
 
-        window.addEventListener("resize", () => this.reportWindowResize(this.canvas, this.context));
+        window.addEventListener("resize", () =>
+            this.reportWindowResize(this.canvas, this.context));
 
+        window.addEventListener("keypress", (e) => {
+            if (e.code == "KeyR") {
+                this.reportTesting();
+            }
+        });
     }
 
     public setConnectionFields(gameView: GameView, id: number, players: number) {
@@ -137,6 +143,15 @@ export class View {
         console.log(gameView);
     }
 
+    private reportTesting(): void {
+        let strJSON: string = JSON.stringify({
+            Message: "Testing",
+            From: this.id
+        });
+
+        this.socket.send(strJSON);
+        console.log(strJSON);
+    }
     private setBoutPositions(): void {
         this.boutCardPositions.set(
             1, [{
@@ -692,7 +707,6 @@ export class View {
         } else {
             this.displayDeck();
         }
-
 
         if (this.gameView.discardHeapSize != 0 && this.gameView.discardHeapChanged) {
             this.displayDiscardedHeap();
