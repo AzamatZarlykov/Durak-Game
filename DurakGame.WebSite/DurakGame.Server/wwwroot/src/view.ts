@@ -620,7 +620,7 @@ export class View {
         }
 
         if (this.IsEndGame()) {
-            this.drawBox(this.durakStr + this.gameView.defendingPlayer, innerWidth / 2 - 50,
+            this.drawBox(this.durakStr + this.gameView.durak, innerWidth / 2 - 50,
                 this.deckPosY, pos.tWidth, 'white', 'white');
         }
     }

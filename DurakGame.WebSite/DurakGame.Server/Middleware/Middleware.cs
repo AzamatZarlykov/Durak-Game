@@ -27,7 +27,7 @@ namespace DurakGame.Server.Middleware
 
         private readonly ConnectionManager manager;
 
-        private Durak game = new OneSideAttacking();
+        private Durak game = new Durak();
 
         public Middleware(RequestDelegate _next, ConnectionManager _manager)
         {
@@ -45,7 +45,8 @@ namespace DurakGame.Server.Middleware
                 case "Attacking":
                     if (!game.AttackingPhase(route.Card))
                     {
-                        command = !game.IsDefenseOver() && !(game.state == State.DefenderTaking)
+                        command = !game.IsDefenseOver() && !(game.state == State.DefenderTaking) &&
+                            !game.taking
                             ? "Wait" : "Illegal";
                         await SendJSON(socket, new
                         {
@@ -66,17 +67,22 @@ namespace DurakGame.Server.Middleware
                     }
                     break;
                 case "Done":
-                    game.ChangeBattle(!(game.state == State.DefenderTaking));
+                    // game.ChangeBattle(!(game.state == State.DefenderTaking), true);
+                    game.ChangeBattle(true, false);
+
                     break;
                 case "Take":
                     command = "TakeCards";
+                    game.taking = true;
                     game.state = State.DefenderTaking;
+                    game.ChangeBattle(true, true);
                     break;
             }
 
-            if (game.state == State.DefenderTaking && !game.IsAttackPossible())
+            // the game is over and durak is found.
+            if (game.GetAttackingPlayer() == game.GetDefendingPlayer())
             {
-                game.ChangeBattle(false);
+                game.durak = game.GetDefendingPlayer();
             }
 
             // Distribute updated GameView to players
@@ -292,58 +298,61 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
+                        /*
+                                                if (route.Message == "Testing")
+                                                {
+                                                    game.GetPlayers()[route.From].autoPlay = true;
+                                                }
 
-                        if (route.Message == "Testing")
-                        {
-                            game.GetPlayers()[route.From].autoPlay = true;
-                        }
+                                                if (game.GetPlayers()[route.From].autoPlay)
+                                                {
+                                                    string randomMove = "";
 
-                        if (game.GetPlayers()[route.From].autoPlay)
-                        {
-                            string randomMove = "";
+                                                    if (route.From == game.GetAttackingPlayer())
+                                                    {
+                                                        if (game.GetBoutInformation().GetAttackingCardsSize() == 0)
+                                                        {
+                                                            randomMove = "Attacking";
+                                                        } 
+                                                        else if (!game.IsAttackPossible())
+                                                        {
+                                                            randomMove = "Done";
+                                                        }
+                                                        else
+                                                        {
+                                                            randomMove = DecideMove("Attacking", "Done");
+                                                        }
+                                                    }
+                                                    else if (route.From == game.GetDefendingPlayer())
+                                                    {
+                                                        if (!game.IsDefensePossible())
+                                                        {
+                                                            randomMove = "Take";
+                                                        } 
+                                                        else
+                                                        {
+                                                            randomMove = DecideMove("Defending", "Take");
+                                                        }
+                                                    }
 
-                            if (route.From == game.GetAttackingPlayer())
-                            {
-                                if (game.GetBoutInformation().GetAttackingCardsSize() == 0)
-                                {
-                                    randomMove = "Attacking";
-                                } 
-                                else if (!game.IsAttackPossible())
-                                {
-                                    randomMove = "Done";
-                                }
-                                else
-                                {
-                                    randomMove = DecideMove("Attacking", "Done");
-                                }
-                            }
-                            else if (route.From == game.GetDefendingPlayer())
-                            {
-                                if (!game.IsDefensePossible())
-                                {
-                                    randomMove = "Take";
-                                } 
-                                else
-                                {
-                                    randomMove = DecideMove("Defending", "Take");
-                                }
-                            }
+                                                    if(randomMove == "Attacking")
+                                                    {
+                                                        route.Card = PickCardIndex(isAttacking: true);
+                                                    } else if (randomMove == "Defending")
+                                                    {
+                                                        route.Card = PickCardIndex(isAttacking: false);
+                                                    }
 
-                            if(randomMove == "Attacking")
-                            {
-                                route.Card = PickCardIndex(isAttacking: true);
-                            } else if (randomMove == "Defending")
-                            {
-                                route.Card = PickCardIndex(isAttacking: false);
-                            }
+                                                    route.Message = randomMove;
 
-                            route.Message = randomMove;
+                                                    await MessageHandle(route, websocket);
+                                                } else
+                                                {
+                                                    await MessageHandle(route, websocket);
+                                                }*/
 
-                            await MessageHandle(route, websocket);
-                        } else
-                        {
-                            await MessageHandle(route, websocket);
-                        }
+                        await MessageHandle(route, websocket);
+
 
                         return;
                     }

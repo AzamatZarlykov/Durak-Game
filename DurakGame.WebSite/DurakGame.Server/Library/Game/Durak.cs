@@ -9,6 +9,7 @@ using DurakGame.Library.GameCard;
 namespace DurakGame.Library.Game
 {
     public enum State { AttackerTurn, DefenderTurn, DefenderTaking }
+    public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
     public class PlayerView
     {
         public int numberOfCards;
@@ -28,8 +29,9 @@ namespace DurakGame.Library.Game
         private int prevDiscardedHeapValue;
         public bool discardHeapChanged;
 
+        public int durak;
+
         public bool takingCards;
-        public int durak => game.GetDurak();
         public int discardHeapSize => game.GetDiscardedHeapSize();
         public int deckSize => game.GetDeck().cardsLeft;
         public int defendingPlayer => game.GetDefendingPlayer();
@@ -74,39 +76,48 @@ namespace DurakGame.Library.Game
             attackingCards = game.GetBoutInformation().GetAttackingCards();
             defendingCards = game.GetBoutInformation().GetDefendingCards();
 
+            takingCards = game.taking;
+/*
             if (game.state == State.DefenderTaking)
             {
                 takingCards = true;
             }
+*/
+            durak = game.durak;
         }
     }
 
-    public abstract class Durak
+    public class Durak
     {
         protected Bout bout;
         protected Deck deck;
         protected Card trumpCard;
 
         public bool isBoutChanged;
+        public bool taking;
 
         protected int defendingPlayer;
         protected int attackingPlayer;
 
         public State state;
 
-        protected int durak;
+        public Type type = Type.AllSidesAttacking;
 
-        protected int discardedHeapSize;
+        public int durak;
+        public int totalUninteruptedDone;
+
+        private int discardedHeapSize;
         public bool GameInProgress => players.Count > 1;
 
         protected List<Player> players = new List<Player>();
-         
+
+        public int allAttackingPlayersIndex;
+        private List<int> allAttackingPlayers = new List<int>();
         public Durak() { }
 
         public Card GetTrumpCard() => trumpCard;
         public Deck GetDeck() => deck;
         public int GetDiscardedHeapSize() => discardedHeapSize;
-        public int GetDurak() => durak;
         public int GetDefendingPlayer() => defendingPlayer;
         public State GetStateOfTheGame() => state;
         public int GetAttackingPlayer() => attackingPlayer;
@@ -130,32 +141,14 @@ namespace DurakGame.Library.Game
             // Set the attacking player
             SetAttacker();
 
+            GetAttackers();
+
             bout = new Bout();
         }
 
         public bool IsAttackerWinner() => !IsBoutGoing() && 
             players[attackingPlayer].GetPlayersHand().Count == 0;
 
-       // public void SetAttackFinished(bool value) => attackFinished = value;
-
-        protected void GetNextPlayingPlayer(int increment)
-        {
-            attackingPlayer = (attackingPlayer + increment) % GetSizeOfPlayers();
-
-            while (players[attackingPlayer].GetPlayersHand().Count == 0)
-            {
-                attackingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
-            }
-
-            defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
-
-            while (players[defendingPlayer].GetPlayersHand().Count == 0)
-            {
-                defendingPlayer = (defendingPlayer + 1) % GetSizeOfPlayers();
-            }
-        }
-        
-        public abstract void ChangeBattle(bool successfulDefense);
 
         public void RemovePlayer(int playerID)
         {
@@ -212,8 +205,6 @@ namespace DurakGame.Library.Game
             defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
         }
 
-        public abstract bool AttackingPhase(int cardIndex);
-        
 
         public bool IsTrumpSuit(Card card)
         {
@@ -229,8 +220,6 @@ namespace DurakGame.Library.Game
                     attackingCard.rank)));
         }
 
-        public abstract bool DefendingPhase(int cardIndex);
-        
         public bool IsDefenseOver()
         {
             return bout.GetEverything().Count % 2 == 0;
@@ -267,5 +256,231 @@ namespace DurakGame.Library.Game
             return false;
         }
 
+        private void GetNextPlayingPlayer(int increment)
+        {
+            attackingPlayer = (attackingPlayer + increment) % GetSizeOfPlayers();
+
+            while (players[attackingPlayer].GetPlayersHand().Count == 0)
+            {
+                attackingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
+            }
+
+            defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
+
+            while (players[defendingPlayer].GetPlayersHand().Count == 0)
+            {
+                defendingPlayer = (defendingPlayer + 1) % GetSizeOfPlayers();
+            }
+        }
+
+
+        private int GetNextAttackingPlayerIndex(int relativePlayer)
+        {
+            int newAttackingPlayer = (relativePlayer + 1) % GetSizeOfPlayers();
+            while (players[newAttackingPlayer].GetPlayersHand().Count == 0)
+            {
+                newAttackingPlayer = (newAttackingPlayer + 1) % GetSizeOfPlayers();
+            }
+            return newAttackingPlayer;
+        }
+
+        private void UpdateDiscardedPile()
+        {
+            int attCards = bout.GetAttackingCardsSize();
+            int defCards = bout.GetDefendingCardsSize();
+
+            discardedHeapSize = discardedHeapSize + attCards + defCards;
+        }
+
+        // Returns the list of attacking player based on the type of Durak
+        public void GetAttackers()
+        {
+            allAttackingPlayers.Clear();
+            allAttackingPlayers.Add(attackingPlayer);
+
+            switch (type)
+            {
+                case Type.OneSideAttacking:
+                    break;
+                case Type.NeighboursAttacking:
+                    allAttackingPlayers.Add(GetNextAttackingPlayerIndex(defendingPlayer));
+                    break;
+                case Type.AllSidesAttacking:
+
+                    for (int i = 1; i < players.Count; i++)
+                    {
+                        int index = (attackingPlayer + i) % players.Count;
+                        if (index == defendingPlayer || players[index].GetPlayersHand().Count == 0)
+                        {
+                            continue;
+                        }
+                        allAttackingPlayers.Add(index);
+                    }
+                    break;
+            }
+        }
+
+        // function that controls the flow of the game: assigns new attacking/defending players
+        // based on the outcome of the bout. 
+        public void ChangeBattle(bool done, bool took)
+        {
+            // If any card was played by attacking player and done button was pressed
+            if (isBoutChanged && done)
+            {
+                totalUninteruptedDone = 1;
+                isBoutChanged = false;
+                // if defending player took the cards, decrement totalUninteruptedDone to
+                // avoid completing the bout. Also, decrement allAttackingPlayersIndex to ask the
+                // same player if there any cards to be added
+                if (took)
+                {
+                    totalUninteruptedDone -= 1;
+                    allAttackingPlayersIndex -= 1;
+                }
+            }
+            // this statement takes care the situation if the player pressed done and added no cards
+            else if (done && !isBoutChanged)
+            {
+                totalUninteruptedDone += 1;
+            }
+            // if all attacking players pressed done then it implies that bout is over no matter if 
+            // the defending player took the cards or defended successfully
+            if (totalUninteruptedDone == allAttackingPlayers.Count)
+            {
+                // update the cards for all attacking players until the deck is empty
+                for (int i = 0; i < allAttackingPlayers.Count && deck.cardsLeft != 0; i++)
+                {
+                    deck.UpdatePlayersHand(players[allAttackingPlayers[i]]);
+                }
+                // set the initial attacking player
+                attackingPlayer = allAttackingPlayers[0];
+
+                if (taking)
+                {
+                    taking = false;
+                    // add all the cards from the bout to the defending player
+                    players[defendingPlayer].AddCardsToHand(bout.GetEverything());
+                    GetNextPlayingPlayer(2);
+                }
+                else
+                {
+
+                    // refill the cards for defending player 
+                    if (deck.cardsLeft > 0)
+                    {
+                        deck.UpdatePlayersHand(players[defendingPlayer]);
+                    }
+                    
+                    UpdateDiscardedPile();
+
+                    GetNextPlayingPlayer(1);
+                }
+
+                Console.WriteLine("The attacking Player after change battle " + attackingPlayer);
+
+                bout.RemoveCardsFromBout();
+
+                // Get new list of attacking player as the round of attack finished
+                GetAttackers();
+                allAttackingPlayersIndex = 0;
+            }
+            else
+            {
+                // update the current attacking player
+                allAttackingPlayersIndex = (allAttackingPlayersIndex + 1) %
+                            allAttackingPlayers.Count;
+                attackingPlayer = allAttackingPlayers[allAttackingPlayersIndex];
+
+                // if defending player TAKEs cards then check if new attacking player can add any 
+                // cards to the bout. If not then skip his turn to the next attacking player. 
+                if (taking && !IsAttackPossible()) 
+                {
+                    ChangeBattle(true, false);
+                }
+            }
+            state = State.AttackerTurn;
+        }
+
+        public bool DefendingPhase(int cardIndex)
+        {
+            if (!taking)
+            {
+                // wait for the attack
+                if (!(state == State.DefenderTurn))
+                {
+                    return false;
+                }
+
+                int attackCardIndex = bout.GetAttackingCardsSize() - 1;
+
+                Card attackingCard;
+                Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
+
+
+                attackingCard = bout.GetAttackingCard(attackCardIndex);
+
+
+                if (!IsLegalDefense(attackingCard, defendingCard))
+                {
+                    return false;
+                }
+
+                bout.AddDefendingCard(defendingCard);
+                players[defendingPlayer].RemoveCardFromHand(defendingCard);
+
+                // set defense finished to true
+                state = State.AttackerTurn;
+
+                return true;
+            }
+            return false;
+        }
+
+        public bool AttackingPhase(int cardIndex)
+        {
+            // if the attack started wait for the defense
+            if (!IsDefenseOver() && !(state == State.DefenderTaking) && !taking)
+            {
+                return false;
+            }
+
+            Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
+
+            if (bout.GetAttackingCardsSize() == 0 || bout.ContainsRank(attackingCard.rank))
+            {
+                bout.AddAttackingCard(attackingCard);
+                players[attackingPlayer].RemoveCardFromHand(attackingCard);
+
+                isBoutChanged = true;
+
+                if (state != State.DefenderTaking)
+                {
+                    state = State.DefenderTurn;
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 }
+
+
+
+/*
+Possible Combinations of Battle:
+
+1) Player1 Attack + Player2 Defend + Player1 Done + Player3 Attack + Player4 Defend + Player3 Done
+ + Player1 Attack (works) 
+
+2) Player1 Attack + Player2 Defend + Player1 Done + Player3 Done (works)
+
+3) Player1 Attack + Player2 Take + Player1 Attack (until no cards to attack left) + Player1 Done + 
+   Player3 Attack (until no cards to attack left) + Player3 Done ()
+
+4) Player1 Attack + Player2 Take + Player1 Done + Player3 (until no cards to attack left) + Player3
+Done 
+ 
+*/
