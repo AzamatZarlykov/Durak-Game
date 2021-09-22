@@ -262,8 +262,8 @@ export class View {
         return this.gameView.attackingPlayer == this.id;
     }
 
-    private drawBox(text: string, x: number, y: number, width: number, strokeStyle: string,
-        textStyle: string) {
+    private drawBox(text: string, x: number, y: number, strokeStyle: string,
+        textStyle: string, extraMessage: boolean = false, message: string = "") {
         this.textMetrics = this.context.measureText(text);
 
         this.context.save()
@@ -272,8 +272,16 @@ export class View {
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
-        this.context.fillText(text, x - this.textMetrics.width / 2 + width / 2, y);
-        this.context.strokeRect(x - this.textMetrics.width / 2 - this.textLeftMargin + width / 2,
+        if (extraMessage) {
+            let extraTextMetrics: TextMetrics = this.context.measureText(message);
+            this.context.fillText(message, x + this.textMetrics.width / 2 + 4 *
+                this.textLeftMargin, y);
+            this.context.strokeRect(x + this.textMetrics.width / 2 + 3 * this.textLeftMargin, y -
+                this.textUpperMargin, extraTextMetrics.width + 2 * this.textLeftMargin,
+                this.boxHeight);
+        }
+        this.context.fillText(text, x - this.textMetrics.width / 2, y);
+        this.context.strokeRect(x - this.textMetrics.width / 2 - this.textLeftMargin,
             y - this.textUpperMargin, this.textMetrics.width + 2 * this.textLeftMargin,
             this.boxHeight);
 
@@ -544,7 +552,7 @@ export class View {
                 );
             }
         } else {
-            this.drawBox("Winner", x, y, tWidth, 'white', 'white');
+            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white');
         }
     }
 
@@ -561,7 +569,7 @@ export class View {
                 );
             }
         } else {
-            this.drawBox(this.winnerStr, x, y, tWidth, 'white', 'white');
+            this.drawBox(this.winnerStr, x + tWidth / 2, y, 'white', 'white');
         }
     }
 
@@ -616,41 +624,50 @@ export class View {
                 this.textLeftMargin, pos.y + this.offset, 'white');
         }
 */
-        this.drawBox("Player " + currentID, pos.x,
-            pos.y + this.offset, pos.tWidth, this.context.strokeStyle, 'white');
+        this.drawBox("Player " + currentID, pos.x + pos.tWidth / 2,
+            pos.y + this.offset, this.context.strokeStyle, 'white');
 
 
         if (this.id == currentID) {
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
 
-            // display "Your Turn" if no cards were played 
-            if (this.isAttacking() && this.gameView.attackingCards.length == 0) {
-                this.drawBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset, pos.tWidth, 'white', 'white');
-            }
-
-            // display "Done" button on the attacking player if attack successfully defeated 
-            // otherwise attack
-            if (this.isAttacking() && (this.gameView.attackingCards.length ==
-                this.gameView.defendingCards.length && this.gameView.attackingCards.length > 0 ||
-                this.gameView.takingCards)) {
-                this.drawBox(this.doneStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset, pos.tWidth, 'white', 'white');
+            if (this.isAttacking()) {
+                // display "Your Turn" if no cards were played 
+                if (this.gameView.attackingCards.length == 0) {
+                    this.drawBox(this.yourTurnStr, pos.x + pos.tWidth + this.cardWidth,
+                        pos.y + this.offset, 'white', 'white');
+                }
+                // display "Done" button on the attacking player if attack successfully defeated or
+                // if defending player took cards 
+                else if (this.gameView.attackingCards.length == this.gameView.defendingCards.length
+                        || this.gameView.takingCards) {
+                    // display message "Add Cards" if the player took cards
+                    if (this.gameView.takingCards) {
+                        this.drawBox(this.doneStr, pos.x + pos.tWidth + this.cardWidth,
+                            pos.y + this.offset, 'white', 'white', true, "Add Cards");
+                    }
+                    // display message "Continue Attack" if the player defended successfully
+                    else {
+                        this.drawBox(this.doneStr, pos.x + pos.tWidth + this.cardWidth,
+                            pos.y + this.offset, 'white', 'white', true, "Continue Attack");
+                    }
+                }
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
-            if (this.id == this.gameView.defendingPlayer && this.gameView.attackingCards.length >
+            if (this.isDefending() && this.gameView.attackingCards.length >
                 this.gameView.defendingCards.length && !this.gameView.takingCards) {
-                this.drawBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
-                    pos.y + this.offset, pos.tWidth, 'white', 'white');
+                // display message "Defend" if did not take cards
+                this.drawBox(this.takeStr, pos.x + pos.tWidth + this.cardWidth,
+                    pos.y + this.offset, 'white', 'white', true, "Defend");
             }
-        } else {
+        } else {    
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
         }
 
         if (this.IsEndGame()) {
             this.drawBox(this.durakStr + this.gameView.durak, innerWidth / 2 - 50,
-                this.deckPosY, pos.tWidth, 'white', 'white');
+                this.deckPosY, 'white', 'white');
         }
 
     }
