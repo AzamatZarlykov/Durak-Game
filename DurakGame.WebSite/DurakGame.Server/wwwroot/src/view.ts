@@ -22,6 +22,7 @@ interface GameView {
 
     attackingPlayer: number;
     defendingPlayer: number;
+    playerTurn: number;
 
     deckSize: number;
     discardHeapSize: number;
@@ -267,6 +268,7 @@ export class View {
 
         this.context.save()
 
+        this.context.lineWidth = 5;
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
@@ -395,7 +397,7 @@ export class View {
                     Card: cardIndex
                 });
             }
-            else if (this.isButtonSelected()) {
+            else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
                 strJSON = JSON.stringify({
                     Message: this.isAttacking() ? "Done" : "Take"
                 });
@@ -568,21 +570,38 @@ export class View {
     }
 
     /*
+        Draws an arrow to indicate which players turn it is to play a card 
+    */
+    private DrawArrow(fromX: number, fromY: number, toX: number, toY: number, style: string): void {
+        let headlen : number = 10; // length of head in pixels
+        let dx: number = toX - fromX;
+        let dy: number = toY - fromY;
+        let angle: number = Math.atan2(dy, dx);
+
+
+        this.context.save();
+        this.context.strokeStyle = style;
+
+        this.context.lineWidth = 1;
+        this.context.moveTo(fromX, fromY);
+        this.context.lineTo(toX, toY);
+        this.context.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen *
+            Math.sin(angle - Math.PI / 6));
+        this.context.moveTo(toX, toY);
+        this.context.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen *
+            Math.sin(angle + Math.PI / 6));
+        this.context.stroke();
+        this.context.restore();
+    }
+
+    /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
-        let pos: { x: number, y: number, tWidth: number };
+        let pos: { x: number, y: number, tWidth: number } =
+            this.positionsAroundTable[position[index] - 1];
 
-        pos = this.positionsAroundTable[position[index] - 1];
-
-        this.context.lineWidth = 5;
-
-        if (currentID == this.id) {
-            this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
-        } else {
-            this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
-        }
         if (currentID == this.gameView.attackingPlayer) {
             this.context.strokeStyle = 'lime';
         } else if (currentID == this.gameView.defendingPlayer) {
@@ -590,14 +609,22 @@ export class View {
         } else {
             this.context.strokeStyle = 'black';
         }
-
+/*
+        // Add an arrow indicating whose turn it is to play
+        if (currentID == this.gameView.playerTurn) {
+            this.DrawArrow(pos.x, pos.y + this.offset, pos.x + pos.tWidth / 2 - 11 *
+                this.textLeftMargin, pos.y + this.offset, 'white');
+        }
+*/
         this.drawBox("Player " + currentID, pos.x,
             pos.y + this.offset, pos.tWidth, this.context.strokeStyle, 'white');
 
+
         if (this.id == currentID) {
+            this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
+
             // display "Your Turn" if no cards were played 
             if (this.isAttacking() && this.gameView.attackingCards.length == 0) {
-
                 this.drawBox(this.yourTurnStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset, pos.tWidth, 'white', 'white');
             }
@@ -617,12 +644,15 @@ export class View {
                 this.drawBox(this.takeStr, pos.x + pos.tWidth / 2 + this.cardWidth,
                     pos.y + this.offset, pos.tWidth, 'white', 'white');
             }
+        } else {
+            this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
         }
 
         if (this.IsEndGame()) {
             this.drawBox(this.durakStr + this.gameView.durak, innerWidth / 2 - 50,
                 this.deckPosY, pos.tWidth, 'white', 'white');
         }
+
     }
 
     /*
@@ -683,14 +713,15 @@ export class View {
     */
     public drawTable(): void {
         // Draws the empty table
+        this.context.save();
+
         this.context.fillStyle = 'green';
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 10;
 
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.strokeRect(0, 0, this.canvas.width, this.canvas.height);
-        this.context.save();
-
+        this.context.restore();
     }
 
     /*
@@ -716,10 +747,13 @@ export class View {
     }
 
     private errorWrite(textStr: string, x: number, y: number, w: number, h: number, textW: number) {
+        this.context.save();
+        this.context.lineWidth = 5;
         this.context.fillText(textStr, x + this.textLeftMargin,
             this.deckPosY - 2 * this.textUpperMargin);
 
         this.context.strokeRect(x, y, w, h);
+        this.context.restore();
     }
 
     private clear(x: number, y: number, w: number, h: number): void {

@@ -30,6 +30,7 @@ namespace DurakGame.Library.Game
         public bool discardHeapChanged;
 
         public int durak;
+        public int playerTurn;
 
         public bool takingCards;
         public int discardHeapSize => game.GetDiscardedHeapSize();
@@ -77,12 +78,9 @@ namespace DurakGame.Library.Game
             defendingCards = game.GetBoutInformation().GetDefendingCards();
 
             takingCards = game.taking;
-/*
-            if (game.state == State.DefenderTaking)
-            {
-                takingCards = true;
-            }
-*/
+
+            playerTurn = game.GetPlayersTurn();
+
             durak = game.durak;
         }
     }
@@ -463,6 +461,24 @@ namespace DurakGame.Library.Game
             {
                 return false;
             }
+        }
+
+        private bool IsDefenderTurn()
+        {
+            if (!taking)
+            {
+                return bout.GetAttackingCardsSize() > bout.GetDefendingCardsSize();
+            }
+            return false;
+        }
+
+        public int GetPlayersTurn()
+        {
+            if (IsDefenderTurn())
+            {
+                return defendingPlayer;
+            }
+            return attackingPlayer;
         }
     }
 }
