@@ -39,43 +39,66 @@ namespace DurakGame.Server.Middleware
         {
             command = "UpdateGameProcess";
             GameView gameView;
+            PhaseResult outcome;
 
             switch (route.Message)
             {
                 case "Attacking":
-                    if (!game.AttackingPhase(route.Card))
+                    outcome = game.AttackingPhase(route.Card);
+
+                    if (outcome != PhaseResult.OK)
                     {
-                        command = !game.IsDefenseOver() && !(game.state == State.DefenderTaking) &&
-                            !game.taking
-                            ? "Wait" : "Illegal";
+                        if (outcome == PhaseResult.OutOfTurn)
+                        {
+                            command = "Wait";
+                        }
+                        else if (outcome == PhaseResult.IllegalMove)
+                        {
+                            command = "Illegal";
+                        }
                         await SendJSON(socket, new
                         {
                             command
                         });
                         return;
                     }
+
                     break;
                 case "Defending":
-                    if (!game.DefendingPhase(route.Card))
+                    outcome = game.DefendingPhase(route.Card);
+
+                    if (outcome != PhaseResult.OK)
                     {
-                        command = game.state == State.DefenderTurn ? "Illegal" : "Wait";
+                        if (outcome == PhaseResult.OutOfTurn)
+                        {
+                            command = "Wait";
+                        }
+                        else if (outcome == PhaseResult.IllegalMove)
+                        {
+                            command = "Illegal";
+                        }
+                        else if (outcome == PhaseResult.TookCards)
+                        {
+                            command = "TookCards";
+                        }
+
                         await SendJSON(socket, new
                         {
                             command
                         });
                         return;
                     }
+
                     break;
                 case "Done":
-                    // game.ChangeBattle(!(game.state == State.DefenderTaking), true);
-                    game.ChangeBattle(true, false);
+                    game.ChangeBattle(false);
 
                     break;
                 case "Take":
                     command = "TakeCards";
                     game.taking = true;
                     game.state = State.DefenderTaking;
-                    game.ChangeBattle(true, true);
+                    game.ChangeBattle(true);
                     break;
             }
 
@@ -226,55 +249,6 @@ namespace DurakGame.Server.Middleware
             }
         }
 
-        private string DecideMove(string a, string b)
-        {
-            float choice;
-            Random random = new Random();
-
-            choice = random.Next(0, 2);
-            if (choice <= .6)
-            {
-                return a;
-            }
-            else
-            {
-                return b;
-            }
-        }
-
-        private int PickCardIndexHelper(bool isAttacking)
-        {
-            Random r = new Random();
-
-            if (isAttacking)
-            {
-                return r.Next(0, game.GetPlayers()[game.GetAttackingPlayer()]
-                    .GetPlayersHand().Count);
-            }
-            else
-            {
-                return r.Next(0, game.GetPlayers()[game.GetDefendingPlayer()]
-                    .GetPlayersHand().Count);
-            }
-        }
-
-        private int PickCardIndex(bool isAttacking = true)
-        {
-            int cardIndex = PickCardIndexHelper(isAttacking);
-
-            Card card = game.GetPlayers()[game.GetAttackingPlayer()].GetPlayersHand()[cardIndex];
-            // Pick a card
-            while (!game.GetBoutInformation().ContainsRank(card.rank) && isAttacking || 
-                !game.IsLegalDefense(game.GetBoutInformation().GetAttackingCards()[^1], card) && 
-                !isAttacking)
-            {
-                cardIndex = PickCardIndex(isAttacking);
-
-                card = game.GetPlayers()[game.GetAttackingPlayer()].GetPlayersHand()[cardIndex];
-            }
-            return cardIndex;
-        }
-
         public async Task InvokeAsync(HttpContext context)
         {
             if (context.WebSockets.IsWebSocketRequest)
@@ -298,61 +272,7 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        /*
-                                                if (route.Message == "Testing")
-                                                {
-                                                    game.GetPlayers()[route.From].autoPlay = true;
-                                                }
-
-                                                if (game.GetPlayers()[route.From].autoPlay)
-                                                {
-                                                    string randomMove = "";
-
-                                                    if (route.From == game.GetAttackingPlayer())
-                                                    {
-                                                        if (game.GetBoutInformation().GetAttackingCardsSize() == 0)
-                                                        {
-                                                            randomMove = "Attacking";
-                                                        } 
-                                                        else if (!game.IsAttackPossible())
-                                                        {
-                                                            randomMove = "Done";
-                                                        }
-                                                        else
-                                                        {
-                                                            randomMove = DecideMove("Attacking", "Done");
-                                                        }
-                                                    }
-                                                    else if (route.From == game.GetDefendingPlayer())
-                                                    {
-                                                        if (!game.IsDefensePossible())
-                                                        {
-                                                            randomMove = "Take";
-                                                        } 
-                                                        else
-                                                        {
-                                                            randomMove = DecideMove("Defending", "Take");
-                                                        }
-                                                    }
-
-                                                    if(randomMove == "Attacking")
-                                                    {
-                                                        route.Card = PickCardIndex(isAttacking: true);
-                                                    } else if (randomMove == "Defending")
-                                                    {
-                                                        route.Card = PickCardIndex(isAttacking: false);
-                                                    }
-
-                                                    route.Message = randomMove;
-
-                                                    await MessageHandle(route, websocket);
-                                                } else
-                                                {
-                                                    await MessageHandle(route, websocket);
-                                                }*/
-
                         await MessageHandle(route, websocket);
-
 
                         return;
                     }

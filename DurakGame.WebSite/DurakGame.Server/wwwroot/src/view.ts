@@ -153,6 +153,7 @@ export class View {
         this.socket.send(strJSON);
         console.log(strJSON);
     }
+
     private setBoutPositions(): void {
         this.boutCardPositions.set(
             1, [{
@@ -388,10 +389,10 @@ export class View {
         let strJSON: string;
         if (this.isAttacking() || this.isDefending() ) {
             if (this.isCardSelected()) {
-                if (this.isDefending() && this.gameView.takingCards) {
+/*                if (this.isDefending() && this.gameView.takingCards) {
                     this.displayMessage("tookCards");
                     return;
-                }
+                }*/
                 let cardIndex: number = Math.floor(this.GetCardSelected());
 
                 if (cardIndex >= this.gameView.hand.length) {
@@ -773,13 +774,6 @@ export class View {
         this.context.restore();
     }
 
-    private clear(x: number, y: number, w: number, h: number): void {
-        this.context.fillStyle = 'green';
-        this.context.fillRect(x - 5, y - 5, w + 10, h + 10);
-
-        this.displayPlayers();
-    }
-
     /*
         Display the error if Attack/Defense is illegal
     */
@@ -807,14 +801,11 @@ export class View {
                 console.log("Unknown type of the string (Check the error types)");
                 break;
         }
-        this.textMetrics = this.context.measureText(textStr);
 
-        let x: number = this.positionsAroundTable[0].x - this.textLeftMargin;
-        let y: number = this.deckPosY - 3 * this.textUpperMargin;
-        let w: number = this.textMetrics.width + 2 * this.textLeftMargin;
-        let h: number = this.boxHeight;
+        this.drawBox(textStr, this.positionsAroundTable[0].x +
+            this.positionsAroundTable[0].tWidth / 2, this.deckPosY - 2 * this.textUpperMargin,
+            'white', 'white');
 
-        this.errorWrite(textStr, x, y, w, h, this.textMetrics.width);
-        setTimeout(() => this.clear(x, y, w, h), 3000);
+        setTimeout(() => this.displayStateOfTheGame(), 3000);
     }
 }

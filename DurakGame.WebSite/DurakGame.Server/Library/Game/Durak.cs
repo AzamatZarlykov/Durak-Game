@@ -10,6 +10,7 @@ namespace DurakGame.Library.Game
 {
     public enum State { AttackerTurn, DefenderTurn, DefenderTaking }
     public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
+    public enum PhaseResult { OK, OutOfTurn, IllegalMove, TookCards }
     public class PlayerView
     {
         public int numberOfCards;
@@ -117,7 +118,6 @@ namespace DurakGame.Library.Game
         public Deck GetDeck() => deck;
         public int GetDiscardedHeapSize() => discardedHeapSize;
         public int GetDefendingPlayer() => defendingPlayer;
-        public State GetStateOfTheGame() => state;
         public int GetAttackingPlayer() => attackingPlayer;
         public List<Player> GetPlayers() => players;
         public int GetSizeOfPlayers() => players.Count;
@@ -320,10 +320,10 @@ namespace DurakGame.Library.Game
 
         // function that controls the flow of the game: assigns new attacking/defending players
         // based on the outcome of the bout. 
-        public void ChangeBattle(bool done, bool took)
+        public void ChangeBattle(bool took)
         {
             // If any card was played by attacking player and done button was pressed
-            if (isBoutChanged && done)
+            if (isBoutChanged)
             {
                 totalUninteruptedDone = 1;
                 isBoutChanged = false;
@@ -337,7 +337,7 @@ namespace DurakGame.Library.Game
                 }
             }
             // this statement takes care the situation if the player pressed done and added no cards
-            else if (done && !isBoutChanged)
+            else if (!isBoutChanged)
             {
                 totalUninteruptedDone += 1;
             }
@@ -393,20 +393,20 @@ namespace DurakGame.Library.Game
                 // cards to the bout. If not then skip his turn to the next attacking player. 
                 if (taking && !IsAttackPossible()) 
                 {
-                    ChangeBattle(true, false);
+                    ChangeBattle(false);
                 }
             }
             state = State.AttackerTurn;
         }
 
-        public bool DefendingPhase(int cardIndex)
+        public PhaseResult DefendingPhase(int cardIndex)
         {
             if (!taking)
             {
                 // wait for the attack
                 if (!(state == State.DefenderTurn))
                 {
-                    return false;
+                    return PhaseResult.OutOfTurn;
                 }
 
                 int attackCardIndex = bout.GetAttackingCardsSize() - 1;
@@ -420,7 +420,7 @@ namespace DurakGame.Library.Game
 
                 if (!IsLegalDefense(attackingCard, defendingCard))
                 {
-                    return false;
+                    return PhaseResult.IllegalMove;
                 }
 
                 bout.AddDefendingCard(defendingCard);
@@ -429,17 +429,17 @@ namespace DurakGame.Library.Game
                 // set defense finished to true
                 state = State.AttackerTurn;
 
-                return true;
+                return PhaseResult.OK;
             }
-            return false;
+            return PhaseResult.TookCards;
         }
 
-        public bool AttackingPhase(int cardIndex)
+        public PhaseResult AttackingPhase(int cardIndex)
         {
             // if the attack started wait for the defense
             if (!IsDefenseOver() && !(state == State.DefenderTaking) && !taking)
             {
-                return false;
+                return PhaseResult.OutOfTurn;
             }
 
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
@@ -455,11 +455,11 @@ namespace DurakGame.Library.Game
                 {
                     state = State.DefenderTurn;
                 }
-                return true;
+                return PhaseResult.OK;
             }
             else
             {
-                return false;
+                return PhaseResult.IllegalMove;
             }
         }
 

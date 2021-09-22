@@ -21,6 +21,7 @@ let UpdateGameProcessCommand: string = "UpdateGameProcess";
 let IllegalCommand: string = "Illegal";
 let WaitCommand: string = "Wait";
 let TakeCardsCommand: string = "TakeCards";
+let TookCardsCommand: string = "TookCards";
 
 let view: View;
 
@@ -33,6 +34,7 @@ let allCommands: string[] = [
     IllegalCommand,
     WaitCommand,
     TakeCardsCommand,
+    TookCardsCommand,
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -122,6 +124,8 @@ socket.onmessage = function (event): void {
                 view.displayStateOfTheGame();
                 view.displayMessage("takeCards");
                 break;
+            case (TookCardsCommand):
+                view.displayMessage("tookCards");
         }
     } else {
         console.log("Unknown command from the server");
