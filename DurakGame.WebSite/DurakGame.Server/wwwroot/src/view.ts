@@ -433,8 +433,8 @@ export class View {
 
             // getting random angle and y position to replicate the real world discarded pile
             let angle: number = Math.random() * Math.PI * 2;
-            let yPos: number = Math.random() * (this.deckPosY + this.canvas.width / 24 -
-                this.deckPosY - this.canvas.width / 24) + this.deckPosY - this.canvas.width / 24;
+            let yPos: number = Math.random() * (this.deckPosY + 50 -
+                this.deckPosY - 50) + this.deckPosY - 50;
 
             if (this.discardedPilePositions.get(i)) {
                 coordinates = this.discardedPilePositions.get(i);
@@ -581,7 +581,7 @@ export class View {
     /*
         Draws an arrow to indicate which players turn it is to play a card 
     */
-    private DrawArrow(fromX: number, fromY: number, toX: number, toY: number, style: string): void {
+    private drawArrow(fromX: number, fromY: number, toX: number, toY: number, style: string): void {
         let headlen : number = 10; // length of head in pixels
         let dx: number = toX - fromX;
         let dy: number = toY - fromY;
@@ -621,7 +621,7 @@ export class View {
 /*
         // Add an arrow indicating whose turn it is to play
         if (currentID == this.gameView.playerTurn) {
-            this.DrawArrow(pos.x, pos.y + this.offset, pos.x + pos.tWidth / 2 - 11 *
+            this.drawArrow(pos.x, pos.y + this.offset, pos.x + pos.tWidth / 2 - 11 *
                 this.textLeftMargin, pos.y + this.offset, 'white');
         }
 */
