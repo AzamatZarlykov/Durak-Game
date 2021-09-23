@@ -103,7 +103,7 @@ namespace DurakGame.Library.Game
         public Type type = Type.AllSidesAttacking;
 
         public int durak;
-        public int totalUninteruptedDone;
+        public int totalUninterruptedDone;
 
         private int discardedHeapSize;
         public bool GameInProgress => players.Count > 1;
@@ -362,17 +362,17 @@ namespace DurakGame.Library.Game
             // If any card was played by attacking player and done button was pressed
             if (isBoutChanged)
             {
-                totalUninteruptedDone = 1;
+                totalUninterruptedDone = 1;
                 isBoutChanged = false;
             }
             // this statement takes care the situation if the player pressed done and added no cards
             else if (!isBoutChanged)
             {
-                totalUninteruptedDone += 1;
+                totalUninterruptedDone += 1;
             }
             // if all attacking players pressed done then it implies that bout is over no matter if 
             // the defending player took the cards or defended successfully
-            if (totalUninteruptedDone == allAttackingPlayers.Count)
+            if (totalUninterruptedDone == allAttackingPlayers.Count)
             {
                 ResetRound();
 
@@ -403,20 +403,20 @@ namespace DurakGame.Library.Game
             // If any card was played by attacking player and done button was pressed
             if (isBoutChanged)
             {
-                totalUninteruptedDone = 1;
+                totalUninterruptedDone = 1;
                 isBoutChanged = false;
 
                 // if defending player took the cards, decrement totalUninteruptedDone to
                 // avoid completing the bout. Also, decrement allAttackingPlayersIndex to ask the
                 // same player if there any cards to be added
                 taking = true;
-                totalUninteruptedDone -= 1;
+                totalUninterruptedDone -= 1;
                 allAttackingPlayersIndex -= 1;
             }
             // this statement takes care the situation if the player pressed done and added no cards
             else if (!isBoutChanged)
             {
-                totalUninteruptedDone += 1;
+                totalUninterruptedDone += 1;
             }
             
             // update the current attacking player
@@ -468,7 +468,7 @@ namespace DurakGame.Library.Game
         public MoveResult AttackerMove(int cardIndex)
         {
             // if the attack started wait for the defense
-            if (!IsDefenseOver() && !taking)
+            if (state == State.DefenderTurn)
             {
                 return MoveResult.OutOfTurn;
             }
