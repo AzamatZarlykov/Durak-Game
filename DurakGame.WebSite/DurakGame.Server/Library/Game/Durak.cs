@@ -8,9 +8,9 @@ using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.Game
 {
-    public enum State { AttackerTurn, DefenderTurn, DefenderTaking }
+    public enum State { AttackerTurn, DefenderTurn }
     public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
-    public enum PhaseResult { OK, OutOfTurn, IllegalMove, TookCards }
+    public enum MoveResult { OK, OutOfTurn, IllegalMove, TookCards }
     public class PlayerView
     {
         public int numberOfCards;
@@ -140,6 +140,8 @@ namespace DurakGame.Library.Game
             SetAttacker();
 
             GetAttackers();
+
+            state = State.AttackerTurn;
 
             bout = new Bout();
         }
@@ -318,23 +320,50 @@ namespace DurakGame.Library.Game
             }
         }
 
-        // function that controls the flow of the game: assigns new attacking/defending players
-        // based on the outcome of the bout. 
-        public void ChangeBattle(bool took)
+        // Resets the round i.e distributes the cards to attacking players, based on bool taking,
+        // distribute bout cards to defending player or remove to discarded pile, and get next 
+        // players that will play
+        private void ResetRound()
+        {
+            // update the cards for all attacking players until the deck is empty
+            for (int i = 0; i < allAttackingPlayers.Count && deck.cardsLeft != 0; i++)
+            {
+                deck.UpdatePlayersHand(players[allAttackingPlayers[i]]);
+            }
+            // set the initial attacking player
+            attackingPlayer = allAttackingPlayers[0];
+
+            if (taking)
+            {
+                taking = false;
+                // add all the cards from the bout to the defending player
+                players[defendingPlayer].AddCardsToHand(bout.GetEverything());
+                GetNextPlayingPlayer(2);
+            }
+            else
+            {
+                // refill the cards for defending player 
+                if (deck.cardsLeft > 0)
+                {
+                    deck.UpdatePlayersHand(players[defendingPlayer]);
+                }
+
+                UpdateDiscardedPile();
+
+                GetNextPlayingPlayer(1);
+            }
+
+            bout.RemoveCardsFromBout();
+        }
+
+        // controls flow of the game when the attacking player presses DONE. 
+        public void AttackerDone()
         {
             // If any card was played by attacking player and done button was pressed
             if (isBoutChanged)
             {
                 totalUninteruptedDone = 1;
                 isBoutChanged = false;
-                // if defending player took the cards, decrement totalUninteruptedDone to
-                // avoid completing the bout. Also, decrement allAttackingPlayersIndex to ask the
-                // same player if there any cards to be added
-                if (took)
-                {
-                    totalUninteruptedDone -= 1;
-                    allAttackingPlayersIndex -= 1;
-                }
             }
             // this statement takes care the situation if the player pressed done and added no cards
             else if (!isBoutChanged)
@@ -345,38 +374,7 @@ namespace DurakGame.Library.Game
             // the defending player took the cards or defended successfully
             if (totalUninteruptedDone == allAttackingPlayers.Count)
             {
-                // update the cards for all attacking players until the deck is empty
-                for (int i = 0; i < allAttackingPlayers.Count && deck.cardsLeft != 0; i++)
-                {
-                    deck.UpdatePlayersHand(players[allAttackingPlayers[i]]);
-                }
-                // set the initial attacking player
-                attackingPlayer = allAttackingPlayers[0];
-
-                if (taking)
-                {
-                    taking = false;
-                    // add all the cards from the bout to the defending player
-                    players[defendingPlayer].AddCardsToHand(bout.GetEverything());
-                    GetNextPlayingPlayer(2);
-                }
-                else
-                {
-
-                    // refill the cards for defending player 
-                    if (deck.cardsLeft > 0)
-                    {
-                        deck.UpdatePlayersHand(players[defendingPlayer]);
-                    }
-                    
-                    UpdateDiscardedPile();
-
-                    GetNextPlayingPlayer(1);
-                }
-
-                Console.WriteLine("The attacking Player after change battle " + attackingPlayer);
-
-                bout.RemoveCardsFromBout();
+                ResetRound();
 
                 // Get new list of attacking player as the round of attack finished
                 GetAttackers();
@@ -391,36 +389,69 @@ namespace DurakGame.Library.Game
 
                 // if defending player TAKEs cards then check if new attacking player can add any 
                 // cards to the bout. If not then skip his turn to the next attacking player. 
-                if (taking && !IsAttackPossible()) 
+                if (taking && !IsAttackPossible())
                 {
-                    ChangeBattle(false);
+                    AttackerDone();
                 }
             }
             state = State.AttackerTurn;
         }
 
-        public PhaseResult DefendingPhase(int cardIndex)
+        // controls the flow of the game when the defending player takes the cards
+        public void DefenderTake()
+        {
+            // If any card was played by attacking player and done button was pressed
+            if (isBoutChanged)
+            {
+                totalUninteruptedDone = 1;
+                isBoutChanged = false;
+
+                // if defending player took the cards, decrement totalUninteruptedDone to
+                // avoid completing the bout. Also, decrement allAttackingPlayersIndex to ask the
+                // same player if there any cards to be added
+                taking = true;
+                totalUninteruptedDone -= 1;
+                allAttackingPlayersIndex -= 1;
+            }
+            // this statement takes care the situation if the player pressed done and added no cards
+            else if (!isBoutChanged)
+            {
+                totalUninteruptedDone += 1;
+            }
+            
+            // update the current attacking player
+            allAttackingPlayersIndex = (allAttackingPlayersIndex + 1) %
+                        allAttackingPlayers.Count;
+            attackingPlayer = allAttackingPlayers[allAttackingPlayersIndex];
+
+            // if defending player TAKEs cards then check if new attacking player can add any 
+            // cards to the bout. If not then skip his turn to the next attacking player. 
+            if (!IsAttackPossible())
+            {
+                AttackerDone();
+            }
+            
+            state = State.AttackerTurn;
+        }
+
+        public MoveResult DefenderMove(int cardIndex)
         {
             if (!taking)
             {
                 // wait for the attack
                 if (!(state == State.DefenderTurn))
                 {
-                    return PhaseResult.OutOfTurn;
+                    return MoveResult.OutOfTurn;
                 }
 
                 int attackCardIndex = bout.GetAttackingCardsSize() - 1;
 
-                Card attackingCard;
+                Card attackingCard = bout.GetAttackingCard(attackCardIndex);
                 Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
-
-
-                attackingCard = bout.GetAttackingCard(attackCardIndex);
-
 
                 if (!IsLegalDefense(attackingCard, defendingCard))
                 {
-                    return PhaseResult.IllegalMove;
+                    return MoveResult.IllegalMove;
                 }
 
                 bout.AddDefendingCard(defendingCard);
@@ -429,17 +460,17 @@ namespace DurakGame.Library.Game
                 // set defense finished to true
                 state = State.AttackerTurn;
 
-                return PhaseResult.OK;
+                return MoveResult.OK;
             }
-            return PhaseResult.TookCards;
+            return MoveResult.TookCards;
         }
 
-        public PhaseResult AttackingPhase(int cardIndex)
+        public MoveResult AttackerMove(int cardIndex)
         {
             // if the attack started wait for the defense
-            if (!IsDefenseOver() && !(state == State.DefenderTaking) && !taking)
+            if (!IsDefenseOver() && !taking)
             {
-                return PhaseResult.OutOfTurn;
+                return MoveResult.OutOfTurn;
             }
 
             Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
@@ -451,15 +482,15 @@ namespace DurakGame.Library.Game
 
                 isBoutChanged = true;
 
-                if (state != State.DefenderTaking)
+                if (!taking)
                 {
                     state = State.DefenderTurn;
                 }
-                return PhaseResult.OK;
+                return MoveResult.OK;
             }
             else
             {
-                return PhaseResult.IllegalMove;
+                return MoveResult.IllegalMove;
             }
         }
 

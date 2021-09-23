@@ -39,20 +39,20 @@ namespace DurakGame.Server.Middleware
         {
             command = "UpdateGameProcess";
             GameView gameView;
-            PhaseResult outcome;
+            MoveResult outcome;
 
             switch (route.Message)
             {
                 case "Attacking":
-                    outcome = game.AttackingPhase(route.Card);
+                    outcome = game.AttackerMove(route.Card);
 
-                    if (outcome != PhaseResult.OK)
+                    if (outcome != MoveResult.OK)
                     {
-                        if (outcome == PhaseResult.OutOfTurn)
+                        if (outcome == MoveResult.OutOfTurn)
                         {
                             command = "Wait";
                         }
-                        else if (outcome == PhaseResult.IllegalMove)
+                        else if (outcome == MoveResult.IllegalMove)
                         {
                             command = "Illegal";
                         }
@@ -65,19 +65,19 @@ namespace DurakGame.Server.Middleware
 
                     break;
                 case "Defending":
-                    outcome = game.DefendingPhase(route.Card);
+                    outcome = game.DefenderMove(route.Card);
 
-                    if (outcome != PhaseResult.OK)
+                    if (outcome != MoveResult.OK)
                     {
-                        if (outcome == PhaseResult.OutOfTurn)
+                        if (outcome == MoveResult.OutOfTurn)
                         {
                             command = "Wait";
                         }
-                        else if (outcome == PhaseResult.IllegalMove)
+                        else if (outcome == MoveResult.IllegalMove)
                         {
                             command = "Illegal";
                         }
-                        else if (outcome == PhaseResult.TookCards)
+                        else if (outcome == MoveResult.TookCards)
                         {
                             command = "TookCards";
                         }
@@ -91,14 +91,11 @@ namespace DurakGame.Server.Middleware
 
                     break;
                 case "Done":
-                    game.ChangeBattle(false);
-
+                    game.AttackerDone();
                     break;
                 case "Take":
                     command = "TakeCards";
-                    game.taking = true;
-                    game.state = State.DefenderTaking;
-                    game.ChangeBattle(true);
+                    game.DefenderTake();
                     break;
             }
 
