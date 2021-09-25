@@ -582,6 +582,7 @@ export class View {
 
     /*
         Draws an arrow to indicate which players turn it is to play a card 
+        source: https://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
     */
     private drawArrow(fromX: number, fromY: number, toX: number, toY: number, style: string): void {
         let headlen : number = 10; // length of head in pixels
@@ -589,11 +590,11 @@ export class View {
         let dy: number = toY - fromY;
         let angle: number = Math.atan2(dy, dx);
 
-
         this.context.save();
         this.context.strokeStyle = style;
 
         this.context.lineWidth = 1;
+        this.context.beginPath();
         this.context.moveTo(fromX, fromY);
         this.context.lineTo(toX, toY);
         this.context.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen *
@@ -620,13 +621,13 @@ export class View {
         } else {
             this.context.strokeStyle = 'black';
         }
-/*
+
         // Add an arrow indicating whose turn it is to play
         if (currentID == this.gameView.playerTurn) {
-            this.drawArrow(pos.x, pos.y + this.offset, pos.x + pos.tWidth / 2 - 11 *
-                this.textLeftMargin, pos.y + this.offset, 'white');
+            this.drawArrow(pos.x, pos.y + this.offset, pos.x + pos.tWidth / 4, pos.y + this.offset,
+                'white');
         }
-*/
+
         this.drawBox("Player " + currentID, pos.x + pos.tWidth / 2,
             pos.y + this.offset, this.context.strokeStyle, 'white');
 
