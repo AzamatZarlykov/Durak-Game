@@ -42,6 +42,8 @@ connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
 socket = new WebSocket(connectionUrl);
 
 socket.onopen = function (event): void {
+    view = new View(socket);
+
     updateState();
 };
 socket.onclose = function (event): void {
@@ -69,7 +71,6 @@ socket.onmessage = function (event): void {
 
                     if (nPlayersPlaying > 1) {
                         setPlayingPlayers(nPlayersPlaying);
-                        // view.displayPlayers(id, nPlayersPlaying);
                     } else {
                         // when 1 person left the game is over. Close the board and tell server that game
                         // has finished
@@ -96,7 +97,6 @@ socket.onmessage = function (event): void {
                 // hide the button
                 startButton.style.display = 'none';
 
-                view = new View(socket);
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
@@ -148,6 +148,7 @@ function updateState(): void {
     }
     function enable() {
         startButton.disabled = false;
+        // view.displayMenu();
     }
 
     if (!socket) {

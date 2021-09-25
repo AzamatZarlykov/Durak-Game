@@ -58,7 +58,7 @@ export class View {
     private cardHeight: number;
     private cardCorner: number;
 
-    private yourTurnStr: string = "Your Turn";
+    private yourTurnStr: string = "Attack";
     private takeStr: string = "Take";
     private doneStr: string = "Done";
     private winnerStr: string = "Winner";
@@ -97,6 +97,7 @@ export class View {
     private totalPlayers: number;
 
     private textMetrics: TextMetrics
+    private nTextMetrics: TextMetrics
     private socket: WebSocket;
 
     private defaultFontSize: number = 20;
@@ -264,26 +265,32 @@ export class View {
     }
 
     private drawBox(text: string, x: number, y: number, strokeStyle: string,
-        textStyle: string, extraMessage: boolean = false, message: string = "") {
-        this.textMetrics = this.context.measureText(text);
+        textStyle: string, extraMessage?: boolean, message?: string) {
 
         this.context.save()
+
+        if (text == "JOIN" || text == "CREATE") {
+            this.defaultFontSize = 50;
+            this.context.font = "bold " + this.defaultFontSize + "px serif";
+            this.boxHeight = this.textUpperMargin + this.defaultFontSize;
+        }
 
         this.context.lineWidth = 5;
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
+        this.textMetrics = this.context.measureText(text);
 
         if (extraMessage) {
-            let extraTextMetrics: TextMetrics = this.context.measureText(message);
-            this.context.fillText(message, x + this.textMetrics.width / 2 + 4 *
+            this.nTextMetrics = this.context.measureText(message);
+            this.context.fillText(message, x - this.nTextMetrics.width / 2 - 2 *
                 this.textLeftMargin, y);
-            this.context.strokeRect(x + this.textMetrics.width / 2 + 3 * this.textLeftMargin, y -
-                this.textUpperMargin, extraTextMetrics.width + 2 * this.textLeftMargin,
-                this.boxHeight);
+            x = x + this.nTextMetrics.width / 2 + 4 * this.textLeftMargin;
+        } else {
+            x = x - this.textMetrics.width / 2
         }
-        this.context.fillText(text, x - this.textMetrics.width / 2, y);
-        this.context.strokeRect(x - this.textMetrics.width / 2 - this.textLeftMargin,
-            y - this.textUpperMargin, this.textMetrics.width + 2 * this.textLeftMargin,
+        this.context.fillText(text, x, y);
+        this.context.strokeRect(x - this.textLeftMargin,
+            y - this.defaultFontSize, this.textMetrics.width + 2 * this.textLeftMargin,
             this.boxHeight);
 
         this.context.restore();
@@ -365,10 +372,10 @@ export class View {
 
         this.textMetrics = this.context.measureText(text);
 
-        return x + w + this.cardWidth - this.textMetrics.width / 2 <
-            this.mousePos.x && this.mousePos.x <= x + w + this.cardWidth -
-            this.textMetrics.width / 2 + this.textLeftMargin + this.textMetrics.width +
-            this.context.lineWidth && y + this.offset - this.textUpperMargin +
+        return x + w + this.cardWidth + this.nTextMetrics.width / 2 + 4 * this.textLeftMargin -
+            this.context.lineWidth < this.mousePos.x && this.mousePos.x <= x + w + this.cardWidth +
+            this.nTextMetrics.width / 2 + 4 * this.textLeftMargin + this.textMetrics.width +
+            this.textLeftMargin, this.context.lineWidth && y + this.offset - this.textUpperMargin +
             this.context.lineWidth < this.mousePos.y && this.mousePos.y <= y + this.offset +
             this.boxHeight - this.textUpperMargin + this.context.lineWidth;
     }
@@ -389,10 +396,6 @@ export class View {
         let strJSON: string;
         if (this.isAttacking() || this.isDefending() ) {
             if (this.isCardSelected()) {
-/*                if (this.isDefending() && this.gameView.takingCards) {
-                    this.displayMessage("tookCards");
-                    return;
-                }*/
                 let cardIndex: number = Math.floor(this.GetCardSelected());
 
                 if (cardIndex >= this.gameView.hand.length) {
@@ -413,7 +416,6 @@ export class View {
             } else {
                 return;
             }
-
             this.socket.send(strJSON);
             console.log(strJSON);
         }
@@ -729,12 +731,12 @@ export class View {
         Displays the table and the current number of
         players joined to the game
     */
-    public drawTable(): void {
+    public drawScreen(fillS: string, strokeS: string): void {
         // Draws the empty table
         this.context.save();
 
-        this.context.fillStyle = 'green';
-        this.context.strokeStyle = 'black';
+        this.context.fillStyle = fillS;
+        this.context.strokeStyle = strokeS;
         this.context.lineWidth = 10;
 
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -747,7 +749,7 @@ export class View {
         deck size, discarded heap, defending player, hands etc.)
     */
     public displayStateOfTheGame(): void {
-        this.drawTable();
+        this.drawScreen('green', 'black');
 
         this.displayPlayers();
 
@@ -764,13 +766,36 @@ export class View {
         this.displayBout();
     }
 
-    private errorWrite(textStr: string, x: number, y: number, w: number, h: number, textW: number) {
+    /*
+        Displays the menu section once the players connect 
+        Menu section has Join and Create Buttons
+    */
+    public displayMenu(): void {
+        this.drawScreen('Lavender', 'black');
+        // write "MENU" 
         this.context.save();
-        this.context.lineWidth = 5;
-        this.context.fillText(textStr, x + this.textLeftMargin,
-            this.deckPosY - 2 * this.textUpperMargin);
+        this.defaultFontSize = 75;
+        this.context.font = "bold " + this.defaultFontSize + "px serif";
+        this.textMetrics = this.context.measureText("MENU");
+        this.context.fillText("MENU", this.canvas.width / 2 - this.textMetrics.width / 2,
+            this.deckPosY - this.offset);
 
-        this.context.strokeRect(x, y, w, h);
+        // make a line under MENU
+        this.context.beginPath();
+        this.context.moveTo(this.canvas.width / 2 - this.textMetrics.width / 2 -
+            this.textMetrics.width % 10, this.deckPosY - this.offset +
+        this.textUpperMargin);
+        this.context.lineTo(this.canvas.width / 2 + this.textMetrics.width / 2 +
+            this.textMetrics.width % 10, this.deckPosY - this.offset +
+        this.textUpperMargin);
+        this.context.stroke();
+
+        // create buttons for JOIN and CREATE
+        this.drawBox("JOIN", this.canvas.width / 2, this.deckPosY - this.textUpperMargin, 'black',
+            'black');
+        this.drawBox("CREATE", this.canvas.width / 2, this.deckPosY + this.boxHeight, 'black',
+            'black');
+
         this.context.restore();
     }
 
@@ -809,3 +834,8 @@ export class View {
         setTimeout(() => this.displayStateOfTheGame(), 3000);
     }
 }
+
+
+// Buttons : GreenYellow
+// Background : Lavender 
+// Text: Black
