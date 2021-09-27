@@ -1,5 +1,4 @@
-﻿
-interface PlayerView {
+﻿interface PlayerView {
     numberOfCards: number;
     isAttacking: boolean;
 }
@@ -12,12 +11,14 @@ enum Suit {
     Club, Diamonds, Heart, Spade
 }
 
+enum State { Menu, CreateGame, GameTable }
+
 export interface Card {
     rank: Rank;
     suit: Suit;
 }
 
-interface GameView {
+interface GameViewInfo {
     playerID: number
 
     attackingPlayer: number;
@@ -50,7 +51,7 @@ class MousePos {
     }
 }
 
-export class View {
+export class GameView {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
 
@@ -91,7 +92,7 @@ export class View {
     private totalCardWidth: number;
 
     private mousePos: MousePos;
-    private gameView: GameView;
+    private gameView: GameViewInfo;
 
     private id: number;
     private totalPlayers: number;
@@ -99,13 +100,14 @@ export class View {
     private textMetrics: TextMetrics
     private nTextMetrics: TextMetrics
     private socket: WebSocket;
+    private state: State;
 
     private defaultFontSize: number = 20;
 
     private positionsAroundTable: { x: number, y: number, tWidth: number }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number }[];
 
-    constructor(socket: WebSocket) {
+    constructor(socket?: WebSocket) {
         this.socket = socket;
 
         let canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -125,17 +127,11 @@ export class View {
             this.CheckMouseClick();
         });
 
-        window.addEventListener("resize", () =>
-            this.reportWindowResize(this.canvas, this.context));
-
-        window.addEventListener("keypress", (e) => {
-            if (e.code == "KeyR") {
-                this.reportTesting();
-            }
-        });
+/*        window.addEventListener("resize", () =>
+            this.reportWindowResize(this.canvas, this.context));*/
     }
 
-    public setConnectionFields(gameView: GameView, id: number, players: number) {
+    public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
 
         this.gameView = gameView;
         this.id = id;
@@ -143,16 +139,6 @@ export class View {
 
 
         console.log(gameView);
-    }
-
-    private reportTesting(): void {
-        let strJSON: string = JSON.stringify({
-            Message: "Testing",
-            From: this.id
-        });
-
-        this.socket.send(strJSON);
-        console.log(strJSON);
     }
 
     private setBoutPositions(): void {
@@ -264,7 +250,7 @@ export class View {
         return this.gameView.attackingPlayer == this.id;
     }
 
-    private drawBox(text: string, x: number, y: number, strokeStyle: string,
+    public drawBox(text: string, x: number, y: number, strokeStyle: string,
         textStyle: string, extraMessage?: boolean, message?: string) {
 
         this.context.save()
@@ -347,7 +333,6 @@ export class View {
     */
     private GetCardSelected(): number {
         let x: number = this.positionsAroundTable[0].x;
-        let w: number = this.positionsAroundTable[0].tWidth;
 
         return (this.mousePos.x - x - this.mouseClickMargin) / this.cardCorner;
     }
@@ -389,12 +374,30 @@ export class View {
         }
     }
 
+    private menuButtonsPressed(text: string, y: number): boolean {
+        this.textMetrics = this.context.measureText(text);
+        let x: number = this.canvas.width / 2 - this.textMetrics.width / 2
+
+        return x < this.mousePos.x && this.mousePos.x <= x + this.textMetrics.width +
+            this.textLeftMargin && y - this.defaultFontSize + 2 * this.context.lineWidth <
+            this.mousePos.y && this.mousePos.y <= y + this.boxHeight - this.defaultFontSize +
+            this.context.lineWidth;
+    }
+
+    private isJoinPressed(): boolean {
+        return this.menuButtonsPressed("JOIN", this.deckPosY - this.textUpperMargin);
+    }
+
+    private isCreatePressed(): boolean {
+        return this.menuButtonsPressed("CREATE", this.deckPosY + this.boxHeight);
+    }
+
     /*
         Function that tells which card the attacking player has selected to attack 
     */
     private CheckMouseClick(): void {
         let strJSON: string;
-        if (this.isAttacking() || this.isDefending() ) {
+        if (this.state == State.GameTable && (this.isAttacking() || this.isDefending())) {
             if (this.isCardSelected()) {
                 let cardIndex: number = Math.floor(this.GetCardSelected());
 
@@ -418,7 +421,27 @@ export class View {
             }
             this.socket.send(strJSON);
             console.log(strJSON);
+            return;
         }
+        else if (this.state == State.Menu) {
+            this.context.lineWidth = 5;
+            this.defaultFontSize = 50;
+            this.boxHeight = this.textUpperMargin + this.defaultFontSize;
+            this.context.font = "bold " + this.defaultFontSize + "px serif";
+
+            if (this.isJoinPressed()) {
+                console.log("JOIN PRESSED");
+
+            }
+            else if (this.isCreatePressed()) {
+                console.log("CREATE PRESSED");
+            }
+            else {
+                console.log("SOMETHING ELSE WAS PRESSED");
+                return;
+            }
+        }
+
     }
 
     /*
@@ -798,6 +821,7 @@ export class View {
             'black');
 
         this.context.restore();
+        this.state = State.Menu;
     }
 
     /*
@@ -835,8 +859,3 @@ export class View {
         setTimeout(() => this.displayStateOfTheGame(), 3000);
     }
 }
-
-
-// Buttons : GreenYellow
-// Background : Lavender 
-// Text: Black
