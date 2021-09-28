@@ -1,7 +1,7 @@
 ﻿import { GameView } from './gameView.js';
 
 let playingTable = document.getElementById("playingTable") as HTMLDivElement;
-// let startButton = document.getElementById("startGameButton") as HTMLButtonElement;
+let startButton = document.getElementById("startGameButton") as HTMLButtonElement;
 
 let socket: WebSocket;
 let connectionUrl: string;
@@ -95,7 +95,7 @@ socket.onmessage = function (event): void {
                 setPlayingPlayers(obj.sizeOfPlayers);
 
                 // hide the button
-                // startButton.style.display = 'none';
+                startButton.style.display = 'none';
 
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
@@ -131,7 +131,7 @@ socket.onmessage = function (event): void {
         console.log("Unknown command from the server");
     }
 };
-/*
+
 startButton.onclick = function (): void {
     if (nPlayers > 1) {
         let data: string = constructJSONPayload(requestStateGameCommand);
@@ -139,16 +139,16 @@ startButton.onclick = function (): void {
     } else {
         console.log("Not enough people on the server to play");
     }
-}*/
+}
 
 function updateState(): void {
     function disable() {
-        // startButton.disabled = true;
+        startButton.disabled = true;
         view.removeTable();
     }
     function enable() {
-        // startButton.disabled = false;
-        view.displayMenu();
+        startButton.disabled = false;
+        // view.displayMenu();
     }
 
     if (!socket) {
