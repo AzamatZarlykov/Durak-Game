@@ -1,4 +1,6 @@
-﻿interface PlayerView {
+﻿import { Button } from './button.js';
+
+interface PlayerView {
     numberOfCards: number;
     isAttacking: boolean;
 }
@@ -53,16 +55,14 @@ class MousePos {
 
 export class GameView {
     private canvas: HTMLCanvasElement;
-    private context: CanvasRenderingContext2D;
+    public context: CanvasRenderingContext2D;
+
+    private count: number = 0;
 
     private cardWidth: number;
     private cardHeight: number;
     private cardCorner: number;
 
-    private takeStr: string = "Take";
-    private doneStr: string = "Done";
-    private winnerStr: string = "Winner";
-    private durakStr: string = "Durak is ";
     private mouseClickMargin: number = 7
 
     private cardLowerY: number;
@@ -87,7 +87,7 @@ export class GameView {
     private textUpperMargin: number;
     private textLeftMargin: number;
 
-    private boxHeight: number;
+    public boxHeight: number;
     private totalCardWidth: number;
 
     private mousePos: MousePos;
@@ -101,10 +101,13 @@ export class GameView {
     private socket: WebSocket;
     private state: State;
 
-    private defaultFontSize: number = 20;
+    private button: Button;
 
-    private positionsAroundTable: { x: number, y: number, tWidth: number }[];
+    public defaultFontSize: number = 20;
+
+    public positionsAroundTable: { x: number, y: number, tWidth: number }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number }[];
+
 
     constructor(socket?: WebSocket) {
         this.state = State.GameTable;
@@ -131,6 +134,8 @@ export class GameView {
 /*        window.addEventListener("resize", () =>
             this.reportWindowResize(this.canvas, this.context));*/
     }
+
+
 
     public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
 
@@ -359,9 +364,9 @@ export class GameView {
 
         this.textMetrics = this.context.measureText(text);
 
-        return x + w + this.cardWidth + this.nTextMetrics.width / 2 + 2 * this.textLeftMargin
+        return x + w + this.cardWidth + this.nTextMetrics.width / 2 + 6 * this.textLeftMargin
             < this.mousePos.x && this.mousePos.x <= x + w + this.cardWidth +
-            this.nTextMetrics.width / 2 + 2 * this.textLeftMargin + this.textMetrics.width +
+            this.nTextMetrics.width / 2 + 6 * this.textLeftMargin + this.textMetrics.width +
             this.textLeftMargin && y + this.offset - this.textUpperMargin +
             this.context.lineWidth < this.mousePos.y && this.mousePos.y <= y + this.offset +
             this.boxHeight - this.textUpperMargin + this.context.lineWidth;
@@ -369,12 +374,16 @@ export class GameView {
 
     private isButtonSelected(): boolean {
         if (this.isAttacking()) {
-            return this.withinTheButton(this.doneStr);
+            return this.withinTheButton("Done");
         }
         else if (this.isDefending()) {
-            return this.withinTheButton(this.takeStr);
+            return this.withinTheButton("Take");
         }
     }
+
+/*    private isButtonSelected(): boolean {
+        return this.button.contains(this.mousePos);
+    }*/
 
     private menuButtonsPressed(text: string, y: number): boolean {
         this.textMetrics = this.context.measureText(text);
@@ -413,8 +422,7 @@ export class GameView {
                     Message: this.isAttacking() ? "Attacking" : "Defending",
                     Card: cardIndex
                 });
-                this.socket.send(strJSON);
-                console.log(strJSON);
+
             }
             else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
                 console.log("SELECTED");
@@ -424,7 +432,8 @@ export class GameView {
             } else {
                 return;
             }
-
+            this.socket.send(strJSON);
+            console.log(strJSON);
             return;
         }
         else if (this.state == State.Menu) {
@@ -599,7 +608,7 @@ export class GameView {
                 );
             }
         } else {
-            this.drawBox(this.winnerStr, x + tWidth / 2, y, 'white', 'white', true);
+            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true);
         }
     }
 
@@ -633,11 +642,27 @@ export class GameView {
         this.context.restore();
     }
 
+    private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
+        x: number, y: number, tWidth: number }): void {
+        this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
+            pos.y + this.offset, 'white', 'white', false);
+
+/*        this.drawBox(buttonStr, pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
+            + 8 * this.textLeftMargin, pos.y + this.offset, 'white', 'white', true);*/
+
+        this.button = new Button(pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
+            + 8 * this.textLeftMargin, pos.y + this.offset, buttonStr);
+        this.button.draw('white', 'white', true);
+    }
+
     /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
+        this.count += 1;
+        console.log("COUNT " + this.count);
+
         let pos: { x: number, y: number, tWidth: number } =
             this.positionsAroundTable[position[index] - 1];
 
@@ -674,22 +699,11 @@ export class GameView {
                         || this.gameView.takingCards) {
                     // display message "Add Cards" if the player took cards
                     if (this.gameView.takingCards) {
-                        this.drawBox("Add Cards", pos.x + pos.tWidth + this.cardWidth,
-                            pos.y + this.offset, 'white', 'white', false);
-                        // x + this.nTextMetrics.width / 2 + 4 * this.textLeftMargin
-
-                        this.drawBox(this.doneStr, pos.x + pos.tWidth + this.cardWidth +
-                            this.nTextMetrics.width / 2 + 4 * this.textLeftMargin,
-                            pos.y + this.offset, 'white', 'white', true);
+                        this.displayPlayerOptions("Add Cards", "Done", pos);
                     }
                     // display message "Continue Attack" if the player defended successfully
                     else {
-                        this.drawBox("Continue Attack", pos.x + pos.tWidth + this.cardWidth,
-                            pos.y + this.offset, 'white', 'white', false);
-
-                        this.drawBox(this.doneStr, pos.x + pos.tWidth + this.cardWidth +
-                            this.nTextMetrics.width / 2 + 4 * this.textLeftMargin,
-                            pos.y + this.offset, 'white', 'white', true);
+                        this.displayPlayerOptions("Continue Attack", "Done", pos);
                     }
                 }
             }
@@ -698,20 +712,14 @@ export class GameView {
             if (this.isDefending() && this.gameView.attackingCards.length >
                 this.gameView.defendingCards.length && !this.gameView.takingCards) {
 
-                this.drawBox("Defend", pos.x + pos.tWidth + this.cardWidth,
-                    pos.y + this.offset, 'white', 'white', false);
-
-                // display message "Defend" if did not take cards
-                this.drawBox(this.takeStr, pos.x + pos.tWidth + this.cardWidth +
-                    this.nTextMetrics.width / 2 + 4 * this.textLeftMargin,
-                    pos.y + this.offset, 'white', 'white', true);
+                this.displayPlayerOptions("Defend", "Take", pos);
             }
         } else {    
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
         }
 
         if (this.IsEndGame()) {
-            this.drawBox(this.durakStr + this.gameView.durak, innerWidth / 2 - 50,
+            this.drawBox("Durak is " + this.gameView.durak, innerWidth / 2 - 50,
                 this.deckPosY, 'white', 'white', true);
         }
 
