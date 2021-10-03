@@ -57,8 +57,6 @@ export class GameView {
     private canvas: HTMLCanvasElement;
     public context: CanvasRenderingContext2D;
 
-    private count: number = 0;
-
     private cardWidth: number;
     private cardHeight: number;
     private cardCorner: number;
@@ -84,8 +82,8 @@ export class GameView {
     private boutCardPositions = new Map();
     private discardedPilePositions = new Map();
 
-    private textUpperMargin: number;
-    private textLeftMargin: number;
+    public textUpperMargin: number;
+    public textLeftMargin: number;
 
     public boxHeight: number;
     private totalCardWidth: number;
@@ -96,14 +94,15 @@ export class GameView {
     private id: number;
     private totalPlayers: number;
 
-    private textMetrics: TextMetrics;
     private nTextMetrics: TextMetrics;
     private socket: WebSocket;
     private state: State;
 
     private button: Button;
+    private joinButton: Button;
+    private createButton: Button;
 
-    public defaultFontSize: number = 20;
+    public fontSize: number = 20;
 
     public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
@@ -131,18 +130,14 @@ export class GameView {
             this.CheckMouseClick();
         });
 
-        /*        window.addEventListener("resize", () =>
-                    this.reportWindowResize(this.canvas, this.context));*/
+        window.addEventListener("resize", () =>
+            this.reportWindowResize(this.canvas, this.context));
     }
 
-
-
     public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
-
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
-
 
         console.log(gameView);
     }
@@ -191,6 +186,19 @@ export class GameView {
         this.displayStateOfTheGame();
     }
 
+    private setFontSize(): void {
+        switch (this.state) {
+            case State.Menu:
+                this.fontSize = 50;
+                break;
+            case State.GameTable:
+                this.fontSize = 20;
+                break;
+            case State.CreateGame:
+                break;
+        }
+    }
+
     private windowObjectsResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
         console.log("WINDOW CHANGES");
 
@@ -200,13 +208,15 @@ export class GameView {
         console.log(canvas.width);
         console.log(canvas.height);
 
+        this.setFontSize();
+
         this.canvas = canvas;
         this.context = context;
 
         this.textUpperMargin = 20;
         this.textLeftMargin = this.canvas.width / 251;
 
-        this.context.font = "bold " + this.defaultFontSize + "px Serif";
+        this.context.font = "bold " + this.fontSize + "px Serif";
 
         console.log(this.context.font);
 
@@ -219,7 +229,7 @@ export class GameView {
         this.cardLeftX = this.canvas.width / 7;
         this.cardRightX = this.canvas.width / 7 * 6;
 
-        this.boxHeight = this.defaultFontSize + this.textUpperMargin;
+        this.boxHeight = this.fontSize + this.textUpperMargin;
 
         this.cardUpperY = this.canvas.height / 40;
         this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
@@ -257,34 +267,28 @@ export class GameView {
     }
 
     public drawBox(text: string, x: number, y: number, strokeStyle: string,
-        textStyle: string, withRectangle: boolean) {
+        textStyle: string, withRectangle: boolean, fontS: number) {
 
         this.context.save();
-
-        if (text == "JOIN" || text == "CREATE") {
-            this.defaultFontSize = 50;
-            this.context.font = "bold " + this.defaultFontSize + "px serif";
-            this.boxHeight = this.textUpperMargin + this.defaultFontSize;
-        }
+        this.context.font = "bold " + fontS + "px serif";
 
         this.context.lineWidth = 5;
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
         if (withRectangle) {
-            this.textMetrics = this.context.measureText(text);
+            let textM: TextMetrics = this.context.measureText(text);
 
-            x = x - this.textMetrics.width / 2;
+            x = x - textM.width / 2;
 
             this.context.fillText(text, x, y);
             this.context.strokeRect(x - this.textLeftMargin,
-                y - this.defaultFontSize, this.textMetrics.width + 2 * this.textLeftMargin,
-                this.boxHeight);
+                y - fontS, textM.width + 2 * this.textLeftMargin,
+                this.textUpperMargin + fontS);
         }
         else {
             this.nTextMetrics = this.context.measureText(text);
-            this.context.fillText(text, x - this.nTextMetrics.width / 2 - 2 *
-                this.textLeftMargin, y);
+            this.context.fillText(text, x - this.nTextMetrics.width / 2, y);
         }
         this.context.restore();
     }
@@ -357,50 +361,16 @@ export class GameView {
             y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
     }
 
-    private withinTheButton(text: string) {
-        let x: number = this.positionsAroundTable[0].x;
-        let y: number = this.positionsAroundTable[0].y;
-        let w: number = this.positionsAroundTable[0].tWidth;
-
-        this.textMetrics = this.context.measureText(text);
-
-        return x + w + this.cardWidth + this.nTextMetrics.width / 2 + 6 * this.textLeftMargin
-            < this.mousePos.x && this.mousePos.x <= x + w + this.cardWidth +
-            this.nTextMetrics.width / 2 + 6 * this.textLeftMargin + this.textMetrics.width +
-            this.textLeftMargin && y + this.offset - this.textUpperMargin +
-            this.context.lineWidth < this.mousePos.y && this.mousePos.y <= y + this.offset +
-            this.boxHeight - this.textUpperMargin + this.context.lineWidth;
-    }
-
     private isButtonSelected(): boolean {
-        if (this.isAttacking()) {
-            return this.withinTheButton("Done");
-        }
-        else if (this.isDefending()) {
-            return this.withinTheButton("Take");
-        }
-    }
-
-    /*    private isButtonSelected(): boolean {
-            return this.button.contains(this.mousePos);
-        }*/
-
-    private menuButtonsPressed(text: string, y: number): boolean {
-        this.textMetrics = this.context.measureText(text);
-        let x: number = this.canvas.width / 2 - this.textMetrics.width / 2;
-
-        return x < this.mousePos.x && this.mousePos.x <= x + this.textMetrics.width +
-            this.textLeftMargin && y - this.defaultFontSize + 2 * this.context.lineWidth <
-            this.mousePos.y && this.mousePos.y <= y + this.boxHeight - this.defaultFontSize +
-            this.context.lineWidth;
+        return this.button.contains(this.mousePos);
     }
 
     private isJoinPressed(): boolean {
-        return this.menuButtonsPressed("JOIN", this.deckPosY - this.textUpperMargin);
+        return this.joinButton.contains(this.mousePos);
     }
 
     private isCreatePressed(): boolean {
-        return this.menuButtonsPressed("CREATE", this.deckPosY + this.boxHeight);
+        return this.createButton.contains(this.mousePos);
     }
 
     /*
@@ -438,9 +408,9 @@ export class GameView {
         }
         else if (this.state == State.Menu) {
             this.context.lineWidth = 5;
-            this.defaultFontSize = 50;
-            this.boxHeight = this.textUpperMargin + this.defaultFontSize;
-            this.context.font = "bold " + this.defaultFontSize + "px serif";
+            this.fontSize = 50;
+            this.boxHeight = this.textUpperMargin + this.fontSize;
+            this.context.font = "bold " + this.fontSize + "px serif";
 
             if (this.isJoinPressed()) {
                 console.log("JOIN PRESSED");
@@ -591,7 +561,7 @@ export class GameView {
                 );
             }
         } else {
-            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true);
+            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true, this.fontSize);
         }
     }
 
@@ -608,7 +578,7 @@ export class GameView {
                 );
             }
         } else {
-            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true);
+            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true, this.fontSize);
         }
     }
 
@@ -643,17 +613,16 @@ export class GameView {
     }
 
     private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number;
-    }): void {
+        x: number, y: number, tWidth: number }): void {
+
         this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
-            pos.y + this.offset, 'white', 'white', false);
+            pos.y + this.offset, 'white', 'white', false, this.fontSize);
 
-        /*        this.drawBox(buttonStr, pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
-                    + 8 * this.textLeftMargin, pos.y + this.offset, 'white', 'white', true);*/
-
-        this.button = new Button(pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
-            + 8 * this.textLeftMargin, pos.y + this.offset, buttonStr);
-        this.button.draw('white', 'white', true);
+        this.button = new Button(this, pos.x + pos.tWidth + this.cardWidth +
+            this.nTextMetrics.width / 2 + 8 * this.textLeftMargin,
+            pos.y + this.offset, buttonStr, this.fontSize
+        );
+        this.button.draw('white', 'white');
     }
 
     /*
@@ -661,9 +630,6 @@ export class GameView {
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
-        this.count += 1;
-        console.log("COUNT " + this.count);
-
         let pos: { x: number, y: number, tWidth: number; } =
             this.positionsAroundTable[position[index] - 1];
 
@@ -682,7 +648,7 @@ export class GameView {
         }
 
         this.drawBox("Player " + currentID, pos.x + pos.tWidth / 2,
-            pos.y + this.offset, this.context.strokeStyle, 'white', true);
+            pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
 
 
         if (this.id == currentID) {
@@ -692,7 +658,7 @@ export class GameView {
                 // display "Attack" message if no cards were played 
                 if (this.gameView.attackingCards.length == 0) {
                     this.drawBox("Attack", pos.x + pos.tWidth + this.cardWidth,
-                        pos.y + this.offset, 'white', 'white', false);
+                        pos.y + this.offset, 'white', 'white', false, this.fontSize);
                 }
                 // display "Done" button on the attacking player if attack successfully defeated or
                 // if defending player took cards 
@@ -721,7 +687,7 @@ export class GameView {
 
         if (this.IsEndGame()) {
             this.drawBox("Durak is " + this.gameView.durak, innerWidth / 2 - 50,
-                this.deckPosY, 'white', 'white', true);
+                this.deckPosY, 'white', 'white', true, this.fontSize);
         }
 
     }
@@ -822,30 +788,33 @@ export class GameView {
         Menu section has Join and Create Buttons
     */
     public displayMenu(): void {
+        let textM: TextMetrics;
         this.drawScreen('Lavender', 'black');
         // write "MENU" 
+        this.drawBox("MENU", this.canvas.width / 2, this.deckPosY - this.offset, 'black',
+            'black', false, 75
+        );
         this.context.save();
-        this.defaultFontSize = 75;
-        this.context.font = "bold " + this.defaultFontSize + "px serif";
-        this.textMetrics = this.context.measureText("MENU");
-        this.context.fillText("MENU", this.canvas.width / 2 - this.textMetrics.width / 2,
-            this.deckPosY - this.offset);
 
+        textM = this.context.measureText("MENU");
         // make a line under MENU
         this.context.beginPath();
-        this.context.moveTo(this.canvas.width / 2 - this.textMetrics.width / 2 -
-            this.textMetrics.width % 10, this.deckPosY - this.offset +
+        this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
+            textM.width % 10, this.deckPosY - this.offset +
         this.textUpperMargin);
-        this.context.lineTo(this.canvas.width / 2 + this.textMetrics.width / 2 +
-            this.textMetrics.width % 10, this.deckPosY - this.offset +
+        this.context.lineTo(this.canvas.width / 2 + textM.width / 2 +
+            textM.width % 10, this.deckPosY - this.offset +
         this.textUpperMargin);
         this.context.stroke();
 
         // create buttons for JOIN and CREATE
-        this.drawBox("JOIN", this.canvas.width / 2, this.deckPosY - this.textUpperMargin, 'black',
-            'black', true);
-        this.drawBox("CREATE", this.canvas.width / 2, this.deckPosY + this.boxHeight, 'black',
-            'black', true);
+        this.joinButton = new Button(this, this.canvas.width / 2,
+            this.deckPosY - this.textUpperMargin, "JOIN", this.fontSize);
+        this.joinButton.draw('black', 'black');
+
+        this.createButton = new Button(this, this.canvas.width / 2,
+            this.deckPosY + this.boxHeight, "CREATE", this.fontSize);
+        this.createButton.draw('black', 'black');
 
         this.context.restore();
         this.state = State.Menu;
@@ -881,7 +850,7 @@ export class GameView {
 
         this.drawBox(textStr, this.positionsAroundTable[0].x +
             this.positionsAroundTable[0].tWidth / 2, this.deckPosY - 2 * this.textUpperMargin,
-            'white', 'white', true);
+            'white', 'white', true, this.fontSize);
 
         setTimeout(() => this.displayStateOfTheGame(), 3000);
     }

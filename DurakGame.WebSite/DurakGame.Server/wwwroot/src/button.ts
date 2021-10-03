@@ -1,32 +1,40 @@
 ﻿import { GameView } from './gameView.js';
 
 export class Button {
-    public x: number;
-    public y: number;
-    public name: string;
-
+    private x: number;
+    private y: number;
+    private name: string;
+    private fontSize: number;
     private gameView: GameView;
 
-    constructor(x: number, y: number, name: string) {
+    constructor(gameView: GameView, x: number, y: number, name: string, fontSize: number) {
         this.x = x;
         this.y = y;
         this.name = name;
+        this.fontSize = fontSize;
 
-        this.gameView = new GameView();
+        this.gameView = gameView;
     }
 
-    public draw(strokeS: string, textS: string, withRectangle: boolean): void {
+    public draw(strokeS: string, textS: string): void {
         this.gameView.drawBox(
-            this.name, this.x, this.y, strokeS, textS, withRectangle
+            this.name, this.x, this.y, strokeS, textS, true, this.fontSize
         );
     }
 
     public contains(mousePos: { x: number, y: number; }): boolean {
+        let margin: number = this.gameView.textLeftMargin;
+        let bHeight: number = this.gameView.textUpperMargin + this.fontSize;
+        this.gameView.context.font = "bold " + this.fontSize + "px serif";
         let textMetrics: TextMetrics = this.gameView.context.measureText(this.name);
+        let lineW: number = 5;
 
-        return this.x - textMetrics.width / 2 < mousePos.x && mousePos.x <= this.x +
-            textMetrics.width / 2 && this.y - this.gameView.defaultFontSize < mousePos.y &&
-            mousePos.y < this.y - this.gameView.defaultFontSize + this.gameView.boxHeight;
+        console.log("FONT SIZE " + this.fontSize);
+
+        return this.x - textMetrics.width / 2 < mousePos.x &&
+            mousePos.x <= this.x + textMetrics.width / 2 + margin &&
+            this.y - this.fontSize / 2 < mousePos.y &&
+            mousePos.y < this.y - this.fontSize / 2 + bHeight - lineW;
     }
 
 
