@@ -75,7 +75,7 @@ socket.onmessage = function (event): void {
                         // when 1 person left the game is over. Close the board and tell server that game
                         // has finished
                         view.removeTable();
-                        
+
                         // no players playing
                         setPlayingPlayers(0);
 
@@ -109,7 +109,7 @@ socket.onmessage = function (event): void {
                     console.log("Game is already being played");
                 }
                 break;
-            case (UpdateGameProcessCommand): 
+            case (UpdateGameProcessCommand):
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
@@ -139,7 +139,7 @@ startButton.onclick = function (): void {
     } else {
         console.log("Not enough people on the server to play");
     }
-}
+};
 
 function updateState(): void {
     function disable() {

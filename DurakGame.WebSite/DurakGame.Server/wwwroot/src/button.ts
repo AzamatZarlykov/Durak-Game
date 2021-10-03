@@ -21,11 +21,13 @@ export class Button {
         );
     }
 
-    public contains(mousePos: {x: number, y: number}): boolean {
+    public contains(mousePos: { x: number, y: number; }): boolean {
         let textMetrics: TextMetrics = this.gameView.context.measureText(this.name);
 
         return this.x - textMetrics.width / 2 < mousePos.x && mousePos.x <= this.x +
             textMetrics.width / 2 && this.y - this.gameView.defaultFontSize < mousePos.y &&
             mousePos.y < this.y - this.gameView.defaultFontSize + this.gameView.boxHeight;
     }
+
+
 }

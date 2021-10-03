@@ -21,7 +21,7 @@ export interface Card {
 }
 
 interface GameViewInfo {
-    playerID: number
+    playerID: number;
 
     attackingPlayer: number;
     defendingPlayer: number;
@@ -63,7 +63,7 @@ export class GameView {
     private cardHeight: number;
     private cardCorner: number;
 
-    private mouseClickMargin: number = 7
+    private mouseClickMargin: number = 7;
 
     private cardLowerY: number;
     private cardUpperY: number;
@@ -96,8 +96,8 @@ export class GameView {
     private id: number;
     private totalPlayers: number;
 
-    private textMetrics: TextMetrics
-    private nTextMetrics: TextMetrics
+    private textMetrics: TextMetrics;
+    private nTextMetrics: TextMetrics;
     private socket: WebSocket;
     private state: State;
 
@@ -105,8 +105,8 @@ export class GameView {
 
     public defaultFontSize: number = 20;
 
-    public positionsAroundTable: { x: number, y: number, tWidth: number }[];
-    private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number }[];
+    public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
+    private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
 
 
     constructor(socket?: WebSocket) {
@@ -126,13 +126,13 @@ export class GameView {
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
-            console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y)
+            console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y);
 
             this.CheckMouseClick();
         });
 
-/*        window.addEventListener("resize", () =>
-            this.reportWindowResize(this.canvas, this.context));*/
+        /*        window.addEventListener("resize", () =>
+                    this.reportWindowResize(this.canvas, this.context));*/
     }
 
 
@@ -211,7 +211,7 @@ export class GameView {
         console.log(this.context.font);
 
         this.cardWidth = 117;
-        this.cardHeight = 140
+        this.cardHeight = 140;
 
         this.cardCorner = this.cardWidth / 4;
 
@@ -236,7 +236,7 @@ export class GameView {
             { x: this.cardMiddleX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
-        ]
+        ];
 
         this.positionsAroundTableDuplicate = [
             { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
@@ -245,7 +245,7 @@ export class GameView {
             { x: this.cardMiddleX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
-        ]
+        ];
     }
 
     private isDefending(): boolean {
@@ -259,7 +259,7 @@ export class GameView {
     public drawBox(text: string, x: number, y: number, strokeStyle: string,
         textStyle: string, withRectangle: boolean) {
 
-        this.context.save()
+        this.context.save();
 
         if (text == "JOIN" || text == "CREATE") {
             this.defaultFontSize = 50;
@@ -274,7 +274,7 @@ export class GameView {
         if (withRectangle) {
             this.textMetrics = this.context.measureText(text);
 
-            x = x - this.textMetrics.width / 2
+            x = x - this.textMetrics.width / 2;
 
             this.context.fillText(text, x, y);
             this.context.strokeRect(x - this.textLeftMargin,
@@ -289,7 +289,7 @@ export class GameView {
         this.context.restore();
     }
 
-    private displayBoutHelper(pos: { x: number, y: number }[], yOffset: number, from: number,
+    private displayBoutHelper(pos: { x: number, y: number; }[], yOffset: number, from: number,
         toAttacking: number, toDefending: number): void {
 
         for (let i = from; i < toAttacking; i++) {
@@ -309,7 +309,7 @@ export class GameView {
         Display attacking and defending cards in the middle of the table 
     */
     public displayBout(): void {
-        let pos: { x: number, y: number }[];
+        let pos: { x: number, y: number; }[];
         let attackingCardSize: number = this.gameView.attackingCards.length;
         let defendingCardSize: number = this.gameView.defendingCards.length;
 
@@ -381,13 +381,13 @@ export class GameView {
         }
     }
 
-/*    private isButtonSelected(): boolean {
-        return this.button.contains(this.mousePos);
-    }*/
+    /*    private isButtonSelected(): boolean {
+            return this.button.contains(this.mousePos);
+        }*/
 
     private menuButtonsPressed(text: string, y: number): boolean {
         this.textMetrics = this.context.measureText(text);
-        let x: number = this.canvas.width / 2 - this.textMetrics.width / 2
+        let x: number = this.canvas.width / 2 - this.textMetrics.width / 2;
 
         return x < this.mousePos.x && this.mousePos.x <= x + this.textMetrics.width +
             this.textLeftMargin && y - this.defaultFontSize + 2 * this.context.lineWidth <
@@ -462,7 +462,7 @@ export class GameView {
     */
     public displayDiscardedHeap(): void {
         for (let i = 0; i < this.gameView.discardHeapSize; i++) {
-            let coordinates: { angle: number, y: number };
+            let coordinates: { angle: number, y: number; };
             let img: HTMLImageElement = this.getCardImage();
 
             this.context.save();
@@ -586,7 +586,7 @@ export class GameView {
             for (let i = 0; i < hand.length; i++) {
                 let img: HTMLImageElement = this.getCardImage(hand[i]);
                 this.context.drawImage(
-                    img, x  + i * this.cardCorner, y, this.cardWidth,
+                    img, x + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
                 );
             }
@@ -621,7 +621,7 @@ export class GameView {
         source: https://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
     */
     private drawArrow(fromX: number, fromY: number, toX: number, toY: number, style: string): void {
-        let headlen : number = 10; // length of head in pixels
+        let headlen: number = 10; // length of head in pixels
         let dx: number = toX - fromX;
         let dy: number = toY - fromY;
         let angle: number = Math.atan2(dy, dx);
@@ -643,12 +643,13 @@ export class GameView {
     }
 
     private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number }): void {
+        x: number, y: number, tWidth: number;
+    }): void {
         this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
             pos.y + this.offset, 'white', 'white', false);
 
-/*        this.drawBox(buttonStr, pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
-            + 8 * this.textLeftMargin, pos.y + this.offset, 'white', 'white', true);*/
+        /*        this.drawBox(buttonStr, pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
+                    + 8 * this.textLeftMargin, pos.y + this.offset, 'white', 'white', true);*/
 
         this.button = new Button(pos.x + pos.tWidth + this.cardWidth + this.nTextMetrics.width / 2
             + 8 * this.textLeftMargin, pos.y + this.offset, buttonStr);
@@ -663,7 +664,7 @@ export class GameView {
         this.count += 1;
         console.log("COUNT " + this.count);
 
-        let pos: { x: number, y: number, tWidth: number } =
+        let pos: { x: number, y: number, tWidth: number; } =
             this.positionsAroundTable[position[index] - 1];
 
         if (currentID == this.gameView.attackingPlayer) {
@@ -696,7 +697,7 @@ export class GameView {
                 // display "Done" button on the attacking player if attack successfully defeated or
                 // if defending player took cards 
                 else if (this.gameView.attackingCards.length == this.gameView.defendingCards.length
-                        || this.gameView.takingCards) {
+                    || this.gameView.takingCards) {
                     // display message "Add Cards" if the player took cards
                     if (this.gameView.takingCards) {
                         this.displayPlayerOptions("Add Cards", "Done", pos);
@@ -714,7 +715,7 @@ export class GameView {
 
                 this.displayPlayerOptions("Defend", "Take", pos);
             }
-        } else {    
+        } else {
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
         }
 
@@ -736,11 +737,11 @@ export class GameView {
             case 3:
                 return [1, 3, 5];
             case 4:
-                return [1, 3, 4, 5]
+                return [1, 3, 4, 5];
             case 5:
-                return [1, 2, 3, 5, 6]
+                return [1, 2, 3, 5, 6];
             case 6:
-                return [1, 2, 3, 4, 5, 6]
+                return [1, 2, 3, 4, 5, 6];
         }
     }
 
