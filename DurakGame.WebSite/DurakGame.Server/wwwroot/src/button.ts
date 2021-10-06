@@ -29,8 +29,6 @@ export class Button {
         let textMetrics: TextMetrics = this.gameView.context.measureText(this.name);
         let lineW: number = 5;
 
-        console.log("FONT SIZE " + this.fontSize);
-
         return this.x - textMetrics.width / 2 < mousePos.x &&
             mousePos.x <= this.x + textMetrics.width / 2 + margin &&
             this.y - this.fontSize / 2 < mousePos.y &&

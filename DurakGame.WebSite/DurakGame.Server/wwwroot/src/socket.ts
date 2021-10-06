@@ -148,7 +148,7 @@ function updateState(): void {
     }
     function enable() {
         startButton.disabled = false;
-        //view.displayMenu();
+        view.displayMenu();
     }
 
     if (!socket) {

@@ -13,7 +13,9 @@ enum Suit {
     Club, Diamonds, Heart, Spade
 }
 
-enum State { Menu, CreateGame, GameTable }
+enum State {
+    Menu, CreateGame, GameTable
+}
 
 export interface Card {
     rank: Rank;
@@ -75,11 +77,14 @@ export class GameView {
 
     private offset: number;
 
-    private dir: string = "images/deck/";
+    private cardDir: string = "images/deck/";
+    private modesDir: string = "images/modes/";
+
     private backCard: string = "2B";
 
-    private cardImages = new Map();
+    private images = new Map();
     private boutCardPositions = new Map();
+    private modesPositions = new Map();
     private discardedPilePositions = new Map();
 
     public textUpperMargin: number;
@@ -107,9 +112,8 @@ export class GameView {
     public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
 
-
     constructor(socket?: WebSocket) {
-        this.state = State.GameTable;
+        this.state = State.Menu;
 
         this.socket = socket;
 
@@ -121,6 +125,7 @@ export class GameView {
         this.mousePos = new MousePos(0, 0);
 
         this.setBoutPositions();
+        this.setModesPositions();
 
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
@@ -130,8 +135,8 @@ export class GameView {
             this.CheckMouseClick();
         });
 
-        window.addEventListener("resize", () =>
-            this.reportWindowResize(this.canvas, this.context));
+/*        window.addEventListener("resize", () =>
+            this.reportWindowResize(this.canvas, this.context));*/
     }
 
     public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
@@ -180,6 +185,35 @@ export class GameView {
         ]);
     }
 
+    private setModesPositions(): void {
+        this.modesPositions.set(1, {
+            x: this.canvas.width / 2 - this.cardHeight / 4 -  this.cardWidth - this.cardHeight / 2,
+            y: this.canvas.height / 2 - this.cardHeight / 2
+        });
+
+        this.modesPositions.set(2, {
+            x: this.canvas.width / 2 - this.cardHeight / 4,
+            y: this.canvas.height / 2 - this.cardHeight / 2
+        });
+
+        this.modesPositions.set(3, {
+            x: this.canvas.width / 2 + this.cardHeight / 4 + this.cardWidth,
+            y: this.canvas.height / 2 - this.cardHeight / 2
+        });
+
+        this.modesPositions.set(4, {
+            x: this.canvas.width / 2 - this.cardHeight / 4 - this.cardWidth / 2 -
+                this.cardHeight / 4,
+            y: this.canvas.height / 2 + this.cardHeight / 2
+        });
+
+        this.modesPositions.set(5, {
+            x: this.canvas.width / 2 + this.cardHeight / 4 + this.cardWidth / 2 -
+                this.cardHeight / 4,
+            y: this.canvas.height / 2 + this.cardHeight / 2
+        });
+    }
+
     private reportWindowResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
         this.windowObjectsResize(canvas, context);
         this.setBoutPositions();
@@ -212,6 +246,8 @@ export class GameView {
 
         this.canvas = canvas;
         this.context = context;
+
+        this.context.lineWidth = 5;
 
         this.textUpperMargin = 20;
         this.textLeftMargin = this.canvas.width / 251;
@@ -272,7 +308,6 @@ export class GameView {
         this.context.save();
         this.context.font = "bold " + fontS + "px serif";
 
-        this.context.lineWidth = 5;
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
@@ -291,6 +326,143 @@ export class GameView {
             this.context.fillText(text, x - this.nTextMetrics.width / 2, y);
         }
         this.context.restore();
+    }
+
+    /*
+        Returns the index of the selected card position
+    */
+    private GetCardSelected(): number {
+        let x: number = this.positionsAroundTable[0].x;
+
+        return (this.mousePos.x - x - this.mouseClickMargin) / this.cardCorner;
+    }
+
+    /*
+        Check if the mouse click is within the main players hand
+    */
+    private isCardSelected(): boolean {
+        let x: number = this.positionsAroundTable[0].x;
+        let y: number = this.positionsAroundTable[0].y;
+        let w: number = this.positionsAroundTable[0].tWidth;
+
+        return x + this.mouseClickMargin < this.mousePos.x &&
+            this.mousePos.x <= x + w + this.mouseClickMargin &&
+            y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
+    }
+
+    private isButtonSelected(): boolean {
+        return this.button.contains(this.mousePos);
+    }
+
+    private isJoinPressed(): boolean {
+        return this.joinButton.contains(this.mousePos);
+    }
+
+    private isCreatePressed(): boolean {
+        return this.createButton.contains(this.mousePos);
+    }
+
+    private displayModeImages(): void {
+        let img: HTMLImageElement;
+        let pos: { x: number, y: number; };
+
+        for (let i: number = 1; i <= 5; i++) {
+            pos = this.modesPositions.get(i);
+
+            img = new Image();
+            img.onload = () => this.context.drawImage(
+                img, pos.x, pos.y, this.cardHeight / 2, this.cardHeight / 2
+            );
+            img.src = this.modesDir.concat(i.toString().concat(".png"));
+        }
+    }
+
+    /*
+        Loads the Setting Menu screen with all the game modes  
+    */
+    private LoadGameSettingMenu(): void {
+        // redraw the screen
+        this.drawScreen('lavender', 'black');
+
+        // display the setting of the game
+        this.displayModeImages();
+    }
+
+    /*
+        Function that tells which card the attacking player has selected to attack 
+    */
+    private CheckMouseClick(): void {
+        let strJSON: string;
+        if (this.state == State.GameTable && (this.isAttacking() || this.isDefending())) {
+            if (this.isCardSelected()) {
+                let cardIndex: number = Math.floor(this.GetCardSelected());
+
+                if (cardIndex >= this.gameView.hand.length) {
+                    cardIndex = this.gameView.hand.length - 1;
+                }
+
+                console.log("Card Index clicked is " + cardIndex);
+
+                strJSON = JSON.stringify({
+                    Message: this.isAttacking() ? "Attacking" : "Defending",
+                    Card: cardIndex
+                });
+
+            }
+            else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
+                console.log("SELECTED");
+                strJSON = JSON.stringify({
+                    Message: this.isAttacking() ? "Done" : "Take"
+                });
+            } else {
+                return;
+            }
+            this.socket.send(strJSON);
+            console.log(strJSON);
+            return;
+        }
+        else if (this.state == State.Menu) {
+
+            if (this.isJoinPressed()) {
+                console.log("JOIN PRESSED");
+
+            }
+            else if (this.isCreatePressed()) {
+                console.log("CREATE PRESSED");
+                this.LoadGameSettingMenu();
+            }
+            else {
+                console.log("SOMETHING ELSE WAS PRESSED");
+                return;
+            }
+        }
+
+    }
+
+    /*
+        Returns an image for a given card.
+    */
+    public getCardImage(card?: Card): HTMLImageElement {
+        let strImg: string;
+        if (card) {
+            let strRank: string = this.fromIntToRank(card.rank);
+            let strSuit: string = this.fromIntToSuit(card.suit);
+            strImg = strRank.concat(strSuit);
+        } else {
+            strImg = this.backCard;
+        }
+
+        if (this.images.has(strImg)) {
+            return this.images.get(strImg);
+        }
+        else {
+            let img = new Image();
+            img.onload = () => this.displayStateOfTheGame();
+            img.src = this.cardDir.concat(strImg.concat(".png"));
+
+            this.images.set(strImg, img);
+            return img;
+        }
     }
 
     private displayBoutHelper(pos: { x: number, y: number; }[], yOffset: number, from: number,
@@ -337,94 +509,6 @@ export class GameView {
 
         pos = this.boutCardPositions.get(attackingCardSize % 4);
         this.displayBoutHelper(pos, 0, from, toAttacking, toDefending);
-    }
-
-    /*
-        Returns the index of the selected card position
-    */
-    private GetCardSelected(): number {
-        let x: number = this.positionsAroundTable[0].x;
-
-        return (this.mousePos.x - x - this.mouseClickMargin) / this.cardCorner;
-    }
-
-    /*
-        Check if the mouse click is within the main players hand
-    */
-    private isCardSelected(): boolean {
-        let x: number = this.positionsAroundTable[0].x;
-        let y: number = this.positionsAroundTable[0].y;
-        let w: number = this.positionsAroundTable[0].tWidth;
-
-        return x + this.mouseClickMargin < this.mousePos.x &&
-            this.mousePos.x <= x + w + this.mouseClickMargin &&
-            y < this.mousePos.y && this.mousePos.y <= y + this.cardHeight;
-    }
-
-    private isButtonSelected(): boolean {
-        return this.button.contains(this.mousePos);
-    }
-
-    private isJoinPressed(): boolean {
-        return this.joinButton.contains(this.mousePos);
-    }
-
-    private isCreatePressed(): boolean {
-        return this.createButton.contains(this.mousePos);
-    }
-
-    /*
-        Function that tells which card the attacking player has selected to attack 
-    */
-    private CheckMouseClick(): void {
-        let strJSON: string;
-        if (this.state == State.GameTable && (this.isAttacking() || this.isDefending())) {
-            if (this.isCardSelected()) {
-                let cardIndex: number = Math.floor(this.GetCardSelected());
-
-                if (cardIndex >= this.gameView.hand.length) {
-                    cardIndex = this.gameView.hand.length - 1;
-                }
-
-                console.log("Card Index clicked is " + cardIndex);
-
-                strJSON = JSON.stringify({
-                    Message: this.isAttacking() ? "Attacking" : "Defending",
-                    Card: cardIndex
-                });
-
-            }
-            else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
-                console.log("SELECTED");
-                strJSON = JSON.stringify({
-                    Message: this.isAttacking() ? "Done" : "Take"
-                });
-            } else {
-                return;
-            }
-            this.socket.send(strJSON);
-            console.log(strJSON);
-            return;
-        }
-        else if (this.state == State.Menu) {
-            this.context.lineWidth = 5;
-            this.fontSize = 50;
-            this.boxHeight = this.textUpperMargin + this.fontSize;
-            this.context.font = "bold " + this.fontSize + "px serif";
-
-            if (this.isJoinPressed()) {
-                console.log("JOIN PRESSED");
-
-            }
-            else if (this.isCreatePressed()) {
-                console.log("CREATE PRESSED");
-            }
-            else {
-                console.log("SOMETHING ELSE WAS PRESSED");
-                return;
-            }
-        }
-
     }
 
     /*
@@ -518,34 +602,6 @@ export class GameView {
     */
     public fromIntToSuit(enumSuit: number): string {
         return "CDHS"[enumSuit];
-    }
-
-
-    /*
-        Returns an image for a given card.
-    */
-    public getCardImage(card?: Card): HTMLImageElement {
-        let strCard: string;
-        if (card) {
-            let strRank: string = this.fromIntToRank(card.rank);
-            let strSuit: string = this.fromIntToSuit(card.suit);
-            strCard = strRank.concat(strSuit);
-        } else {
-            strCard = this.backCard;
-        }
-
-
-        if (this.cardImages.has(strCard)) {
-            return this.cardImages.get(strCard);
-        }
-        else {
-            let img = new Image();
-            img.onload = () => this.displayStateOfTheGame();
-            img.src = this.dir.concat(strCard.concat(".png"));
-
-            this.cardImages.set(strCard, img);
-            return this.cardImages.get(strCard);
-        }
     }
 
     /*
@@ -783,20 +839,13 @@ export class GameView {
         this.displayBout();
     }
 
-    /*
-        Displays the menu section once the players connect 
-        Menu section has Join and Create Buttons
-    */
-    public displayMenu(): void {
-        let textM: TextMetrics;
-        this.drawScreen('Lavender', 'black');
-        // write "MENU" 
-        this.drawBox("MENU", this.canvas.width / 2, this.deckPosY - this.offset, 'black',
+    private writeMainTextWithUnderlying(text: string): void {
+        let textM: TextMetrics = this.context.measureText(text);
+        // write text
+        this.drawBox(text, this.canvas.width / 2, this.deckPosY - this.offset, 'black',
             'black', false, 75
         );
-        this.context.save();
 
-        textM = this.context.measureText("MENU");
         // make a line under MENU
         this.context.beginPath();
         this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
@@ -806,6 +855,17 @@ export class GameView {
             textM.width % 10, this.deckPosY - this.offset +
         this.textUpperMargin);
         this.context.stroke();
+    }
+
+    /*
+        Displays the menu section once the players connect 
+        Menu section has Join and Create Buttons
+    */
+    public displayMenu(): void {
+        this.drawScreen('Lavender', 'black');
+
+        this.context.save();
+        this.writeMainTextWithUnderlying("MENU");
 
         // create buttons for JOIN and CREATE
         this.joinButton = new Button(this, this.canvas.width / 2,
@@ -815,9 +875,7 @@ export class GameView {
         this.createButton = new Button(this, this.canvas.width / 2,
             this.deckPosY + this.boxHeight, "CREATE", this.fontSize);
         this.createButton.draw('black', 'black');
-
         this.context.restore();
-        this.state = State.Menu;
     }
 
     /*
