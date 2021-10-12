@@ -490,21 +490,3 @@ namespace DurakGame.Library.Game
         }
     }
 }
-
-
-
-/*
-Possible Combinations of Battle:
-
-1) Player1 Attack + Player2 Defend + Player1 Done + Player3 Attack + Player4 Defend + Player3 Done
- + Player1 Attack (works) 
-
-2) Player1 Attack + Player2 Defend + Player1 Done + Player3 Done (works)
-
-3) Player1 Attack + Player2 Take + Player1 Attack (until no cards to attack left) + Player1 Done + 
-   Player3 Attack (until no cards to attack left) + Player3 Done ()
-
-4) Player1 Attack + Player2 Take + Player1 Done + Player3 (until no cards to attack left) + Player3
-Done 
- 
-*/
