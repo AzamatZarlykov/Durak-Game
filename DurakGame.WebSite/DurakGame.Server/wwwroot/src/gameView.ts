@@ -75,6 +75,9 @@ export class GameView {
     private deckPosX: number;
     private deckPosY: number;
 
+    private modeHeight: number;
+    private modeWidth: number;
+
     private offset: number;
 
     private cardDir: string = "images/deck/";
@@ -136,8 +139,8 @@ export class GameView {
             this.CheckMouseClick();
         });
 
-/*        window.addEventListener("resize", () =>
-            this.reportWindowResize(this.canvas, this.context));*/
+        window.addEventListener("resize", () =>
+            this.reportWindowResize(this.canvas, this.context));
     }
 
     public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
@@ -188,53 +191,71 @@ export class GameView {
 
     private setModesPositions(): void {
         this.modesPositions.set(1, {
-            x: this.canvas.width / 2 - this.cardHeight / 2 - this.cardHeight,
-            y: this.canvas.height / 2 - this.cardHeight - this.cardHeight / 2
+            x: this.canvas.width / 2 - this.modeHeight / 2 - this.modeHeight,
+            y: this.canvas.height / 2 - this.modeHeight - this.modeHeight / 2
         });
 
         this.modesPositions.set(2, {
-            x: this.canvas.width / 2 + this.cardHeight / 2,
-            y: this.canvas.height / 2 - this.cardHeight - this.cardHeight / 2
+            x: this.canvas.width / 2 + this.modeHeight / 2,
+            y: this.canvas.height / 2 - this.modeHeight - this.modeHeight / 2
         });
 
         this.modesPositions.set(3, {
-            x: this.canvas.width / 2 - this.cardHeight / 2,
-            y: this.canvas.height / 2 + this.cardHeight / 4 - this.cardHeight / 2
+            x: this.canvas.width / 2 - this.modeHeight / 2,
+            y: this.canvas.height / 2 + this.modeHeight / 4 - this.modeHeight / 2
         });
 
         this.modesPositions.set(4, {
-            x: this.canvas.width / 2 - this.cardHeight / 2 - this.cardHeight - this.cardHeight,
-            y: this.canvas.height / 2 + this.cardHeight / 2 + this.cardHeight - this.cardHeight / 2
+            x: this.canvas.width / 2 - this.modeHeight / 2 - this.modeHeight - this.modeHeight,
+            y: this.canvas.height / 2 + this.modeHeight / 2 + this.modeHeight - this.modeHeight / 2
         });
 
         this.modesPositions.set(5, {
-            x: this.canvas.width / 2 - this.cardHeight / 2,
-            y: this.canvas.height / 2 + this.cardHeight / 2 + this.cardHeight - this.cardHeight / 2
+            x: this.canvas.width / 2 - this.modeHeight / 2,
+            y: this.canvas.height / 2 + this.modeHeight / 2 + this.modeHeight - this.modeHeight / 2
         });
 
         this.modesPositions.set(6, {
-            x: this.canvas.width / 2 + this.cardHeight / 2 + this.cardHeight,
-            y: this.canvas.height / 2 + this.cardHeight / 2 + this.cardHeight - this.cardHeight / 2
+            x: this.canvas.width / 2 + this.modeHeight / 2 + this.modeHeight,
+            y: this.canvas.height / 2 + this.modeHeight / 2 + this.modeHeight - this.modeHeight / 2
         })
     }
 
     private reportWindowResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
         this.windowObjectsResize(canvas, context);
-        this.setBoutPositions();
-        this.displayStateOfTheGame();
-    }
-
-    private setFontSize(): void {
         switch (this.state) {
             case State.Menu:
-                this.fontSize = 50;
-                break;
-            case State.GameTable:
-                this.fontSize = 20;
+                this.displayMenu();
                 break;
             case State.CreateGame:
+                this.LoadGameSettingMenu();
+                break;
+            case State.GameTable:
+                this.displayStateOfTheGame();
                 break;
         }
+    }
+
+    private setFontSize(size?: number): void {
+        if (typeof size !== undefined) {
+            switch (this.state) {
+                case State.Menu:
+                    this.fontSize = 50;
+                    break;
+                case State.GameTable:
+                    this.fontSize = 20;
+                    break;
+                case State.CreateGame:
+                    this.fontSize = 30;
+                    break;
+            }
+        } else {
+            this.fontSize = size;
+        }
+
+        this.context.lineWidth = 5;
+        this.context.font = "bold " + this.fontSize + "px Serif";
+        this.boxHeight = this.fontSize + this.textUpperMargin;
     }
 
     private windowObjectsResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
@@ -246,30 +267,27 @@ export class GameView {
         console.log(canvas.width);
         console.log(canvas.height);
 
-        this.setFontSize();
-
         this.canvas = canvas;
         this.context = context;
-
-        this.context.lineWidth = 5;
 
         this.textUpperMargin = 20;
         this.textLeftMargin = this.canvas.width / 251;
 
-        this.context.font = "bold " + this.fontSize + "px Serif";
+        this.setFontSize();
 
         console.log(this.context.font);
 
         this.cardWidth = 117;
         this.cardHeight = 140;
 
+        this.modeWidth = this.canvas.width / 20;
+        this.modeHeight = this.canvas.height / 8;
+
         this.cardCorner = this.cardWidth / 4;
 
         this.cardMiddleX = this.canvas.width / 2;
         this.cardLeftX = this.canvas.width / 7;
         this.cardRightX = this.canvas.width / 7 * 6;
-
-        this.boxHeight = this.fontSize + this.textUpperMargin;
 
         this.cardUpperY = this.canvas.height / 40;
         this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
@@ -296,6 +314,9 @@ export class GameView {
             { x: this.cardRightX, y: this.cardUpperY, tWidth: 0 },
             { x: this.cardRightX, y: this.cardLowerY, tWidth: 0 }
         ];
+
+        this.setBoutPositions();
+        this.setModesPositions();
     }
 
     private isDefending(): boolean {
@@ -366,6 +387,10 @@ export class GameView {
         return this.createButton.contains(this.mousePos);
     }
 
+    private isBackToMenuPressed(): boolean {
+        return this.buttonMenu.contains(this.mousePos);
+    }
+
     /*
         Returns an image for a given card.
     */
@@ -421,6 +446,19 @@ export class GameView {
         // display the setting of the game
         this.displayModeImages();
 
+        this.context.save();
+        this.setFontSize(30)
+        // create a back to Menu button
+        this.buttonMenu = new Button(this, 50 + 2 * this.textLeftMargin, 50, "Menu", this.fontSize);
+        this.buttonMenu.draw('black', 'black');
+
+        // create a Proceed button
+        let tM: TextMetrics = this.context.measureText("Proceed");
+        this.button = new Button(this, this.canvas.width - tM.width / 2 - 4 * this.textLeftMargin,
+            this.canvas.height - this.boxHeight, "Proceed", this.fontSize);
+        this.button.draw('black', 'black');
+
+        this.context.restore();
     }
 
     /*
@@ -464,6 +502,8 @@ export class GameView {
             }
             else if (this.isCreatePressed()) {
                 console.log("CREATE PRESSED");
+                this.state = State.CreateGame;
+                this.setFontSize();
                 this.LoadGameSettingMenu();
             }
             else {
@@ -471,7 +511,13 @@ export class GameView {
                 return;
             }
         }
-
+        else if (this.state == State.CreateGame) {
+            if (this.isBackToMenuPressed()) {
+                this.state = State.Menu;
+                this.setFontSize();
+                this.displayMenu();
+            }
+        }
     }
 
 
@@ -887,6 +933,7 @@ export class GameView {
         this.createButton = new Button(this, this.canvas.width / 2,
             this.deckPosY + this.boxHeight, "CREATE", this.fontSize);
         this.createButton.draw('black', 'black');
+
         this.context.restore();
     }
 
