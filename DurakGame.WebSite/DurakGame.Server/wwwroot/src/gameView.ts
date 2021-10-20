@@ -111,6 +111,7 @@ export class GameView {
     private createButton: Button;
 
     public fontSize: number = 20;
+    private hasInput: boolean = false;
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
 
@@ -231,6 +232,9 @@ export class GameView {
                 break;
             case State.GameTable:
                 this.displayStateOfTheGame();
+                break;
+            case State.PlayerSetup:
+                this.displayPlayerSetupPage();
                 break;
         }
     }
@@ -585,7 +589,16 @@ export class GameView {
         let textMetric: TextMetrics = this.context.measureText("Name: ");
         this.context.fillText("Name: ", this.canvas.width / 2 - textMetric.width,
             this.canvas.height / 2);
-        this.addInput(this.canvas.width / 2, this.canvas.height / 2);
+        if (!this.hasInput) {
+            this.hasInput = true;
+            this.addInput(this.canvas.width / 2, this.canvas.height / 2);
+        }
+    }
+
+    private changeStates(newState: State) {
+        this.state = newState;
+        this.setFontSize();
+        this.selectedModes = [0, 0, 0];
     }
 
     /*
@@ -640,10 +653,7 @@ export class GameView {
         }
         else if (this.state == State.CreateGame) {
             if (this.isBackToMenuPressed()) {
-                this.state = State.Menu;
-                this.setFontSize();
-                // reset the selected modes
-                this.selectedModes = [0, 0, 0];
+                this.changeStates(State.Menu);
                 this.displayMenu();
             }
             else if (this.anyModePressed()) {
@@ -653,11 +663,12 @@ export class GameView {
             }
             // Check if the "Proceed" Button was pressed 
             else if (this.isButtonSelected()) {
+                this.changeStates(State.PlayerSetup);
                 this.displayPlayerSetupPage();
             }
         }
         else if (this.state == State.PlayerSetup) {
-
+            console.log("PLAYER SETUP PAGE");
         }
     }
 
