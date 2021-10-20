@@ -26,8 +26,8 @@ export class Button {
         let margin: number = this.gameView.textLeftMargin;
         let bHeight: number = this.gameView.textUpperMargin + this.fontSize;
         this.gameView.context.font = "bold " + this.fontSize + "px serif";
-        let textMetrics: TextMetrics = this.gameView.context.measureText(this.name);
         let lineW: number = 5;
+        let textMetrics: TextMetrics = this.gameView.context.measureText(this.name);
 
         return this.x - textMetrics.width / 2 < mousePos.x &&
             mousePos.x <= this.x + textMetrics.width / 2 + margin &&

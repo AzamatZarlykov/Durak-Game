@@ -14,7 +14,7 @@ enum Suit {
 }
 
 enum State {
-    Menu, CreateGame, GameTable
+    Menu, CreateGame, PlayerSetup, GameTable
 }
 
 export interface Card {
@@ -76,7 +76,6 @@ export class GameView {
     private deckPosY: number;
 
     private modeHeight: number;
-    private modeWidth: number;
 
     private offset: number;
 
@@ -112,6 +111,8 @@ export class GameView {
     private createButton: Button;
 
     public fontSize: number = 20;
+    // setting is the first mode of each row
+    private selectedModes: number[] = [0, 0, 0];
 
     public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
@@ -147,8 +148,6 @@ export class GameView {
         this.gameView = gameView;
         this.id = id;
         this.totalPlayers = players;
-
-        console.log(gameView);
     }
 
     private setBoutPositions(): void {
@@ -248,6 +247,9 @@ export class GameView {
                 case State.CreateGame:
                     this.fontSize = 30;
                     break;
+                case State.PlayerSetup:
+                    this.fontSize = 30;
+                    break;
             }
         } else {
             this.fontSize = size;
@@ -275,13 +277,10 @@ export class GameView {
 
         this.setFontSize();
 
-        console.log(this.context.font);
-
         this.cardWidth = 117;
         this.cardHeight = 140;
 
-        this.modeWidth = this.canvas.width / 20;
-        this.modeHeight = this.canvas.height / 8;
+        this.modeHeight = this.canvas.height / 7;
 
         this.cardCorner = this.cardWidth / 4;
 
@@ -434,6 +433,51 @@ export class GameView {
     }
 
     /*
+        Outlines the modes based on the modes selected 
+    */
+    private outlineSelectedModes(): void {
+        let modeOfTheRow: number;
+        let pos: { x: number, y: number; };
+        this.context.save();
+        this.context.strokeStyle = 'lime';
+
+        for (let i: number = 0; i < this.selectedModes.length; i++) {
+            modeOfTheRow = this.selectedModes[i] + 1;
+            if (i == 1) {
+                modeOfTheRow += 2;
+            } else if (i == 2) {
+                modeOfTheRow += 3;
+            }
+            pos = this.modesPositions.get(modeOfTheRow);
+            this.context.strokeRect(pos.x, pos.y, this.cardHeight, this.cardHeight);
+        }
+        this.context.restore();
+    }
+
+    /*
+        Displays the main text in the middle of the screen. Also underlines the text 
+    */
+    private writeMainTextWithUnderlying(text: string): void {
+        let textM: TextMetrics = this.context.measureText(text);
+        // write text
+        this.drawBox(text, this.canvas.width / 2, this.deckPosY - this.canvas.height / 4, 'black',
+            'black', false, 80
+        );
+
+        console.log(this.fontSize);
+
+        // make a line under MENU
+        this.context.beginPath();
+        this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
+            textM.width % 10, this.deckPosY - this.canvas.height / 4 +
+        this.textUpperMargin);
+        this.context.lineTo(this.canvas.width / 2 + textM.width / 2 +
+            textM.width % 10, this.deckPosY - this.canvas.height / 4 +
+        this.textUpperMargin);
+        this.context.stroke();
+    }
+
+    /*
         Loads the Setting Menu screen with all the game modes  
     */
     private LoadGameSettingMenu(): void {
@@ -458,7 +502,90 @@ export class GameView {
             this.canvas.height - this.boxHeight, "Proceed", this.fontSize);
         this.button.draw('black', 'black');
 
+
+        // Create outline of modes selected on each row
+        this.outlineSelectedModes();
+
         this.context.restore();
+
+    }
+
+    /*
+        Checks if given mode pressed
+    */
+    private isModePressed(pos: { x: number, y: number; }): boolean {
+        return pos.x < this.mousePos.x && this.mousePos.x <= pos.x + this.cardHeight &&
+               pos.y < this.mousePos.y && this.mousePos.y <= pos.y + this.cardHeight;
+    }
+
+    /*
+        Checks if any of the mode was pressed 
+    */
+    private anyModePressed(): boolean {
+        for (let i: number = 1; i <= 6; i++) {
+            if (this.isModePressed(this.modesPositions.get(i))) {
+                if (i == 1 || i == 2) {
+                    this.selectedModes[0] = i - 1;
+                } else if (3 < i && i < 7) {
+                    i -= 4;
+                    this.selectedModes[2] = i;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //Draw the text onto canvas:
+    private drawText(txt: string, x: number, y: number): void {
+        this.context.textBaseline = 'top';
+        this.context.textAlign = 'left';
+        this.context.fillText(txt, x - 4, y - 4);
+    }
+
+/*    //Key handler for input box:
+    private handleEnter(e: { keyCode: number; }): void{
+        var keyCode = e.keyCode;
+        if (keyCode === 13) {
+            this.drawText(this.value, parseInt(this.style.left, 10), parseInt(this.style.top, 10));
+            document.body.removeChild(this);
+        }
+    }*/
+
+
+    //Function to dynamically add an input box: 
+    private addInput(x: number, y: number) {
+        let input: HTMLInputElement = document.createElement('input');
+
+        input.type = 'text';
+        input.style.position = 'fixed';
+        input.style.left = x  + 'px';
+        input.style.top = y + 'px';
+        input.width = 100;
+        input.height = 100;
+
+        // input.onkeydown = this.handleEnter;
+
+        document.body.appendChild(input);
+
+        input.focus();
+    }
+
+    /*
+        Displays the setup page where the user can select icon and write the name 
+    */
+    private displayPlayerSetupPage(): void {
+        // redraw the screen
+        this.drawScreen('lavender', 'black');
+
+        // display the main text "Player Setup"
+        this.writeMainTextWithUnderlying("Player Setup");
+
+        // display form for name input
+        let textMetric: TextMetrics = this.context.measureText("Name: ");
+        this.context.fillText("Name: ", this.canvas.width / 2 - textMetric.width,
+            this.canvas.height / 2);
+        this.addInput(this.canvas.width / 2, this.canvas.height / 2);
     }
 
     /*
@@ -515,8 +642,22 @@ export class GameView {
             if (this.isBackToMenuPressed()) {
                 this.state = State.Menu;
                 this.setFontSize();
+                // reset the selected modes
+                this.selectedModes = [0, 0, 0];
                 this.displayMenu();
             }
+            else if (this.anyModePressed()) {
+
+                this.LoadGameSettingMenu();
+
+            }
+            // Check if the "Proceed" Button was pressed 
+            else if (this.isButtonSelected()) {
+                this.displayPlayerSetupPage();
+            }
+        }
+        else if (this.state == State.PlayerSetup) {
+
         }
     }
 
@@ -893,26 +1034,6 @@ export class GameView {
         }
 
         this.displayBout();
-    }
-
-    private writeMainTextWithUnderlying(text: string): void {
-        let textM: TextMetrics = this.context.measureText(text);
-        // write text
-        this.drawBox(text, this.canvas.width / 2, this.deckPosY - this.offset, 'black',
-            'black', false, 75
-        );
-
-        console.log(this.fontSize);
-
-        // make a line under MENU
-        this.context.beginPath();
-        this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
-            textM.width % 10, this.deckPosY - this.offset +
-        this.textUpperMargin);
-        this.context.lineTo(this.canvas.width / 2 + textM.width / 2 +
-            textM.width % 10, this.deckPosY - this.offset +
-        this.textUpperMargin);
-        this.context.stroke();
     }
 
     /*
