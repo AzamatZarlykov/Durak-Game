@@ -101,6 +101,8 @@ export class GameView {
     private id: number;
     private totalPlayers: number;
 
+    private userName: string = "";
+    private input: HTMLInputElement;
     private nTextMetrics: TextMetrics;
     private socket: WebSocket;
     private state: State;
@@ -540,39 +542,32 @@ export class GameView {
         return false;
     }
 
-    //Draw the text onto canvas:
-    private drawText(txt: string, x: number, y: number): void {
-        this.context.textBaseline = 'top';
-        this.context.textAlign = 'left';
-        this.context.fillText(txt, x - 4, y - 4);
-    }
-
-/*    //Key handler for input box:
-    private handleEnter(e: { keyCode: number; }): void{
-        var keyCode = e.keyCode;
-        if (keyCode === 13) {
-            this.drawText(this.value, parseInt(this.style.left, 10), parseInt(this.style.top, 10));
-            document.body.removeChild(this);
-        }
-    }*/
-
-
-    //Function to dynamically add an input box: 
+    //Function to dynamically add an this.this.input box: 
     private addInput(x: number, y: number) {
-        let input: HTMLInputElement = document.createElement('input');
-
-        input.type = 'text';
-        input.style.position = 'fixed';
-        input.style.left = x  + 'px';
-        input.style.top = y + 'px';
-        input.width = 100;
-        input.height = 100;
-
-        // input.onkeydown = this.handleEnter;
-
-        document.body.appendChild(input);
-
-        input.focus();
+        if (this.hasInput) {
+            document.body.removeChild(this.input);
+        }
+        this.input = document.createElement('input');
+        this.input.value = this.userName;
+        this.input.type = 'text';
+        this.input.style.position = 'fixed';
+        this.input.style.left = x + 'px';
+        this.input.style.top = y + 'px';
+        this.input.required;
+        this.input.maxLength = 15;
+        this.input.style.width = 180 + 'px';
+        this.input.style.height = 33 + 'px';
+        this.input.style.fontSize = 22 + 'px';
+        this.input.style.fontFamily = 'Serif';
+        this.input.onkeydown = (e) => {
+            if (e.keyCode === 13) {
+                this.userName = this.input.value.trim();
+                console.log("User entered the following username: " + this.userName);
+            }
+        };
+        this.hasInput = true;
+        document.body.appendChild(this.input);
+        this.input.focus();
     }
 
     /*
@@ -585,14 +580,18 @@ export class GameView {
         // display the main text "Player Setup"
         this.writeMainTextWithUnderlying("Player Setup");
 
-        // display form for name input
+        // display form for name this.input
         let textMetric: TextMetrics = this.context.measureText("Name: ");
-        this.context.fillText("Name: ", this.canvas.width / 2 - textMetric.width,
+        this.context.fillText("Name: ", this.canvas.width / 2 - 2 * textMetric.width,
+            this.canvas.height / 2 - this.canvas.height / 5);
+        // add input element
+        this.addInput(this.canvas.width / 2, this.canvas.height / 2 - this.canvas.height / 5);
+        // create the options for icon selections
+        textMetric = this.context.measureText("Select an Icon");
+        this.context.fillText("Select an Icon", this.canvas.width / 2 - textMetric.width / 2,
             this.canvas.height / 2);
-        if (!this.hasInput) {
-            this.hasInput = true;
-            this.addInput(this.canvas.width / 2, this.canvas.height / 2);
-        }
+
+        // put the images of icons 
     }
 
     private changeStates(newState: State) {
