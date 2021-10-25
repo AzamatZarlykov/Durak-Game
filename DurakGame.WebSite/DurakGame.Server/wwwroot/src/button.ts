@@ -23,9 +23,9 @@ export class Button {
     }
 
     public contains(mousePos: { x: number, y: number; }): boolean {
+
         let margin: number = this.gameView.textLeftMargin;
         let bHeight: number = this.gameView.textUpperMargin + this.fontSize;
-        this.gameView.context.font = "bold " + this.fontSize + "px serif";
         let lineW: number = 5;
         let textMetrics: TextMetrics = this.gameView.context.measureText(this.name);
 

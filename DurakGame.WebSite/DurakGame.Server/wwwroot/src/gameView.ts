@@ -81,6 +81,7 @@ export class GameView {
 
     private cardDir: string = "images/deck/";
     private modesDir: string = "images/modes/";
+    private iconsDir: string = "images/icons/";
 
     private backCard: string = "2B";
 
@@ -88,6 +89,7 @@ export class GameView {
     private boutCardPositions = new Map();
     private modesPositions = new Map();
     private discardedPilePositions = new Map();
+    private iconsPositions = new Map();
 
     public textUpperMargin: number;
     public textLeftMargin: number;
@@ -116,6 +118,7 @@ export class GameView {
     private hasInput: boolean = false;
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
+    private selectedIcon: number = 1;
 
     public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
@@ -134,6 +137,7 @@ export class GameView {
 
         this.setBoutPositions();
         this.setModesPositions();
+        this.setIconsPositions();
 
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
@@ -220,7 +224,19 @@ export class GameView {
         this.modesPositions.set(6, {
             x: this.canvas.width / 2 + this.modeHeight / 2 + this.modeHeight,
             y: this.canvas.height / 2 + this.modeHeight / 2 + this.modeHeight - this.modeHeight / 2
-        })
+        });
+    }
+
+    private setIconsPositions(): void {
+        let startPos: number = this.canvas.width / 2 - (this.cardWidth * 6 + 5 *
+            (this.canvas.width * 10 / 100 - this.cardWidth)) / 2;
+
+        for (let i: number = 0; i < 6; i++) {
+            this.iconsPositions.set(i + 1, {
+                x: startPos + (i * 10) / 100 * this.canvas.width,
+                y: this.canvas.height / 2 + (10 / 100) * this.canvas.height
+            });
+        }
     }
 
     private reportWindowResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
@@ -236,7 +252,7 @@ export class GameView {
                 this.displayStateOfTheGame();
                 break;
             case State.PlayerSetup:
-                this.displayPlayerSetupPage();
+                this.LoadPlayerSetupPage();
                 break;
         }
     }
@@ -251,10 +267,10 @@ export class GameView {
                     this.fontSize = 20;
                     break;
                 case State.CreateGame:
-                    this.fontSize = 30;
+                    this.fontSize = 45;
                     break;
                 case State.PlayerSetup:
-                    this.fontSize = 30;
+                    this.fontSize = 45;
                     break;
             }
         } else {
@@ -322,6 +338,7 @@ export class GameView {
 
         this.setBoutPositions();
         this.setModesPositions();
+        this.setIconsPositions();
     }
 
     private isDefending(): boolean {
@@ -397,6 +414,14 @@ export class GameView {
     }
 
     /*
+        Checks if given mode pressed
+    */
+    private isSettingPressed(pos: { x: number, y: number; }, size: number): boolean {
+        return pos.x < this.mousePos.x && this.mousePos.x <= pos.x + size &&
+            pos.y < this.mousePos.y && this.mousePos.y <= pos.y + size;
+    }
+
+    /*
         Returns an image for a given card.
     */
     public getImage(card?: Card, isCard?: boolean, name?: string): HTMLImageElement {
@@ -418,23 +443,31 @@ export class GameView {
         }
         else {
             let img = new Image();
-            img.onload = () => isCard ? this.displayStateOfTheGame() : this.LoadGameSettingMenu();
-            img.src = (isCard ? this.cardDir : this.modesDir).concat(strImg.concat(".png"));
+            img.onload = () => isCard ? this.displayStateOfTheGame() :
+                (name[0] != "i" ? this.LoadGameSettingMenu() : this.LoadPlayerSetupPage());
+            img.src = (isCard ? this.cardDir : (name[0] != "i" ? this.modesDir : this.iconsDir))
+                .concat(strImg.concat(".png"));
 
             this.images.set(strImg, img);
             return img;
         }
     }
 
-    private displayModeImages(): void {
+    private displaySettingImages(): void {
         let img: HTMLImageElement;
         let pos: { x: number, y: number; };
 
         for (let i: number = 1; i <= 6; i++) {
-            pos = this.modesPositions.get(i);
-            img = this.getImage(undefined, false, i.toString());
+            pos = this.state == State.CreateGame ? this.modesPositions.get(i) :
+                this.iconsPositions.get(i);
+            img = this.getImage(undefined, false, this.state == State.CreateGame ? i.toString()
+                : "icon" + i.toString());
 
-            this.context.drawImage(img, pos.x, pos.y, this.cardHeight, this.cardHeight);
+
+            this.context.drawImage(img, pos.x, pos.y, this.state == State.CreateGame ?
+                this.cardHeight : this.cardWidth, this.state == State.CreateGame ?
+                this.cardHeight : this.cardWidth
+            );
         }
     }
 
@@ -470,9 +503,8 @@ export class GameView {
             'black', false, 80
         );
 
-        console.log(this.fontSize);
-
         // make a line under MENU
+        this.context.save();
         this.context.beginPath();
         this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
             textM.width % 10, this.deckPosY - this.canvas.height / 4 +
@@ -481,7 +513,25 @@ export class GameView {
             textM.width % 10, this.deckPosY - this.canvas.height / 4 +
         this.textUpperMargin);
         this.context.stroke();
+        this.context.restore();
     }
+
+    /*
+        Creates buttons that allow to get back to menu or move to the next stage of the game
+    */
+    private renderKeyButtons(nextStateButton: string): void {
+        // create a back to Menu button
+        this.buttonMenu = new Button(this, 50 + 2 * this.textLeftMargin, 50, "Menu", 30);
+        this.buttonMenu.draw('black', 'black');
+
+        // create a Proceed button
+        let tM: TextMetrics = this.context.measureText(nextStateButton);
+        this.button = new Button(this, this.canvas.width - tM.width / 2 - 4 * this.textLeftMargin,
+            this.canvas.height - this.boxHeight, nextStateButton, 30);
+        this.button.draw('black', 'black');
+    }
+
+
 
     /*
         Loads the Setting Menu screen with all the game modes  
@@ -494,34 +544,12 @@ export class GameView {
         this.writeMainTextWithUnderlying("Choose Modes");
 
         // display the setting of the game
-        this.displayModeImages();
+        this.displaySettingImages();
 
-        this.context.save();
-        this.setFontSize(30)
-        // create a back to Menu button
-        this.buttonMenu = new Button(this, 50 + 2 * this.textLeftMargin, 50, "Menu", this.fontSize);
-        this.buttonMenu.draw('black', 'black');
-
-        // create a Proceed button
-        let tM: TextMetrics = this.context.measureText("Proceed");
-        this.button = new Button(this, this.canvas.width - tM.width / 2 - 4 * this.textLeftMargin,
-            this.canvas.height - this.boxHeight, "Proceed", this.fontSize);
-        this.button.draw('black', 'black');
-
+        this.renderKeyButtons("Proceed");
 
         // Create outline of modes selected on each row
         this.outlineSelectedModes();
-
-        this.context.restore();
-
-    }
-
-    /*
-        Checks if given mode pressed
-    */
-    private isModePressed(pos: { x: number, y: number; }): boolean {
-        return pos.x < this.mousePos.x && this.mousePos.x <= pos.x + this.cardHeight &&
-               pos.y < this.mousePos.y && this.mousePos.y <= pos.y + this.cardHeight;
     }
 
     /*
@@ -529,7 +557,7 @@ export class GameView {
     */
     private anyModePressed(): boolean {
         for (let i: number = 1; i <= 6; i++) {
-            if (this.isModePressed(this.modesPositions.get(i))) {
+            if (this.isSettingPressed(this.modesPositions.get(i), this.cardHeight)) {
                 if (i == 1 || i == 2) {
                     this.selectedModes[0] = i - 1;
                 } else if (3 < i && i < 7) {
@@ -547,6 +575,7 @@ export class GameView {
         if (this.hasInput) {
             document.body.removeChild(this.input);
         }
+
         this.input = document.createElement('input');
         this.input.value = this.userName;
         this.input.type = 'text';
@@ -559,41 +588,101 @@ export class GameView {
         this.input.style.height = 33 + 'px';
         this.input.style.fontSize = 22 + 'px';
         this.input.style.fontFamily = 'Serif';
-        this.input.onkeydown = (e) => {
-            if (e.keyCode === 13) {
-                this.userName = this.input.value.trim();
-                console.log("User entered the following username: " + this.userName);
-            }
-        };
+
         this.hasInput = true;
         document.body.appendChild(this.input);
         this.input.focus();
     }
 
     /*
+        Outlines the selected icon in the player setup page 
+    */
+    private outlineSelectedIcon(): void {
+        let pos: { x: number, y: number; } = this.iconsPositions.get(this.selectedIcon);
+        this.context.save();
+        this.context.strokeStyle = 'lime';
+        this.context.strokeRect(pos.x, pos.y, this.cardWidth, this.cardWidth);
+        this.context.restore();
+    }
+
+
+
+    /*
         Displays the setup page where the user can select icon and write the name 
     */
-    private displayPlayerSetupPage(): void {
+    private LoadPlayerSetupPage(): void {
+
+
+        let textMetric: TextMetrics;
         // redraw the screen
         this.drawScreen('lavender', 'black');
+
+        // render the buttons
+        this.renderKeyButtons("Create");
 
         // display the main text "Player Setup"
         this.writeMainTextWithUnderlying("Player Setup");
 
         // display form for name this.input
-        let textMetric: TextMetrics = this.context.measureText("Name: ");
+        textMetric = this.context.measureText("Name: ");
         this.context.fillText("Name: ", this.canvas.width / 2 - 2 * textMetric.width,
             this.canvas.height / 2 - this.canvas.height / 5);
         // add input element
         this.addInput(this.canvas.width / 2, this.canvas.height / 2 - this.canvas.height / 5);
+        this.userName = this.input.value;
+
         // create the options for icon selections
-        textMetric = this.context.measureText("Select an Icon");
-        this.context.fillText("Select an Icon", this.canvas.width / 2 - textMetric.width / 2,
+        textMetric = this.context.measureText("Select an Icon:");
+        this.context.fillText("Select an Icon:", this.canvas.width / 2 - textMetric.width / 2,
             this.canvas.height / 2);
 
-        // put the images of icons 
+        // display the setting of the game
+        this.displaySettingImages();
+
+        // outline selected Icon
+        this.outlineSelectedIcon();
     }
 
+
+
+    private checkKeyButtonPress(): void {
+        
+        if (this.isBackToMenuPressed()) {
+            if (this.state == State.PlayerSetup) {
+                document.body.removeChild(this.input);
+                this.hasInput = false;
+            }
+            this.changeStates(State.Menu);
+            this.displayMenu();
+        }
+
+        else if (this.isButtonSelected()) {
+            console.log("SETUP PAGE FONT " + this.fontSize);
+            console.log("SETUP PAGE FONT CONTEXT " + this.context.font);
+            if (this.state == State.PlayerSetup) {
+
+            }
+            else if (this.state == State.CreateGame) {
+                this.changeStates(State.PlayerSetup);
+                this.LoadPlayerSetupPage();
+            }
+        }
+
+    }
+
+    private anyIconPressed(): boolean {
+        for (let i: number = 0; i < 6; i++) {
+            if (this.isSettingPressed(this.iconsPositions.get(i + 1), this.cardWidth)) {
+                this.selectedIcon = (i + 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*
+        Helper function that changes the state settings 
+    */
     private changeStates(newState: State) {
         this.state = newState;
         this.setFontSize();
@@ -636,13 +725,10 @@ export class GameView {
         else if (this.state == State.Menu) {
 
             if (this.isJoinPressed()) {
-                console.log("JOIN PRESSED");
 
             }
             else if (this.isCreatePressed()) {
-                console.log("CREATE PRESSED");
-                this.state = State.CreateGame;
-                this.setFontSize();
+                this.changeStates(State.CreateGame);
                 this.LoadGameSettingMenu();
             }
             else {
@@ -651,23 +737,20 @@ export class GameView {
             }
         }
         else if (this.state == State.CreateGame) {
-            if (this.isBackToMenuPressed()) {
-                this.changeStates(State.Menu);
-                this.displayMenu();
-            }
-            else if (this.anyModePressed()) {
+            this.checkKeyButtonPress();
 
+            if (this.anyModePressed()) {
                 this.LoadGameSettingMenu();
+            }
 
-            }
-            // Check if the "Proceed" Button was pressed 
-            else if (this.isButtonSelected()) {
-                this.changeStates(State.PlayerSetup);
-                this.displayPlayerSetupPage();
-            }
         }
         else if (this.state == State.PlayerSetup) {
-            console.log("PLAYER SETUP PAGE");
+            this.checkKeyButtonPress();
+
+            if (this.anyIconPressed()) {
+
+                this.LoadPlayerSetupPage();
+            }
         }
     }
 
@@ -876,7 +959,8 @@ export class GameView {
     }
 
     private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number }): void {
+        x: number, y: number, tWidth: number;
+    }): void {
 
         this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
             pos.y + this.offset, 'white', 'white', false, this.fontSize);
@@ -1051,6 +1135,7 @@ export class GameView {
         Menu section has Join and Create Buttons
     */
     public displayMenu(): void {
+
         this.drawScreen('Lavender', 'black');
 
         this.context.save();
