@@ -570,12 +570,15 @@ export class GameView {
         return false;
     }
 
-    //Function to dynamically add an this.this.input box: 
-    private addInput(x: number, y: number) {
-        if (this.hasInput) {
-            document.body.removeChild(this.input);
-        }
+    private removeInputBox(): void {
+        document.body.removeChild(this.input);
+        this.hasInput = false;
+    }
 
+    /*
+        sets the properties of input element 
+    */
+    private setupInputElement(x: number, y: number): void {
         this.input = document.createElement('input');
         this.input.value = this.userName;
         this.input.type = 'text';
@@ -594,6 +597,15 @@ export class GameView {
         this.input.focus();
     }
 
+    //Function to dynamically add an this.this.input box: 
+    private addInput(x: number, y: number) {
+        if (this.hasInput) {
+            this.removeInputBox();
+        }
+        this.setupInputElement(x, y);
+
+    }
+
     /*
         Outlines the selected icon in the player setup page 
     */
@@ -605,14 +617,10 @@ export class GameView {
         this.context.restore();
     }
 
-
-
     /*
         Displays the setup page where the user can select icon and write the name 
     */
     private LoadPlayerSetupPage(): void {
-
-
         let textMetric: TextMetrics;
         // redraw the screen
         this.drawScreen('lavender', 'black');
@@ -629,7 +637,6 @@ export class GameView {
             this.canvas.height / 2 - this.canvas.height / 5);
         // add input element
         this.addInput(this.canvas.width / 2, this.canvas.height / 2 - this.canvas.height / 5);
-        this.userName = this.input.value;
 
         // create the options for icon selections
         textMetric = this.context.measureText("Select an Icon:");
@@ -643,22 +650,28 @@ export class GameView {
         this.outlineSelectedIcon();
     }
 
+    /*
+        Resets the user name, the icon selected and removes already created input element 
+    */
+    private resetSetupPageSettings(): void {
+        this.removeInputBox();
+        this.userName = "";
+        this.selectedIcon = 1;
+    }
 
-
+    /*
+        Checks Menu and Next(proceed/create) buttons and performs appropriate instructions 
+    */
     private checkKeyButtonPress(): void {
-        
         if (this.isBackToMenuPressed()) {
             if (this.state == State.PlayerSetup) {
-                document.body.removeChild(this.input);
-                this.hasInput = false;
+                this.resetSetupPageSettings();
             }
             this.changeStates(State.Menu);
             this.displayMenu();
         }
 
         else if (this.isButtonSelected()) {
-            console.log("SETUP PAGE FONT " + this.fontSize);
-            console.log("SETUP PAGE FONT CONTEXT " + this.context.font);
             if (this.state == State.PlayerSetup) {
 
             }
@@ -725,7 +738,7 @@ export class GameView {
         else if (this.state == State.Menu) {
 
             if (this.isJoinPressed()) {
-
+                
             }
             else if (this.isCreatePressed()) {
                 this.changeStates(State.CreateGame);
@@ -748,7 +761,7 @@ export class GameView {
             this.checkKeyButtonPress();
 
             if (this.anyIconPressed()) {
-
+                this.userName = this.input.value;
                 this.LoadPlayerSetupPage();
             }
         }
