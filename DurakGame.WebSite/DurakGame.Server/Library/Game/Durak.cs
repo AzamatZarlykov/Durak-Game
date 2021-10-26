@@ -105,7 +105,8 @@ namespace DurakGame.Library.Game
         public int totalUninterruptedDone;
 
         private int discardedHeapSize;
-        public bool GameInProgress => players.Count > 1;
+        // public bool GameInProgress => players.Count > 1;
+        public bool gameInProgress;
 
         protected List<Player> players = new List<Player>();
 

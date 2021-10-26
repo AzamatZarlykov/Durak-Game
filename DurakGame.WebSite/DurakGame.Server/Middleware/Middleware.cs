@@ -121,15 +121,19 @@ namespace DurakGame.Server.Middleware
         {
             var options = new JsonSerializerOptions { IncludeFields = true };
             var buffer = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options));
-            Console.WriteLine(JsonSerializer.Serialize(data, options));
+            Console.WriteLine("SERVER: " + JsonSerializer.Serialize(data, options));
             Console.WriteLine();
             await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
-        private async Task DistributeJSONToWebSockets<T>(T data)
+        private async Task DistributeJSONToWebSockets<T>(T data, WebSocket websocket = null)
         {
             foreach (var socket in manager.GetAllSockets())
             {
+                if (websocket == socket)
+                {
+                    continue;
+                }
                 await SendJSON(socket, data);
             }
         }
@@ -169,15 +173,6 @@ namespace DurakGame.Server.Middleware
             }
         }
 
-        private async Task InformGameState(WebSocket socket)
-        {
-            command = "RequestStateGame";
-
-            bool gameState = game.GameInProgress;
-
-            await SendJSON(socket, new { command, gameState });
-        }
-
         private async Task ReceiveMessage(WebSocket socket, 
             Action<WebSocketReceiveResult, byte[]> handleMessage)
         {
@@ -201,33 +196,29 @@ namespace DurakGame.Server.Middleware
 
             int totalPlayers = manager.GetTotalPlayers();
 
-            foreach (var socket in manager.GetAllSockets())
+            await DistributeJSONToWebSockets(new { command, totalPlayers });
+        }
+
+        private async Task InitializationOfTheGame(ClientMessage route, WebSocket websocket)
+        {
+            command = "RequestStateGame";
+            bool gameState = game.gameInProgress;
+            // if game is already being created then inform the user that the game is on
+            if (gameState)
             {
-                await SendJSON(socket, new { command, totalPlayers });
+                await SendJSON(websocket, new { command, gameState });
+                return;
             }
+
+            game.gameInProgress = true;
+            command = "GameIsBeingCreated";
+            await DistributeJSONToWebSockets(new { command }, websocket);
         }
 
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
         {
             switch (route.Message)
             {
-                case "RequestStateGame":
-                    await InformGameState(websocket);
-                    break;
-                case "StartGame":
-                    if (game.GameInProgress)
-                    {
-                        Console.WriteLine("Game is being played");
-                    }
-                    else
-                    {
-                        // Send the information about the game 
-                        // to all players that are playing the game:
-                        // IDs, total number of players, list of theirs
-                        // ids and who started the game
-                        await InformJoiningGame();
-                    }
-                    break;
                 case "Attacking":
                     await UpdateGameProcess(route, websocket);
                     break;
@@ -239,6 +230,11 @@ namespace DurakGame.Server.Middleware
                     break;
                 case "Take":
                     await UpdateGameProcess(route, websocket);
+                    break;
+                case "CreateGame":
+                    // Acknowledge that someone is creating the game and let other players 
+                    // know that game is being created
+                    await InitializationOfTheGame(route, websocket);
                     break;
                 default:
                     Console.WriteLine("Unknown Message from the client");
@@ -253,7 +249,7 @@ namespace DurakGame.Server.Middleware
                 // Accepting the websocket connection
                 WebSocket websocket = await context.WebSockets.AcceptWebSocketAsync();
 
-                //await InformPlayerInformationAsync(websocket);
+                //Informing about the connection of the socket
                 await InformPlayerInformationAsync(websocket);
 
                 // Handling the actions of the client
@@ -264,7 +260,7 @@ namespace DurakGame.Server.Middleware
                     {
                         // Storing the message from the client into json string e.g {"command":"SetPlayerID";"playerID":1;"totalPlayers":3}
                         string jsonMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                        Console.WriteLine(jsonMessage);
+                        Console.WriteLine("Client: "+ jsonMessage);
                         // Deserialize from json string to an object 
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
@@ -284,7 +280,7 @@ namespace DurakGame.Server.Middleware
                             // Send messages to players informing which player leaves and update
                             // the number of players
                             // only if the game is on
-                            if (game.GameInProgress)
+                            if (game.gameInProgress)
                             {
                                 // Remove the players from the game 
                                 game.RemovePlayer(id);

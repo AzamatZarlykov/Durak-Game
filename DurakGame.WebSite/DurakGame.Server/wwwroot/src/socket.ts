@@ -22,6 +22,7 @@ let IllegalCommand: string = "Illegal";
 let WaitCommand: string = "Wait";
 let TakeCardsCommand: string = "TakeCards";
 let TookCardsCommand: string = "TookCards";
+let GameCreationInProcess: string = "GameIsBeingCreated";
 
 let view: GameView;
 
@@ -35,6 +36,7 @@ let allCommands: string[] = [
     WaitCommand,
     TakeCardsCommand,
     TookCardsCommand,
+    GameCreationInProcess,
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -46,6 +48,7 @@ socket.onopen = function (event): void {
 
     updateState();
 };
+
 socket.onclose = function (event): void {
     updateState();
 };
@@ -106,6 +109,8 @@ socket.onmessage = function (event): void {
                     let data: string = constructJSONPayload("StartGame");
                     socket.send(data);
                 } else {
+                    // display the message on the screen of the player
+
                     console.log("Game is already being played");
                 }
                 break;
@@ -113,19 +118,29 @@ socket.onmessage = function (event): void {
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
                 break;
+            case (setTotalPlayersCommand):
+                view.setTotalPlayers(nPlayers);
+                break;
             case (IllegalCommand):
-                view.displayMessage("illegal");
+                view.displayMessage("illegal", false, 'white', 'white');
                 break;
             case (WaitCommand):
-                view.displayMessage("wait");
+                view.displayMessage("wait", false, 'white', 'white');
                 break;
             case (TakeCardsCommand):
                 view.setConnectionFields(obj.gameView, id, nPlayers);
                 view.displayStateOfTheGame();
-                view.displayMessage("takeCards");
+                view.displayMessage("takeCards", false, 'white', 'white');
                 break;
             case (TookCardsCommand):
-                view.displayMessage("tookCards");
+                view.displayMessage("tookCards", false, 'white', 'white');
+                break;
+            case (GameCreationInProcess):
+                if (!view.gameInProgress) {
+                    view.gameInProgress = true;
+                    view.displayMenu();
+                }
+                break;
         }
     } else {
         console.log("Unknown command from the server");

@@ -116,6 +116,9 @@ export class GameView {
 
     public fontSize: number = 20;
     private hasInput: boolean = false;
+
+    public gameInProgress: boolean;
+
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
     private selectedIcon: number = 1;
@@ -151,10 +154,14 @@ export class GameView {
             this.reportWindowResize(this.canvas, this.context));
     }
 
+    public setTotalPlayers(players: number): void {
+        this.totalPlayers = players;
+    }
+
     public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
         this.gameView = gameView;
         this.id = id;
-        this.totalPlayers = players;
+        this.setTotalPlayers(players);
     }
 
     private setBoutPositions(): void {
@@ -703,50 +710,99 @@ export class GameView {
     }
 
     /*
+       helper function that handles different circumstances of when pressing Join button
+    */
+    private handleJoinButtonInstructions(): void {
+        // if game is not being created then players cant join
+        if (!this.gameInProgress) {
+            this.displayMessage("GameNotCreated", true, 'red', 'red',
+                this.canvas.width / 2, this.deckPosY +
+                this.boxHeight + 25 * this.canvas.height / 100
+            );
+        } else {
+            this.LoadPlayerSetupPage();
+        }
+    }
+
+    /*
+        helper function that handles different circumstances of when pressing Create button 
+    */
+    private handleCreateButtonInstructions(): void {
+        let strJSON: string;
+
+        if (this.totalPlayers < 2) {
+            this.displayMessage("LackOfPlayers", true, 'red', 'red',
+                this.canvas.width / 2, this.deckPosY +
+                this.boxHeight + 25 * this.canvas.height / 100
+            );
+        }
+        else if (!this.gameInProgress) {
+            strJSON = JSON.stringify({
+                From: this.id,
+                Message: "CreateGame"
+            });
+            this.socket.send(strJSON);
+
+            this.changeStates(State.CreateGame);
+            this.LoadGameSettingMenu();
+        } else {
+            // display that message game is being created
+            this.displayMessage("GameIsCreated", true, 'red', 'red',
+                this.canvas.width / 2, this.deckPosY +
+                this.boxHeight + 25 * this.canvas.height / 100
+            );
+        }
+    }
+
+    /*
+        helper function that handles different circumstances of when cards are clicked 
+        during the game.
+    */
+    private handleCardClickInstructions(): void {
+        let strJSON: string;
+
+        if (this.isCardSelected()) {
+            let cardIndex: number = Math.floor(this.GetCardSelected());
+
+            if (cardIndex >= this.gameView.hand.length) {
+                cardIndex = this.gameView.hand.length - 1;
+            }
+
+            console.log("Card Index clicked is " + cardIndex);
+
+            strJSON = JSON.stringify({
+                Message: this.isAttacking() ? "Attacking" : "Defending",
+                Card: cardIndex
+            });
+
+        }
+        else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
+            console.log("SELECTED");
+            strJSON = JSON.stringify({
+                Message: this.isAttacking() ? "Done" : "Take"
+            });
+        } else {
+            return;
+        }
+        this.socket.send(strJSON);
+    }
+
+    /*
         Function that tells which card the attacking player has selected to attack 
     */
     private CheckMouseClick(): void {
-        let strJSON: string;
         if (this.state == State.GameTable && (this.isAttacking() || this.isDefending())) {
-            if (this.isCardSelected()) {
-                let cardIndex: number = Math.floor(this.GetCardSelected());
-
-                if (cardIndex >= this.gameView.hand.length) {
-                    cardIndex = this.gameView.hand.length - 1;
-                }
-
-                console.log("Card Index clicked is " + cardIndex);
-
-                strJSON = JSON.stringify({
-                    Message: this.isAttacking() ? "Attacking" : "Defending",
-                    Card: cardIndex
-                });
-
-            }
-            else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
-                console.log("SELECTED");
-                strJSON = JSON.stringify({
-                    Message: this.isAttacking() ? "Done" : "Take"
-                });
-            } else {
-                return;
-            }
-            this.socket.send(strJSON);
-            console.log(strJSON);
-            return;
+            this.handleCardClickInstructions();
         }
         else if (this.state == State.Menu) {
-
             if (this.isJoinPressed()) {
-                
+                this.handleJoinButtonInstructions();
             }
             else if (this.isCreatePressed()) {
-                this.changeStates(State.CreateGame);
-                this.LoadGameSettingMenu();
+                this.handleCreateButtonInstructions()
             }
             else {
                 console.log("SOMETHING ELSE WAS PRESSED");
-                return;
             }
         }
         else if (this.state == State.CreateGame) {
@@ -755,7 +811,6 @@ export class GameView {
             if (this.anyModePressed()) {
                 this.LoadGameSettingMenu();
             }
-
         }
         else if (this.state == State.PlayerSetup) {
             this.checkKeyButtonPress();
@@ -1154,6 +1209,11 @@ export class GameView {
         this.context.save();
         this.writeMainTextWithUnderlying("MENU");
 
+        if (this.gameInProgress) {
+            // display message that game is on
+
+        }
+
         // create buttons for JOIN and CREATE
         this.joinButton = new Button(this, this.canvas.width / 2,
             this.deckPosY - this.textUpperMargin, "JOIN", this.fontSize);
@@ -1169,9 +1229,12 @@ export class GameView {
     /*
         Display the error if Attack/Defense is illegal
     */
-    public displayMessage(type: string): void {
-        this.context.fillStyle = 'white';
-        this.context.strokeStyle = 'white';
+    public displayMessage(type: string, settings: boolean, fillS: string, strokeS: string,
+        x?: number, y?: number ): void {
+        this.context.save();
+
+        this.context.fillStyle = fillS;
+        this.context.strokeStyle = strokeS;
 
         let textStr: string;
 
@@ -1189,15 +1252,42 @@ export class GameView {
             case "takeCards":
                 textStr = "Player " + this.gameView.defendingPlayer + " Takes The Cards";
                 break;
+            case "GameIsCreated":
+                textStr = "The game is being created";
+                break;
+            case "LackOfPlayers":
+                textStr = "Not enough players to start the game";
+                break;
+            case "GameNotCreated":
+                textStr = "Game is not created yet";
+                break;
             default:
                 console.log("Unknown type of the string (Check the error types)");
                 break;
         }
 
-        this.drawBox(textStr, this.positionsAroundTable[0].x +
-            this.positionsAroundTable[0].tWidth / 2, this.deckPosY - 2 * this.textUpperMargin,
-            'white', 'white', true, this.fontSize);
+        let xP: number;
+        let yP: number;
 
-        setTimeout(() => this.displayStateOfTheGame(), 3000);
+        if (settings) {
+            xP = x;
+            yP = y;
+        } else {
+            xP = this.positionsAroundTable[0].x + this.positionsAroundTable[0].tWidth / 2
+            yP = this.deckPosY - 2 * this.textUpperMargin
+        }
+
+        this.drawBox(textStr, xP, yP, fillS, strokeS, true, this.fontSize);
+
+        switch (this.state) {
+            case State.GameTable:
+                setTimeout(() => this.displayStateOfTheGame(), 3000);
+
+                break;
+            case State.Menu:
+                setTimeout(() => this.displayMenu(), 3000);
+                break;
+        }
+        this.context.restore();
     }
 }
