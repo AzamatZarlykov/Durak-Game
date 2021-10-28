@@ -9,6 +9,7 @@ using DurakGame.Library.GameCard;
 namespace DurakGame.Library.Game
 {
     public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
+    public enum Variation { Classic, Passport }
     public enum MoveResult { OK, OutOfTurn, IllegalMove, TookCards }
     public class PlayerView
     {
@@ -99,7 +100,8 @@ namespace DurakGame.Library.Game
 
         public bool attackerTurn;
 
-        public Type type = Type.AllSidesAttacking;
+        public Variation variation = Variation.Classic;
+        public Type type;
 
         public int durak;
         public int totalUninterruptedDone;
@@ -144,6 +146,20 @@ namespace DurakGame.Library.Game
             attackerTurn = true;
 
             bout = new Bout();
+        }
+
+        // Sets up the variation of Durak: Classic or Passport 
+        public void SetupGameVariation(int variationIndex)
+        {
+            variation = (Variation)variationIndex;
+            Console.WriteLine("The Variation is " + variation);
+        }
+
+        // Sets up the type of Durak: One side, neighbours or all side attacking 
+        public void SetupGameType(int typeIndex)
+        {
+            type = (Type)typeIndex;
+            Console.WriteLine("The Type is " + type);
         }
 
         public bool IsAttackerWinner() => !IsBoutGoing() && 

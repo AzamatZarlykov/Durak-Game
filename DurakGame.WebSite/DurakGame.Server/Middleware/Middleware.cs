@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Collections.Generic;
 
 using DurakGame.Library.Game;
-using DurakGame.Library.GameCard;
 
 namespace DurakGame.Server.Middleware
 {
@@ -16,7 +15,8 @@ namespace DurakGame.Server.Middleware
     {
         public int From;
         public string Message;
-        public int Card; 
+        public int Card;
+        public int[] GameSetting;
     }
 
     public class Middleware
@@ -150,29 +150,6 @@ namespace DurakGame.Server.Middleware
             });
         }
 
-        private async Task InformJoiningGame()
-        {
-            command = "JoinGame";
-
-            int totalPlayers = manager.GetTotalPlayers();
-            if (totalPlayers > 6) totalPlayers = 6;
-
-            game.StartGame(totalPlayers);
-
-            int sizeOfPlayers = game.GetSizeOfPlayers();
-            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
-
-            GameView gameView;
-
-            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
-            {
-                gameView = new GameView(game, playerID);
-                await SendJSON(playersPlaying[playerID], new { 
-                    command, playerID, sizeOfPlayers, totalPlayers, gameView 
-                });
-            }
-        }
-
         private async Task ReceiveMessage(WebSocket socket, 
             Action<WebSocketReceiveResult, byte[]> handleMessage)
         {
@@ -187,6 +164,12 @@ namespace DurakGame.Server.Middleware
             }
         }
 
+        private void SetupDurakGame(int[] gameSetting)
+        {
+            game.SetupGameVariation(gameSetting[0]);
+            game.SetupGameType(gameSetting[2]);
+        }
+
         // When someone connects, send to everyone how many people are in the server/game
         private async Task InformPlayerInformationAsync(WebSocket websocket)
         {
@@ -195,24 +178,60 @@ namespace DurakGame.Server.Middleware
             manager.AddSocket(websocket);
 
             int totalPlayers = manager.GetTotalPlayers();
+            int sizeOfPlayers = 0;
+            bool gameInProgress = game.gameInProgress;
+            bool isPlaying;
 
-            await DistributeJSONToWebSockets(new { command, totalPlayers });
-        }
-
-        private async Task InitializationOfTheGame(ClientMessage route, WebSocket websocket)
-        {
-            command = "RequestStateGame";
-            bool gameState = game.gameInProgress;
-            // if game is already being created then inform the user that the game is on
-            if (gameState)
+            if (gameInProgress)
             {
-                await SendJSON(websocket, new { command, gameState });
-                return;
+                isPlaying = false;
+                sizeOfPlayers = game.GetSizeOfPlayers();
+            }  else
+            {
+                isPlaying = true;
             }
 
+            await DistributeJSONToWebSockets(new { command, totalPlayers, sizeOfPlayers, 
+                gameInProgress, isPlaying});
+
+        }
+
+        private async Task InitializationOfTheGame(WebSocket websocket)
+        {
+            command = "JoinGame";
+
             game.gameInProgress = true;
-            command = "GameIsBeingCreated";
-            await DistributeJSONToWebSockets(new { command }, websocket);
+
+            int totalPlayers = manager.GetTotalPlayers();
+            if (totalPlayers > 6) totalPlayers = 6;
+
+            game.AddPlayers(totalPlayers);
+            int sizeOfPlayers = game.GetSizeOfPlayers();
+
+            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+
+            bool isCreator;
+
+            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
+            {
+                if (websocket == playersPlaying[playerID])
+                {
+                    isCreator = true;
+                }
+                else
+                {
+                    isCreator = false;
+                }
+
+                await SendJSON(playersPlaying[playerID], new
+                {
+                    command,
+                    playerID,
+                    sizeOfPlayers,
+                    totalPlayers,
+                    isCreator
+                });
+            }
         }
 
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
@@ -234,7 +253,10 @@ namespace DurakGame.Server.Middleware
                 case "CreateGame":
                     // Acknowledge that someone is creating the game and let other players 
                     // know that game is being created
-                    await InitializationOfTheGame(route, websocket);
+                    await InitializationOfTheGame(websocket);
+                    break;
+                case "GameSetup":
+                    SetupDurakGame(route.GameSetting);
                     break;
                 default:
                     Console.WriteLine("Unknown Message from the client");

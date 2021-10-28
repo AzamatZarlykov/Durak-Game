@@ -102,6 +102,8 @@ export class GameView {
 
     private id: number;
     private totalPlayers: number;
+    private totalPlayersPlaying: number;
+    private isPlaying: boolean;
 
     private userName: string = "";
     private input: HTMLInputElement;
@@ -158,10 +160,20 @@ export class GameView {
         this.totalPlayers = players;
     }
 
-    public setConnectionFields(gameView: GameViewInfo, id: number, players: number) {
+    public setTotalPlayersPlaying(players: number): void {
+        this.totalPlayersPlaying = players;
+    }
+
+    public updateGameView(gameView: GameViewInfo): void {
         this.gameView = gameView;
+    }
+
+    public updatePlayingStatus(pl: boolean): void {
+        this.isPlaying = pl;
+    }
+
+    public setID(id: number) :void {
         this.id = id;
-        this.setTotalPlayers(players);
     }
 
     private setBoutPositions(): void {
@@ -538,12 +550,10 @@ export class GameView {
         this.button.draw('black', 'black');
     }
 
-
-
     /*
         Loads the Setting Menu screen with all the game modes  
     */
-    private LoadGameSettingMenu(): void {
+    public LoadGameSettingMenu(): void {
         // redraw the screen
         this.drawScreen('lavender', 'black');
 
@@ -641,7 +651,7 @@ export class GameView {
         // display form for name this.input
         textMetric = this.context.measureText("Name: ");
         this.context.fillText("Name: ", this.canvas.width / 2 - 2 * textMetric.width,
-            this.canvas.height / 2 - this.canvas.height / 5);
+            this.canvas.height / 2 - this.canvas.height / 6);
         // add input element
         this.addInput(this.canvas.width / 2, this.canvas.height / 2 - this.canvas.height / 5);
 
@@ -670,6 +680,7 @@ export class GameView {
         Checks Menu and Next(proceed/create) buttons and performs appropriate instructions 
     */
     private checkKeyButtonPress(): void {
+        let strJSON: string;
         if (this.isBackToMenuPressed()) {
             if (this.state == State.PlayerSetup) {
                 this.resetSetupPageSettings();
@@ -683,6 +694,12 @@ export class GameView {
 
             }
             else if (this.state == State.CreateGame) {
+                // send information about the game settings 
+                strJSON = JSON.stringify({
+                    Message: "GameSetup",
+                    GameSetting: this.selectedModes
+                });
+                this.socket.send(strJSON)
                 this.changeStates(State.PlayerSetup);
                 this.LoadPlayerSetupPage();
             }
@@ -719,8 +736,14 @@ export class GameView {
                 this.canvas.width / 2, this.deckPosY +
                 this.boxHeight + 25 * this.canvas.height / 100
             );
-        } else {
+        } else if (this.gameInProgress && this.isPlaying) {
+            this.changeStates(State.PlayerSetup);
             this.LoadPlayerSetupPage();
+        } else if (!this.isPlaying) {
+            this.displayMessage("CannotJoin", true, 'red', 'red',
+                this.canvas.width / 2, this.deckPosY +
+                this.boxHeight + 25 * this.canvas.height / 100
+            );
         }
     }
 
@@ -729,7 +752,7 @@ export class GameView {
     */
     private handleCreateButtonInstructions(): void {
         let strJSON: string;
-
+        console.log("Total Players " + this.totalPlayers);
         if (this.totalPlayers < 2) {
             this.displayMessage("LackOfPlayers", true, 'red', 'red',
                 this.canvas.width / 2, this.deckPosY +
@@ -742,12 +765,17 @@ export class GameView {
                 Message: "CreateGame"
             });
             this.socket.send(strJSON);
-
             this.changeStates(State.CreateGame);
-            this.LoadGameSettingMenu();
-        } else {
-            // display that message game is being created
-            this.displayMessage("GameIsCreated", true, 'red', 'red',
+
+        } else if (this.isPlaying) {
+            // display that game is being created
+            this.displayMessage("GameIsBeingCreated", true, 'red', 'red',
+                this.canvas.width / 2, this.deckPosY +
+                this.boxHeight + 25 * this.canvas.height / 100
+            );
+        } else if (!this.isPlaying) {
+            // display that game has already started
+            this.displayMessage("GameInProcess", true, 'red', 'red',
                 this.canvas.width / 2, this.deckPosY +
                 this.boxHeight + 25 * this.canvas.height / 100
             );
@@ -1209,11 +1237,6 @@ export class GameView {
         this.context.save();
         this.writeMainTextWithUnderlying("MENU");
 
-        if (this.gameInProgress) {
-            // display message that game is on
-
-        }
-
         // create buttons for JOIN and CREATE
         this.joinButton = new Button(this, this.canvas.width / 2,
             this.deckPosY - this.textUpperMargin, "JOIN", this.fontSize);
@@ -1252,7 +1275,7 @@ export class GameView {
             case "takeCards":
                 textStr = "Player " + this.gameView.defendingPlayer + " Takes The Cards";
                 break;
-            case "GameIsCreated":
+            case "GameIsBeingCreated":
                 textStr = "The game is being created";
                 break;
             case "LackOfPlayers":
@@ -1260,6 +1283,12 @@ export class GameView {
                 break;
             case "GameNotCreated":
                 textStr = "Game is not created yet";
+                break;
+            case "GameInProcess":
+                textStr = "Game is being played by other players";
+                break;
+            case "CannotJoin":
+                textStr = "Cannot Join. Game has already started";
                 break;
             default:
                 console.log("Unknown type of the string (Check the error types)");
