@@ -1,4 +1,4 @@
-﻿import { GameView } from './gameView.js';
+﻿import { GameView, State } from './gameView.js';
 
 let playingTable = document.getElementById("playingTable") as HTMLDivElement;
 
@@ -21,6 +21,8 @@ let IllegalCommand: string = "Illegal";
 let WaitCommand: string = "Wait";
 let TakeCardsCommand: string = "TakeCards";
 let TookCardsCommand: string = "TookCards";
+let UpdateAvailableIconsCommand: string = "UpdateAvailableIcons";
+let UpdatePlayerSetupCommand: string = "UpdatePlayerSetup";
 
 let view: GameView;
 
@@ -34,6 +36,8 @@ let allCommands: string[] = [
     WaitCommand,
     TakeCardsCommand,
     TookCardsCommand,
+    UpdateAvailableIconsCommand,
+    UpdatePlayerSetupCommand,
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -111,6 +115,20 @@ socket.onmessage = function (event): void {
                 view.setTotalPlayersPlaying(nPlayersPlaying);
                 view.gameInProgress = obj.gameInProgress;
                 view.updatePlayingStatus(obj.isPlaying);
+                break;
+            case (UpdateAvailableIconsCommand):
+                view.UpdateAvailableIcons(obj.availableIcons);
+                if (view.state == State.PlayerSetup) {
+                    view.LoadPlayerSetupPage();
+                }
+                break;
+            case (UpdatePlayerSetupCommand):
+                if (!obj.playerSetupOK) {
+                    view.LoadPlayerSetupPage();
+                    alert("The user name is already taken. Try another one");
+                } else {
+                    // Move to the waiting room
+                }
                 break;
             case (IllegalCommand):
                 view.displayMessage("illegal", false, 'white', 'white');

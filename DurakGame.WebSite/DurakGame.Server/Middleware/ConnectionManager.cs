@@ -9,7 +9,7 @@ namespace DurakGame.Server.Middleware
     {
         // Keep track of users ID and their websockets connection
         // private Dictionary<int, WebSocket> sockets = new Dictionary<int, WebSocket>();
-
+        
         private List<WebSocket> sockets = new List<WebSocket>();
 
         // This list is used to store the ids of players as a copy when the game

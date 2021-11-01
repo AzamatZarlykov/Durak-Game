@@ -110,7 +110,10 @@ namespace DurakGame.Library.Game
         // public bool GameInProgress => players.Count > 1;
         public bool gameInProgress;
 
+        public bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
+
         protected List<Player> players = new List<Player>();
+        private List<string> usernames = new List<string>();
 
         public int allAttackingPlayersIndex;
         private List<int> allAttackingPlayers = new List<int>();
@@ -125,6 +128,7 @@ namespace DurakGame.Library.Game
         public int GetSizeOfPlayers() => players.Count;
         public Bout GetBoutInformation() => bout;
         public bool IsBoutGoing() => bout.GetAttackingCardsSize() > 0;
+        public bool[] GetAvailableIcons() => availableIcons;
         public void StartGame(int totalPlayers)
         {
             deck = new Deck();
@@ -146,8 +150,19 @@ namespace DurakGame.Library.Game
             attackerTurn = true;
 
             bout = new Bout();
+
+
         }
 
+        public bool IsUserNameAvailable(string name)
+        {
+            return usernames.IndexOf(name) == -1;
+        }
+
+        public void AddUserName(string name)
+        {
+            usernames.Add(name);
+        }
         // Sets up the variation of Durak: Classic or Passport 
         public void SetupGameVariation(int variationIndex)
         {

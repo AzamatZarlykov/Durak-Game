@@ -13,7 +13,7 @@ enum Suit {
     Club, Diamonds, Heart, Spade
 }
 
-enum State {
+export enum State {
     Menu, CreateGame, PlayerSetup, GameTable
 }
 
@@ -109,7 +109,7 @@ export class GameView {
     private input: HTMLInputElement;
     private nTextMetrics: TextMetrics;
     private socket: WebSocket;
-    private state: State;
+    public state: State;
 
     private button: Button;
     private buttonMenu: Button;
@@ -124,6 +124,7 @@ export class GameView {
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
     private selectedIcon: number = 1;
+    private availableIcons: boolean[] = [true, true, true, true, true, true];
 
     public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
@@ -462,8 +463,24 @@ export class GameView {
         }
         else {
             let img = new Image();
-            img.onload = () => isCard ? this.displayStateOfTheGame() :
-                (name[0] != "i" ? this.LoadGameSettingMenu() : this.LoadPlayerSetupPage());
+            img.onload = () => {
+                // during the card game 
+                if (isCard) {
+                    this.displayStateOfTheGame();
+                }
+                // for game settings (modes)
+                else if (name[0] != "i") {
+                    this.LoadGameSettingMenu();
+                }
+                // for player setup page
+                else {
+                    if (!this.availableIcons[parseInt(name[4]) - 1]) {
+                        img.style.filter = "brightness(50%)";
+                    }
+                    this.LoadPlayerSetupPage();
+                }
+            }
+                
             img.src = (isCard ? this.cardDir : (name[0] != "i" ? this.modesDir : this.iconsDir))
                 .concat(strImg.concat(".png"));
 
@@ -481,6 +498,7 @@ export class GameView {
                 this.iconsPositions.get(i);
             img = this.getImage(undefined, false, this.state == State.CreateGame ? i.toString()
                 : "icon" + i.toString());
+
 
 
             this.context.drawImage(img, pos.x, pos.y, this.state == State.CreateGame ?
@@ -550,6 +568,10 @@ export class GameView {
         this.button.draw('black', 'black');
     }
 
+    public UpdateAvailableIcons(availableIcons: boolean[]): void {
+        this.availableIcons = availableIcons;
+        console.log("Available Icons are  " + this.availableIcons);
+    }
     /*
         Loads the Setting Menu screen with all the game modes  
     */
@@ -637,7 +659,7 @@ export class GameView {
     /*
         Displays the setup page where the user can select icon and write the name 
     */
-    private LoadPlayerSetupPage(): void {
+    public LoadPlayerSetupPage(): void {
         let textMetric: TextMetrics;
         // redraw the screen
         this.drawScreen('lavender', 'black');
@@ -691,7 +713,14 @@ export class GameView {
 
         else if (this.isButtonSelected()) {
             if (this.state == State.PlayerSetup) {
-
+                // send info about icon and name selection
+                strJSON = JSON.stringify({
+                    From: this.id,
+                    Message: "PlayerSetup",
+                    Name: this.userName,
+                    Icon: this.selectedIcon - 1
+                });
+                this.socket.send(strJSON);
             }
             else if (this.state == State.CreateGame) {
                 // send information about the game settings 
@@ -699,9 +728,8 @@ export class GameView {
                     Message: "GameSetup",
                     GameSetting: this.selectedModes
                 });
-                this.socket.send(strJSON)
+                this.socket.send(strJSON);
                 this.changeStates(State.PlayerSetup);
-                this.LoadPlayerSetupPage();
             }
         }
 
@@ -1320,3 +1348,11 @@ export class GameView {
         this.context.restore();
     }
 }
+
+
+
+
+
+// When available icons are updated, make the icons darker (it will indicate that selecting these 
+// icons is not possible). Also, in mouse click when the icons selected put the expression that 
+// will make sure that not available icons wont be selected

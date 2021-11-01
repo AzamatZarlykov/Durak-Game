@@ -17,6 +17,8 @@ namespace DurakGame.Server.Middleware
         public string Message;
         public int Card;
         public int[] GameSetting;
+        public int Icon;
+        public string Name;
     }
 
     public class Middleware
@@ -234,6 +236,36 @@ namespace DurakGame.Server.Middleware
             }
         }
 
+        private async Task UpdateAvailableIcons(WebSocket websocket)
+        {
+            command = "UpdateAvailableIcons";
+            bool[] availableIcons = game.GetAvailableIcons();
+            await SendJSON(websocket, new { command, availableIcons }); 
+        }
+
+        private async Task CheckPlayerSetup(ClientMessage route, WebSocket websocket)
+        {
+            command = "UpdatePlayerSetup";
+            bool playerSetupOK = true;
+
+            if (!game.IsUserNameAvailable(route.Name))
+            {
+                playerSetupOK = false;
+            } 
+            else
+            {
+                game.AddUserName(route.Name);
+                // the icon on pos route.Icon is not available
+                game.GetAvailableIcons()[route.Icon] = false;
+            }
+            // send setup result to the user's websocket
+            await SendJSON(websocket, new { command, playerSetupOK });
+            // update other players' availableIcons list
+            command = "UpdateAvailableIcons";
+            bool[] availableIcons = game.GetAvailableIcons();
+            await DistributeJSONToWebSockets(new { command, availableIcons }, websocket);
+        }
+
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
         {
             switch (route.Message)
@@ -257,6 +289,10 @@ namespace DurakGame.Server.Middleware
                     break;
                 case "GameSetup":
                     SetupDurakGame(route.GameSetting);
+                    await UpdateAvailableIcons(websocket);
+                    break;
+                case "PlayerSetup":
+                    await CheckPlayerSetup(route, websocket);
                     break;
                 default:
                     Console.WriteLine("Unknown Message from the client");
