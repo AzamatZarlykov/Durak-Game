@@ -204,13 +204,18 @@ namespace DurakGame.Server.Middleware
 
             game.gameInProgress = true;
 
+            int sizeOfPlayers;
             int totalPlayers = manager.GetTotalPlayers();
-            if (totalPlayers > 6) totalPlayers = 6;
 
-            game.AddPlayers(totalPlayers);
-            int sizeOfPlayers = game.GetSizeOfPlayers();
+            if (totalPlayers > 6)
+            {
+                sizeOfPlayers = 6;
+            } else
+            {
+                sizeOfPlayers = totalPlayers;
+            }
 
-            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(sizeOfPlayers);
 
             bool isCreator;
 
@@ -257,13 +262,38 @@ namespace DurakGame.Server.Middleware
                 game.AddUserName(route.Name);
                 // the icon on pos route.Icon is not available
                 game.GetAvailableIcons()[route.Icon] = false;
+                game.readyPlayers++;
             }
             // send setup result to the user's websocket
             await SendJSON(websocket, new { command, playerSetupOK });
             // update other players' availableIcons list
             command = "UpdateAvailableIcons";
+            int readyPlayers = game.readyPlayers;
             bool[] availableIcons = game.GetAvailableIcons();
-            await DistributeJSONToWebSockets(new { command, availableIcons }, websocket);
+            await DistributeJSONToWebSockets(new { command, availableIcons, readyPlayers });
+        }
+
+        private async Task InformStartGame()
+        {
+            command = "StartGame";
+
+            int totalPlayers = manager.GetTotalPlayers();
+            if (totalPlayers > 6) totalPlayers = 6;
+
+            game.StartGame(totalPlayers);
+            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+
+            GameView gameView;
+
+            for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
+            {
+                gameView = new GameView(game, playerID);
+                await SendJSON(playersPlaying[playerID], new
+                {
+                    command,
+                    gameView
+                });
+            }
         }
 
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
@@ -293,6 +323,9 @@ namespace DurakGame.Server.Middleware
                     break;
                 case "PlayerSetup":
                     await CheckPlayerSetup(route, websocket);
+                    break;
+                case "StartGame":
+                    await InformStartGame();
                     break;
                 default:
                     Console.WriteLine("Unknown Message from the client");

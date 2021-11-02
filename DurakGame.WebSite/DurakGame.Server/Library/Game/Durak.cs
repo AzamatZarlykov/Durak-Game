@@ -100,6 +100,8 @@ namespace DurakGame.Library.Game
 
         public bool attackerTurn;
 
+        public int readyPlayers;
+
         public Variation variation = Variation.Classic;
         public Type type;
 

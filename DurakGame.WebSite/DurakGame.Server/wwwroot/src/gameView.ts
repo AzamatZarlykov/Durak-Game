@@ -14,7 +14,7 @@ enum Suit {
 }
 
 export enum State {
-    Menu, CreateGame, PlayerSetup, GameTable
+    Menu, CreateGame, PlayerSetup, WaitingRoom, GameTable
 }
 
 export interface Card {
@@ -103,9 +103,11 @@ export class GameView {
     private id: number;
     private totalPlayers: number;
     private totalPlayersPlaying: number;
+    private isCreator: boolean;
     private isPlaying: boolean;
+    private readyPlayers: number;
 
-    private userName: string = "";
+    public userName: string = "";
     private input: HTMLInputElement;
     private nTextMetrics: TextMetrics;
     private socket: WebSocket;
@@ -173,8 +175,16 @@ export class GameView {
         this.isPlaying = pl;
     }
 
+    public updateReadyPlayers(rp: number): void {
+        this.readyPlayers = rp;
+    }
+
     public setID(id: number) :void {
         this.id = id;
+    }
+
+    public setCreator(isCreator: boolean) {
+        this.isCreator = isCreator;
     }
 
     private setBoutPositions(): void {
@@ -266,13 +276,16 @@ export class GameView {
                 this.displayMenu();
                 break;
             case State.CreateGame:
-                this.LoadGameSettingMenu();
+                this.loadGameSettingMenu();
                 break;
             case State.GameTable:
                 this.displayStateOfTheGame();
                 break;
             case State.PlayerSetup:
-                this.LoadPlayerSetupPage();
+                this.loadPlayerSetupPage();
+                break;
+            case State.WaitingRoom:
+                this.loadWaitingRoomPage();
                 break;
         }
     }
@@ -291,6 +304,9 @@ export class GameView {
                     break;
                 case State.PlayerSetup:
                     this.fontSize = 45;
+                    break;
+                case State.WaitingRoom:
+                    this.fontSize = 50;
                     break;
             }
         } else {
@@ -470,14 +486,11 @@ export class GameView {
                 }
                 // for game settings (modes)
                 else if (name[0] != "i") {
-                    this.LoadGameSettingMenu();
+                    this.loadGameSettingMenu();
                 }
                 // for player setup page
                 else {
-                    if (!this.availableIcons[parseInt(name[4]) - 1]) {
-                        img.style.filter = "brightness(50%)";
-                    }
-                    this.LoadPlayerSetupPage();
+                    this.loadPlayerSetupPage();
                 }
             }
                 
@@ -487,6 +500,17 @@ export class GameView {
             this.images.set(strImg, img);
             return img;
         }
+    }
+
+    private drawX(x: number, y: number): void {
+        this.context.beginPath();
+
+        this.context.moveTo(x, y);
+        this.context.lineTo(x + this.cardWidth, y + this.cardWidth);
+
+        this.context.moveTo(x, y + this.cardWidth);
+        this.context.lineTo(x + this.cardWidth, y);
+        this.context.stroke();
     }
 
     private displaySettingImages(): void {
@@ -499,12 +523,14 @@ export class GameView {
             img = this.getImage(undefined, false, this.state == State.CreateGame ? i.toString()
                 : "icon" + i.toString());
 
-
-
             this.context.drawImage(img, pos.x, pos.y, this.state == State.CreateGame ?
                 this.cardHeight : this.cardWidth, this.state == State.CreateGame ?
                 this.cardHeight : this.cardWidth
             );
+
+            if (this.state == State.PlayerSetup && !this.availableIcons[i - 1]) {
+                this.drawX(pos.x, pos.y);
+            }
         }
     }
 
@@ -568,14 +594,14 @@ export class GameView {
         this.button.draw('black', 'black');
     }
 
-    public UpdateAvailableIcons(availableIcons: boolean[]): void {
+    public updateAvailableIcons(availableIcons: boolean[]): void {
         this.availableIcons = availableIcons;
         console.log("Available Icons are  " + this.availableIcons);
     }
     /*
         Loads the Setting Menu screen with all the game modes  
     */
-    public LoadGameSettingMenu(): void {
+    public loadGameSettingMenu(): void {
         // redraw the screen
         this.drawScreen('lavender', 'black');
 
@@ -659,7 +685,7 @@ export class GameView {
     /*
         Displays the setup page where the user can select icon and write the name 
     */
-    public LoadPlayerSetupPage(): void {
+    public loadPlayerSetupPage(): void {
         let textMetric: TextMetrics;
         // redraw the screen
         this.drawScreen('lavender', 'black');
@@ -690,6 +716,37 @@ export class GameView {
     }
 
     /*
+        function loads the waiting room 
+    */
+    public loadWaitingRoomPage(): void {
+        if (this.hasInput) {
+            this.removeInputBox();
+        }
+
+        this.drawScreen('lavender', 'black');
+
+        // display "Players: {number}" 
+        this.drawBox("Players: " + this.totalPlayersPlaying, 25 / 100 * this.canvas.width,
+            this.deckPosY, 'black', 'black', false, this.fontSize);
+
+        // display "Ready: {number}" 
+        this.drawBox("Ready: " + this.readyPlayers, 75 / 100 * this.canvas.width,
+            this.deckPosY, 'black', 'black', false, this.fontSize);
+
+        // create a Proceed button
+        if (this.isCreator && this.totalPlayersPlaying == this.readyPlayers) {
+            this.button = new Button(this, this.canvas.width / 2,
+                this.canvas.height / 2 + this.boxHeight, "Start Game", this.fontSize);
+            this.button.draw('black', 'black');
+        }
+    }
+
+    public switchPages(state: State): void {
+        this.state = state;
+        this.loadWaitingRoomPage();
+    }
+
+    /*
         Resets the user name, the icon selected and removes already created input element 
     */
     private resetSetupPageSettings(): void {
@@ -713,6 +770,10 @@ export class GameView {
 
         else if (this.isButtonSelected()) {
             if (this.state == State.PlayerSetup) {
+                if (this.userName.length == 0) {
+                    alert("Write the user name");
+                    return;
+                }
                 // send info about icon and name selection
                 strJSON = JSON.stringify({
                     From: this.id,
@@ -738,8 +799,10 @@ export class GameView {
     private anyIconPressed(): boolean {
         for (let i: number = 0; i < 6; i++) {
             if (this.isSettingPressed(this.iconsPositions.get(i + 1), this.cardWidth)) {
-                this.selectedIcon = (i + 1);
-                return true;
+                if (this.availableIcons[i]) {
+                    this.selectedIcon = (i + 1);
+                    return true;
+                }
             }
         }
         return false;
@@ -766,7 +829,7 @@ export class GameView {
             );
         } else if (this.gameInProgress && this.isPlaying) {
             this.changeStates(State.PlayerSetup);
-            this.LoadPlayerSetupPage();
+            this.loadPlayerSetupPage();
         } else if (!this.isPlaying) {
             this.displayMessage("CannotJoin", true, 'red', 'red',
                 this.canvas.width / 2, this.deckPosY +
@@ -843,6 +906,16 @@ export class GameView {
         this.socket.send(strJSON);
     }
 
+    private handleWaitingRoomInstructions(): void {
+        let strJSON: string;
+        if (this.isButtonSelected()) {
+            strJSON = JSON.stringify({
+                Message: "StartGame"
+            });
+            this.socket.send(strJSON);
+        }
+    }
+
     /*
         Function that tells which card the attacking player has selected to attack 
     */
@@ -855,7 +928,7 @@ export class GameView {
                 this.handleJoinButtonInstructions();
             }
             else if (this.isCreatePressed()) {
-                this.handleCreateButtonInstructions()
+                this.handleCreateButtonInstructions();
             }
             else {
                 console.log("SOMETHING ELSE WAS PRESSED");
@@ -865,16 +938,20 @@ export class GameView {
             this.checkKeyButtonPress();
 
             if (this.anyModePressed()) {
-                this.LoadGameSettingMenu();
+                this.loadGameSettingMenu();
             }
         }
         else if (this.state == State.PlayerSetup) {
+            this.userName = this.input.value;
+
             this.checkKeyButtonPress();
 
             if (this.anyIconPressed()) {
-                this.userName = this.input.value;
-                this.LoadPlayerSetupPage();
+                this.loadPlayerSetupPage();
             }
+        }
+        else if (this.state == State.WaitingRoom) {
+            this.handleWaitingRoomInstructions();
         }
     }
 
@@ -1259,7 +1336,9 @@ export class GameView {
         Menu section has Join and Create Buttons
     */
     public displayMenu(): void {
-
+        if (this.hasInput) {
+            this.removeInputBox();
+        }
         this.drawScreen('Lavender', 'black');
 
         this.context.save();
@@ -1317,6 +1396,9 @@ export class GameView {
                 break;
             case "CannotJoin":
                 textStr = "Cannot Join. Game has already started";
+                break;
+            case "UserNameTaken":
+                textStr = "The user name is already taken. Try another one"
                 break;
             default:
                 console.log("Unknown type of the string (Check the error types)");

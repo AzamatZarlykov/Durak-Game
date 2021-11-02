@@ -23,6 +23,7 @@ let TakeCardsCommand: string = "TakeCards";
 let TookCardsCommand: string = "TookCards";
 let UpdateAvailableIconsCommand: string = "UpdateAvailableIcons";
 let UpdatePlayerSetupCommand: string = "UpdatePlayerSetup";
+let StartGameCommand: string = "StartGame";
 
 let view: GameView;
 
@@ -38,6 +39,7 @@ let allCommands: string[] = [
     TookCardsCommand,
     UpdateAvailableIconsCommand,
     UpdatePlayerSetupCommand,
+    StartGameCommand
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -97,11 +99,12 @@ socket.onmessage = function (event): void {
 
                 view.setID(id);
                 view.setTotalPlayers(nPlayers);
+                view.setCreator(obj.isCreator);
                 view.setTotalPlayersPlaying(nPlayersPlaying);
                 view.gameInProgress = true;
 
                 if (obj.isCreator) {
-                    view.LoadGameSettingMenu();
+                    view.loadGameSettingMenu();
                 } else {
                     view.displayMenu();
                 }
@@ -117,17 +120,21 @@ socket.onmessage = function (event): void {
                 view.updatePlayingStatus(obj.isPlaying);
                 break;
             case (UpdateAvailableIconsCommand):
-                view.UpdateAvailableIcons(obj.availableIcons);
+                view.updateAvailableIcons(obj.availableIcons);
+                view.updateReadyPlayers(obj.readyPlayers);
                 if (view.state == State.PlayerSetup) {
-                    view.LoadPlayerSetupPage();
+                    view.loadPlayerSetupPage();
+                } else if (view.state == State.WaitingRoom) {
+                    view.loadWaitingRoomPage();
                 }
                 break;
             case (UpdatePlayerSetupCommand):
                 if (!obj.playerSetupOK) {
-                    view.LoadPlayerSetupPage();
-                    alert("The user name is already taken. Try another one");
+                    view.loadPlayerSetupPage();
+                    alert("The user name is already taken. Try another one.");
                 } else {
                     // Move to the waiting room
+                    view.switchPages(State.WaitingRoom);
                 }
                 break;
             case (IllegalCommand):
@@ -143,6 +150,10 @@ socket.onmessage = function (event): void {
                 break;
             case (TookCardsCommand):
                 view.displayMessage("tookCards", false, 'white', 'white');
+                break;
+            case (StartGameCommand):
+                view.updateGameView(obj.gameView);
+                view.displayStateOfTheGame();
                 break;
         }
     } else {
