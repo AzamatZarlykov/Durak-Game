@@ -115,7 +115,8 @@ namespace DurakGame.Library.Game
         public bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
 
         protected List<Player> players = new List<Player>();
-        private List<string> usernames = new List<string>();
+        private string[] usernames;
+        private int[] icons;
 
         public int allAttackingPlayersIndex;
         private List<int> allAttackingPlayers = new List<int>();
@@ -140,6 +141,7 @@ namespace DurakGame.Library.Game
 
             // add players
             AddPlayers(totalPlayers);
+            
 
             // Each player draws 6 cards
             DistributeCardsToPlayers();
@@ -156,15 +158,42 @@ namespace DurakGame.Library.Game
 
         }
 
+        public string[] GetUserNames() => usernames;
+        public int[] GetIcons() => icons;
+        
+        public void InstantiateGameSession(int totalPlayers)
+        {
+            gameInProgress = true;
+            usernames = new string[totalPlayers];
+            icons = new int[totalPlayers];
+        }
         public bool IsUserNameAvailable(string name)
         {
-            return usernames.IndexOf(name) == -1;
+            return Array.IndexOf(usernames, name) == -1;
         }
 
-        public void AddUserName(string name)
+        public void AssignUserName(string name, int index)
         {
-            usernames.Add(name);
+            usernames[index] = name;
+            Console.Write("SERVER: USERNAMES => ");
+            foreach (var v in usernames)
+            {
+                Console.Write(v + " ");
+            }
+            Console.WriteLine();
         }
+
+        public void AssignIcon(int number, int index)
+        {
+            icons[index] = number;
+            Console.Write("SERVER: ICONS => ");
+            foreach(var v in icons)
+            {
+                Console.Write(v + " ");
+            }
+            Console.WriteLine();
+        }
+
         // Sets up the variation of Durak: Classic or Passport 
         public void SetupGameVariation(int variationIndex)
         {

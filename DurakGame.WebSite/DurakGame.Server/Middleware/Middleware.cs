@@ -202,10 +202,12 @@ namespace DurakGame.Server.Middleware
         {
             command = "JoinGame";
 
-            game.gameInProgress = true;
 
             int sizeOfPlayers;
             int totalPlayers = manager.GetTotalPlayers();
+
+            game.InstantiateGameSession(totalPlayers);
+
 
             if (totalPlayers > 6)
             {
@@ -259,7 +261,8 @@ namespace DurakGame.Server.Middleware
             } 
             else
             {
-                game.AddUserName(route.Name);
+                game.AssignUserName(route.Name, route.From);
+                game.AssignIcon(route.Icon, route.From);
                 // the icon on pos route.Icon is not available
                 game.GetAvailableIcons()[route.Icon] = false;
                 game.readyPlayers++;
@@ -282,8 +285,10 @@ namespace DurakGame.Server.Middleware
 
             game.StartGame(totalPlayers);
             List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
-
             GameView gameView;
+
+            string[] playerUserNames = game.GetUserNames();
+            int[] takenIcons = game.GetIcons();
 
             for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
@@ -291,7 +296,9 @@ namespace DurakGame.Server.Middleware
                 await SendJSON(playersPlaying[playerID], new
                 {
                     command,
-                    gameView
+                    gameView,
+                    playerUserNames,
+                    takenIcons
                 });
             }
         }

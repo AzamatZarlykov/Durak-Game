@@ -153,7 +153,9 @@ socket.onmessage = function (event): void {
                 break;
             case (StartGameCommand):
                 view.updateGameView(obj.gameView);
-                view.displayStateOfTheGame();
+                view.setUserNames(obj.playerUserNames);
+                view.setTakenIcons(obj.takenIcons);
+                view.switchPages(State.GameTable);
                 break;
         }
     } else {

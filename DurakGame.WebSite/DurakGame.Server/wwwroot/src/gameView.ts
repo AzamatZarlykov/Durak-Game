@@ -125,8 +125,10 @@ export class GameView {
 
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
-    private selectedIcon: number = 1;
+    private selectedIcon: number;
     private availableIcons: boolean[] = [true, true, true, true, true, true];
+    private playerUserNames: string[];
+    private takenIcons: number[];
 
     public positionsAroundTable: { x: number, y: number, tWidth: number; }[];
     private positionsAroundTableDuplicate: { x: number, y: number, tWidth: number; }[];
@@ -159,6 +161,14 @@ export class GameView {
             this.reportWindowResize(this.canvas, this.context));
     }
 
+    private getAvailableIcon(): number {
+        for (let i: number = 0; i < this.availableIcons.length; i++) {
+            if (this.availableIcons[i]) {
+                return i;
+            }
+        }
+    }
+
     public setTotalPlayers(players: number): void {
         this.totalPlayers = players;
     }
@@ -177,6 +187,20 @@ export class GameView {
 
     public updateReadyPlayers(rp: number): void {
         this.readyPlayers = rp;
+    }
+
+    public updateAvailableIcons(availableIcons: boolean[]): void {
+        this.availableIcons = availableIcons;
+        this.selectedIcon = this.getAvailableIcon();
+        console.log(this.availableIcons);
+    }
+
+    public setUserNames(names: string[]): void{
+        this.playerUserNames = names;
+    }
+
+    public setTakenIcons(icons: number[]): void {
+        this.takenIcons = icons;
     }
 
     public setID(id: number) :void {
@@ -262,7 +286,7 @@ export class GameView {
             (this.canvas.width * 10 / 100 - this.cardWidth)) / 2;
 
         for (let i: number = 0; i < 6; i++) {
-            this.iconsPositions.set(i + 1, {
+            this.iconsPositions.set(i, {
                 x: startPos + (i * 10) / 100 * this.canvas.width,
                 y: this.canvas.height / 2 + (10 / 100) * this.canvas.height
             });
@@ -346,13 +370,15 @@ export class GameView {
         this.cardLeftX = this.canvas.width / 7;
         this.cardRightX = this.canvas.width / 7 * 6;
 
-        this.cardUpperY = this.canvas.height / 40;
-        this.cardLowerY = this.canvas.height - this.cardHeight - this.cardUpperY - this.boxHeight;
+        this.cardUpperY = 5 / 100 * this.canvas.height;
+        this.cardLowerY = this.canvas.height - 25 / 100 * this.canvas.height;
 
         this.deckPosX = this.canvas.width / 10 * 0.5;
         this.deckPosY = this.canvas.height / 2 - 90;
 
         this.offset = this.cardHeight + 30;
+
+        this.selectedIcon = this.getAvailableIcon();
 
         this.positionsAroundTable = [
             { x: this.cardMiddleX, y: this.cardLowerY, tWidth: 0 },
@@ -517,10 +543,10 @@ export class GameView {
         let img: HTMLImageElement;
         let pos: { x: number, y: number; };
 
-        for (let i: number = 1; i <= 6; i++) {
-            pos = this.state == State.CreateGame ? this.modesPositions.get(i) :
+        for (let i: number = 0; i < 6; i++) {
+            pos = this.state == State.CreateGame ? this.modesPositions.get(i+1) :
                 this.iconsPositions.get(i);
-            img = this.getImage(undefined, false, this.state == State.CreateGame ? i.toString()
+            img = this.getImage(undefined, false, this.state == State.CreateGame ? (i+1).toString()
                 : "icon" + i.toString());
 
             this.context.drawImage(img, pos.x, pos.y, this.state == State.CreateGame ?
@@ -528,7 +554,7 @@ export class GameView {
                 this.cardHeight : this.cardWidth
             );
 
-            if (this.state == State.PlayerSetup && !this.availableIcons[i - 1]) {
+            if (this.state == State.PlayerSetup && !this.availableIcons[i]) {
                 this.drawX(pos.x, pos.y);
             }
         }
@@ -594,10 +620,7 @@ export class GameView {
         this.button.draw('black', 'black');
     }
 
-    public updateAvailableIcons(availableIcons: boolean[]): void {
-        this.availableIcons = availableIcons;
-        console.log("Available Icons are  " + this.availableIcons);
-    }
+
     /*
         Loads the Setting Menu screen with all the game modes  
     */
@@ -743,7 +766,15 @@ export class GameView {
 
     public switchPages(state: State): void {
         this.state = state;
-        this.loadWaitingRoomPage();
+        switch (this.state) {
+            case State.WaitingRoom:
+                this.loadWaitingRoomPage();
+                break;
+            case State.GameTable:
+                this.displayStateOfTheGame();
+                break;
+        }
+        this.setFontSize();
     }
 
     /*
@@ -752,7 +783,7 @@ export class GameView {
     private resetSetupPageSettings(): void {
         this.removeInputBox();
         this.userName = "";
-        this.selectedIcon = 1;
+        this.selectedIcon = this.getAvailableIcon();
     }
 
     /*
@@ -779,7 +810,7 @@ export class GameView {
                     From: this.id,
                     Message: "PlayerSetup",
                     Name: this.userName,
-                    Icon: this.selectedIcon - 1
+                    Icon: this.selectedIcon
                 });
                 this.socket.send(strJSON);
             }
@@ -798,9 +829,9 @@ export class GameView {
 
     private anyIconPressed(): boolean {
         for (let i: number = 0; i < 6; i++) {
-            if (this.isSettingPressed(this.iconsPositions.get(i + 1), this.cardWidth)) {
+            if (this.isSettingPressed(this.iconsPositions.get(i), this.cardWidth)) {
                 if (this.availableIcons[i]) {
-                    this.selectedIcon = (i + 1);
+                    this.selectedIcon = i;
                     return true;
                 }
             }
@@ -960,13 +991,13 @@ export class GameView {
         toAttacking: number, toDefending: number): void {
 
         for (let i = from; i < toAttacking; i++) {
-            let img: HTMLImageElement = this.getImage(this.gameView.attackingCards[i]);
+            let img: HTMLImageElement = this.getImage(this.gameView.attackingCards[i], true);
 
             this.context.drawImage(img, pos[i % 4].x, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
         }
 
         for (let i = from; i < toDefending; i++) {
-            let img: HTMLImageElement = this.getImage(this.gameView.defendingCards[i]);
+            let img: HTMLImageElement = this.getImage(this.gameView.defendingCards[i], true);
 
             this.context.drawImage(img, pos[i % 4].x + 20, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
         }
@@ -1008,7 +1039,7 @@ export class GameView {
     public displayDiscardedHeap(): void {
         for (let i = 0; i < this.gameView.discardHeapSize; i++) {
             let coordinates: { angle: number, y: number; };
-            let img: HTMLImageElement = this.getImage();
+            let img: HTMLImageElement = this.getImage(undefined, true);
 
             this.context.save();
             this.context.translate(this.cardRightX + this.cardWidth,
@@ -1042,7 +1073,7 @@ export class GameView {
         Dispaly the Suit of the Trump card when there is no deck  
     */
     public displayTrumpSuit(): void {
-        let img: HTMLImageElement = this.getImage(this.gameView.trumpCard);
+        let img: HTMLImageElement = this.getImage(this.gameView.trumpCard, true);
         this.context.drawImage(img, this.cardLeftX, this.deckPosY,
             this.cardWidth, this.cardHeight);
     }
@@ -1052,7 +1083,7 @@ export class GameView {
         perpendicular to the rest of the face-down deck 
     */
     public displayDeck(): void {
-        let img: HTMLImageElement = this.getImage(this.gameView.trumpCard);
+        let img: HTMLImageElement = this.getImage(this.gameView.trumpCard, true);
         this.context.save();
 
         this.context.translate(this.deckPosX + this.cardWidth + this.cardWidth / 2,
@@ -1067,7 +1098,7 @@ export class GameView {
 
         // draw the rest of the deck 
         for (let i = 0; i < this.gameView.deckSize - 1; i++) {
-            img = this.getImage();
+            img = this.getImage(undefined, true);
             this.context.drawImage(
                 img, this.deckPosX + i + this.cardWidth * 1 / 150, this.deckPosY,
                 this.cardWidth, this.cardHeight
@@ -1101,7 +1132,7 @@ export class GameView {
     private displayMainPlayersHand(hand: Card[], x: number, y: number, tWidth: number) {
         if (hand.length != 0) {
             for (let i = 0; i < hand.length; i++) {
-                let img: HTMLImageElement = this.getImage(hand[i]);
+                let img: HTMLImageElement = this.getImage(hand[i], true);
                 this.context.drawImage(
                     img, x + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
@@ -1118,7 +1149,7 @@ export class GameView {
     private displayFaceDownCards(playerView: PlayerView, x: number, y: number, tWidth: number) {
         if (playerView.numberOfCards != 0) {
             for (let i = 0; i < playerView.numberOfCards; i++) {
-                let img: HTMLImageElement = this.getImage();
+                let img: HTMLImageElement = this.getImage(undefined, true);
                 this.context.drawImage(
                     img, x + i * this.cardCorner, y, this.cardWidth,
                     this.cardHeight
@@ -1178,6 +1209,7 @@ export class GameView {
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
+        let img: HTMLImageElement;
         let pos: { x: number, y: number, tWidth: number; } =
             this.positionsAroundTable[position[index] - 1];
 
@@ -1191,15 +1223,15 @@ export class GameView {
 
         // Add an arrow indicating whose turn it is to play
         if (currentID == this.gameView.playerTurn) {
-            this.drawArrow(pos.x, pos.y + this.offset, pos.x + pos.tWidth / 4, pos.y + this.offset,
-                'white');
+            let arrowPos = this.positionsAroundTableDuplicate[position[index] - 1];
+            this.drawArrow(arrowPos.x - 130, pos.y + this.offset, arrowPos.x - 70, pos.y +
+                this.offset, 'white');
         }
 
-        this.drawBox("Player " + currentID, pos.x + pos.tWidth / 2,
-            pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
-
-
         if (this.id == currentID) {
+            this.drawBox(this.userName, pos.x + pos.tWidth / 2,
+                pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
+
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
 
             if (this.isAttacking()) {
@@ -1229,15 +1261,33 @@ export class GameView {
 
                 this.displayPlayerOptions("Defend", "Take", pos);
             }
+
+            // draw the icon
+            console.log("SELECTED ICON " + this.selectedIcon);
+            img = this.getImage(undefined, false, "icon" + this.selectedIcon);
+            this.context.drawImage(img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
+                pos.y + this.cardHeight / 2 + 7, 75 / this.cardWidth * 100,
+                75 / this.cardWidth * 100
+            );
         } else {
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
+
+            img = this.getImage(undefined, false, "icon" + currentID);
+            this.context.drawImage(img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
+                pos.y + this.cardHeight / 2 + 7, 75 / this.cardWidth * 100,
+                75 / this.cardWidth * 100
+            );
+
+            
+            this.drawBox(this.playerUserNames[currentID], pos.x + pos.tWidth / 2,
+                pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
+            
         }
 
         if (this.IsEndGame()) {
-            this.drawBox("Durak is " + this.gameView.durak, innerWidth / 2 - 50,
+            this.drawBox("Durak is " + this.gameView.durak, this.canvas.width / 2,
                 this.deckPosY, 'white', 'white', true, this.fontSize);
         }
-
     }
 
     /*
