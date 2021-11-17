@@ -101,12 +101,6 @@ namespace DurakGame.Server.Middleware
                     break;
             }
 
-            // the game is over and durak is found.
-            if (game.GetAttackingPlayer() == game.GetDefendingPlayer())
-            {
-                game.durak = game.GetDefendingPlayer();
-            }
-
             // Distribute updated GameView to players
             for (int i = 0; i < game.GetPlayers().Count; i++)
             {

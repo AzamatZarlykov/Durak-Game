@@ -160,6 +160,11 @@ namespace DurakGame.Library.Game
 
         public string[] GetUserNames() => usernames;
         public int[] GetIcons() => icons;
+
+        private bool IsGameOver()
+        {
+            return GetAttackingPlayer() == GetDefendingPlayer();
+        }
         
         public void InstantiateGameSession(int totalPlayers)
         {
@@ -468,11 +473,29 @@ namespace DurakGame.Library.Game
             attackerTurn = true;
         }
 
+        private void CheckEndGame()
+        {
+            if (IsGameOver())
+            {
+                durak = GetDefendingPlayer();
+            }
+        }
+
         // controls flow of the game when the attacking player presses DONE. 
-        public void AttackerDone() { ChangeBattle(false); }
+        public void AttackerDone() 
+        { 
+            ChangeBattle(false);
+
+            CheckEndGame();
+        }
 
         // controls the flow of the game when the defending player takes the cards
-        public void DefenderTake() { ChangeBattle(true); }
+        public void DefenderTake() 
+        { 
+            ChangeBattle(true);
+
+            CheckEndGame();
+        }
 
         public MoveResult DefenderMove(int cardIndex)
         {

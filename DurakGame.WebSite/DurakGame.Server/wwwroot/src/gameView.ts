@@ -195,7 +195,7 @@ export class GameView {
         console.log(this.availableIcons);
     }
 
-    public setUserNames(names: string[]): void{
+    public setUserNames(names: string[]): void {
         this.playerUserNames = names;
     }
 
@@ -203,7 +203,7 @@ export class GameView {
         this.takenIcons = icons;
     }
 
-    public setID(id: number) :void {
+    public setID(id: number): void {
         this.id = id;
     }
 
@@ -518,8 +518,8 @@ export class GameView {
                 else {
                     this.loadPlayerSetupPage();
                 }
-            }
-                
+            };
+
             img.src = (isCard ? this.cardDir : (name[0] != "i" ? this.modesDir : this.iconsDir))
                 .concat(strImg.concat(".png"));
 
@@ -544,9 +544,9 @@ export class GameView {
         let pos: { x: number, y: number; };
 
         for (let i: number = 0; i < 6; i++) {
-            pos = this.state == State.CreateGame ? this.modesPositions.get(i+1) :
+            pos = this.state == State.CreateGame ? this.modesPositions.get(i + 1) :
                 this.iconsPositions.get(i);
-            img = this.getImage(undefined, false, this.state == State.CreateGame ? (i+1).toString()
+            img = this.getImage(undefined, false, this.state == State.CreateGame ? (i + 1).toString()
                 : "icon" + i.toString());
 
             this.context.drawImage(img, pos.x, pos.y, this.state == State.CreateGame ?
@@ -781,6 +781,7 @@ export class GameView {
         Resets the user name, the icon selected and removes already created input element 
     */
     private resetSetupPageSettings(): void {
+        console.log("RESETTING");
         this.removeInputBox();
         this.userName = "";
         this.selectedIcon = this.getAvailableIcon();
@@ -831,6 +832,7 @@ export class GameView {
         for (let i: number = 0; i < 6; i++) {
             if (this.isSettingPressed(this.iconsPositions.get(i), this.cardWidth)) {
                 if (this.availableIcons[i]) {
+                    console.log("ID: " + this.id + " Selected this icon: " + i);
                     this.selectedIcon = i;
                     return true;
                 }
@@ -1204,22 +1206,65 @@ export class GameView {
         this.button.draw('white', 'white');
     }
 
+    private GetBoxStyle(currentID: number): string {
+        if (currentID == this.gameView.attackingPlayer) {
+            return 'lime';
+        } else if (currentID == this.gameView.defendingPlayer) {
+            return 'red';
+        }
+        return 'black';
+    }
+
+    private manageAttackingPlayerGameSetup(pos: { x: number, y: number, tWidth: number; }): void {
+        // display "Attack" message if no cards were played 
+        if (this.gameView.attackingCards.length == 0) {
+            this.drawBox("Attack", pos.x + pos.tWidth + this.cardWidth,
+                pos.y + this.offset, 'white', 'white', false, this.fontSize);
+        }
+        // display "Done" button on the attacking player if attack successfully defeated or
+        // if defending player took cards 
+        else if (this.gameView.attackingCards.length == this.gameView.defendingCards.length
+            || this.gameView.takingCards) {
+            // display message "Add Cards" if the player took cards
+            if (this.gameView.takingCards) {
+                this.displayPlayerOptions("Add Cards", "Done", pos);
+            }
+            // display message "Continue Attack" if the player defended successfully
+            else {
+                this.displayPlayerOptions("Continue Attack", "Done", pos);
+            }
+        }
+    }
+
+    private checkEndGame(): void {
+        if (this.IsEndGame()) {
+            this.drawBox("Durak is " + this.playerUserNames[this.gameView.durak],
+                this.canvas.width / 2, this.deckPosY, 'white', 'white', true, this.fontSize);
+        }
+    }
+
+    private displayPlayerIconInGame(indexOfIcon: number,
+        pos: { x: number, y: number, tWidth: number; }): void {
+
+        let img: HTMLImageElement;
+
+        img = this.getImage(undefined, false, "icon" + this.takenIcons[indexOfIcon]);
+
+        this.context.drawImage(img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
+            pos.y + this.cardHeight / 2 + 7, 75 / this.cardWidth * 100,
+            75 / this.cardWidth * 100
+        );
+    }
+
     /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
     */
     public displayPlayersHelper(currentID: number, index: number, position: number[]) {
-        let img: HTMLImageElement;
         let pos: { x: number, y: number, tWidth: number; } =
             this.positionsAroundTable[position[index] - 1];
 
-        if (currentID == this.gameView.attackingPlayer) {
-            this.context.strokeStyle = 'lime';
-        } else if (currentID == this.gameView.defendingPlayer) {
-            this.context.strokeStyle = 'red';
-        } else {
-            this.context.strokeStyle = 'black';
-        }
+        this.context.strokeStyle = this.GetBoxStyle(currentID);
 
         // Add an arrow indicating whose turn it is to play
         if (currentID == this.gameView.playerTurn) {
@@ -1235,24 +1280,7 @@ export class GameView {
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
 
             if (this.isAttacking()) {
-                // display "Attack" message if no cards were played 
-                if (this.gameView.attackingCards.length == 0) {
-                    this.drawBox("Attack", pos.x + pos.tWidth + this.cardWidth,
-                        pos.y + this.offset, 'white', 'white', false, this.fontSize);
-                }
-                // display "Done" button on the attacking player if attack successfully defeated or
-                // if defending player took cards 
-                else if (this.gameView.attackingCards.length == this.gameView.defendingCards.length
-                    || this.gameView.takingCards) {
-                    // display message "Add Cards" if the player took cards
-                    if (this.gameView.takingCards) {
-                        this.displayPlayerOptions("Add Cards", "Done", pos);
-                    }
-                    // display message "Continue Attack" if the player defended successfully
-                    else {
-                        this.displayPlayerOptions("Continue Attack", "Done", pos);
-                    }
-                }
+                this.manageAttackingPlayerGameSetup(pos);
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
@@ -1262,31 +1290,16 @@ export class GameView {
                 this.displayPlayerOptions("Defend", "Take", pos);
             }
 
-            // draw the icon
-            console.log("SELECTED ICON " + this.selectedIcon);
-            img = this.getImage(undefined, false, "icon" + this.selectedIcon);
-            this.context.drawImage(img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
-                pos.y + this.cardHeight / 2 + 7, 75 / this.cardWidth * 100,
-                75 / this.cardWidth * 100
-            );
+            this.displayPlayerIconInGame(this.id, pos);
+
+            this.checkEndGame();
         } else {
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
 
-            img = this.getImage(undefined, false, "icon" + currentID);
-            this.context.drawImage(img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
-                pos.y + this.cardHeight / 2 + 7, 75 / this.cardWidth * 100,
-                75 / this.cardWidth * 100
-            );
+            this.displayPlayerIconInGame(currentID, pos);
 
-            
             this.drawBox(this.playerUserNames[currentID], pos.x + pos.tWidth / 2,
                 pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
-            
-        }
-
-        if (this.IsEndGame()) {
-            this.drawBox("Durak is " + this.gameView.durak, this.canvas.width / 2,
-                this.deckPosY, 'white', 'white', true, this.fontSize);
         }
     }
 
@@ -1406,54 +1419,46 @@ export class GameView {
         this.context.restore();
     }
 
+    private getSuitableErrorMessage(type: string): string {
+        switch (type) {
+            case "illegal":
+                return "Illegal Card Played";
+            case "wait":
+                return this.isAttacking() ? "Wait For The Defending Player" :
+                    "Wait For The Attacking Player";
+            case "tookCards":
+                return "Cannot Defend. You Decided To Take The Cards";
+            case "takeCards":
+                return "Player " + this.gameView.defendingPlayer + " Takes The Cards";
+            case "GameIsBeingCreated":
+                return "The game is being created";
+            case "LackOfPlayers":
+                return "Not enough players to start the game";
+            case "GameNotCreated":
+                return "Game is not created yet";
+            case "GameInProcess":
+                return "Game is being played by other players";
+            case "CannotJoin":
+                return "Cannot Join. Game has already started";
+            case "UserNameTaken":
+                return "The user name is already taken. Try another one";
+            default:
+                console.log("Unknown type of the string (Check the error types)");
+                break;
+        }
+    }
+
     /*
         Display the error if Attack/Defense is illegal
     */
     public displayMessage(type: string, settings: boolean, fillS: string, strokeS: string,
-        x?: number, y?: number ): void {
+        x?: number, y?: number): void {
         this.context.save();
 
         this.context.fillStyle = fillS;
         this.context.strokeStyle = strokeS;
 
-        let textStr: string;
-
-        switch (type) {
-            case "illegal":
-                textStr = "Illegal Card Played";
-                break;
-            case "wait":
-                textStr = this.isAttacking() ? "Wait For The Defending Player" :
-                    "Wait For The Attacking Player";
-                break;
-            case "tookCards":
-                textStr = "Cannot Defend. You Decided To Take The Cards";
-                break;
-            case "takeCards":
-                textStr = "Player " + this.gameView.defendingPlayer + " Takes The Cards";
-                break;
-            case "GameIsBeingCreated":
-                textStr = "The game is being created";
-                break;
-            case "LackOfPlayers":
-                textStr = "Not enough players to start the game";
-                break;
-            case "GameNotCreated":
-                textStr = "Game is not created yet";
-                break;
-            case "GameInProcess":
-                textStr = "Game is being played by other players";
-                break;
-            case "CannotJoin":
-                textStr = "Cannot Join. Game has already started";
-                break;
-            case "UserNameTaken":
-                textStr = "The user name is already taken. Try another one"
-                break;
-            default:
-                console.log("Unknown type of the string (Check the error types)");
-                break;
-        }
+        let textStr: string = this.getSuitableErrorMessage(type);
 
         let xP: number;
         let yP: number;
@@ -1462,8 +1467,8 @@ export class GameView {
             xP = x;
             yP = y;
         } else {
-            xP = this.positionsAroundTable[0].x + this.positionsAroundTable[0].tWidth / 2
-            yP = this.deckPosY - 2 * this.textUpperMargin
+            xP = this.positionsAroundTable[0].x + this.positionsAroundTable[0].tWidth / 2;
+            yP = this.deckPosY - 2 * this.textUpperMargin;
         }
 
         this.drawBox(textStr, xP, yP, fillS, strokeS, true, this.fontSize);
@@ -1483,8 +1488,8 @@ export class GameView {
 
 
 
-
-
-// When available icons are updated, make the icons darker (it will indicate that selecting these 
-// icons is not possible). Also, in mouse click when the icons selected put the expression that 
-// will make sure that not available icons wont be selected
+// Bug: lets say there are 4 players. Assume player 2 is out of the game(winner)
+// when player 1 attacks (originally should attack 2 but 2 is out hence defender is 3)
+// if player 3 decides to take the card the turn to be attacking player falls to player 3 again
+// (however should be player 4). This problem, I assume happens because player 2 is out of the game
+// and when I change the attacking/defending players I dont take it into consideration
