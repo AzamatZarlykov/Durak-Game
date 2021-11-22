@@ -1129,6 +1129,14 @@ export class GameView {
     }
 
     /*
+        Displays the player who lost 
+    */
+    private displayDurakMessage(): void {
+        this.drawBox("Durak is " + this.playerUserNames[this.gameView.durak],
+            this.canvas.width / 2, this.deckPosY, 'white', 'white', true, this.fontSize);
+    }
+
+    /*
         displays the cards from the gameView object 
     */
     private displayMainPlayersHand(hand: Card[], x: number, y: number, tWidth: number) {
@@ -1148,7 +1156,8 @@ export class GameView {
     /*
         Displays the face down cards of opponents
     */
-    private displayFaceDownCards(playerView: PlayerView, x: number, y: number, tWidth: number) {
+    private displayFaceDownCards(playerView: PlayerView, currentID: number, x: number,
+        y: number, tWidth: number) {
         if (playerView.numberOfCards != 0) {
             for (let i = 0; i < playerView.numberOfCards; i++) {
                 let img: HTMLImageElement = this.getImage(undefined, true);
@@ -1238,8 +1247,7 @@ export class GameView {
 
     private checkEndGame(): void {
         if (this.IsEndGame()) {
-            this.drawBox("Durak is " + this.playerUserNames[this.gameView.durak],
-                this.canvas.width / 2, this.deckPosY, 'white', 'white', true, this.fontSize);
+            this.displayDurakMessage();
         }
     }
 
@@ -1294,7 +1302,8 @@ export class GameView {
 
             this.checkEndGame();
         } else {
-            this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x, pos.y, pos.tWidth);
+            this.displayFaceDownCards(this.gameView.playersView[currentID], currentID, pos.x,
+                pos.y, pos.tWidth);
 
             this.displayPlayerIconInGame(currentID, pos);
 
@@ -1487,9 +1496,9 @@ export class GameView {
 }
 
 
+// Do not display "Continue Attack" when the defending player is already out of hands
+// Just display "Done"
 
-// Bug: lets say there are 4 players. Assume player 2 is out of the game(winner)
-// when player 1 attacks (originally should attack 2 but 2 is out hence defender is 3)
-// if player 3 decides to take the card the turn to be attacking player falls to player 3 again
-// (however should be player 4). This problem, I assume happens because player 2 is out of the game
-// and when I change the attacking/defending players I dont take it into consideration
+// implement option at the end of the game: 
+
+//Handle when players leave the game

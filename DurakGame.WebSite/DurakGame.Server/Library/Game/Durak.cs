@@ -88,15 +88,15 @@ namespace DurakGame.Library.Game
 
     public class Durak
     {
-        protected Bout bout;
-        protected Deck deck;
-        protected Card trumpCard;
+        private Bout bout;
+        private Deck deck;
+        private Card trumpCard;
 
         public bool isBoutChanged;
         public bool taking;
 
-        protected int defendingPlayer;
-        protected int attackingPlayer;
+        private int defendingPlayer;
+        private int attackingPlayer;
 
         public bool attackerTurn;
 
@@ -114,7 +114,7 @@ namespace DurakGame.Library.Game
 
         public bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
 
-        protected List<Player> players = new List<Player>();
+        private List<Player> players = new List<Player>();
         private string[] usernames;
         private int[] icons;
 
@@ -136,6 +136,7 @@ namespace DurakGame.Library.Game
         {
             deck = new Deck();
             deck.Shuffle();
+
             // the last card is the trump card(the one at the bottom face up)
             trumpCard = deck.GetCard(0);
 
@@ -235,7 +236,7 @@ namespace DurakGame.Library.Game
         {
             foreach (Player p in players)
             {
-                p.AddCardsToHand(deck.DrawUntilSix(0));
+                p.AddCardsToHand(deck.DrawUntilSix(4));
             }
         }
 
@@ -327,7 +328,8 @@ namespace DurakGame.Library.Game
         {
             attackingPlayer = (attackingPlayer + increment) % GetSizeOfPlayers();
 
-            while (players[attackingPlayer].GetPlayersHand().Count == 0)
+            while (players[attackingPlayer].GetPlayersHand().Count == 0 || 
+                  ((defendingPlayer == attackingPlayer) && taking))
             {
                 attackingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
             }
@@ -402,10 +404,10 @@ namespace DurakGame.Library.Game
 
             if (taking)
             {
-                taking = false;
                 // add all the cards from the bout to the defending player
                 players[defendingPlayer].AddCardsToHand(bout.GetEverything());
                 GetNextPlayingPlayer(2);
+                taking = false;
             }
             else
             {
