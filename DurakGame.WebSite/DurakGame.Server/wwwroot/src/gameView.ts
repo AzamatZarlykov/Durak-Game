@@ -34,6 +34,7 @@ interface GameViewInfo {
     discardHeapChanged: boolean;
 
     durak: number;
+    gameOver: boolean;
 
     hand: Card[];
 
@@ -1171,10 +1172,6 @@ export class GameView {
         }
     }
 
-    private IsEndGame(): boolean {
-        return this.gameView.attackingPlayer == this.gameView.defendingPlayer;
-    }
-
     /*
         Draws an arrow to indicate which players turn it is to play a card 
         source: https://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
@@ -1246,7 +1243,7 @@ export class GameView {
     }
 
     private checkEndGame(): void {
-        if (this.IsEndGame()) {
+        if (this.gameView.gameOver) {
             this.displayDurakMessage();
         }
     }
@@ -1495,10 +1492,16 @@ export class GameView {
     }
 }
 
+// Passport
 
 // Do not display "Continue Attack" when the defending player is already out of hands
 // Just display "Done"
 
-// implement option at the end of the game: 
+// implement option at the end of the game: "Back To Lobby"
 
-//Handle when players leave the game
+// When there are two players, if player A attacks its last card and player B defends with its
+// last cards, the game displays the defending player as "Winner" as well.
+
+// Handle when players leave the game
+
+// at the end, refactor the code: remove duplicate code, make it more OO(if possible), add comments

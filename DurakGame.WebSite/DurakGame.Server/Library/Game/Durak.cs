@@ -31,6 +31,7 @@ namespace DurakGame.Library.Game
         public bool discardHeapChanged;
 
         public int durak;
+        public bool gameOver;
         public int playerTurn;
 
         public bool takingCards;
@@ -83,6 +84,7 @@ namespace DurakGame.Library.Game
             playerTurn = game.GetPlayersTurn();
 
             durak = game.durak;
+            gameOver = game.gameOver;
         }
     }
 
@@ -92,13 +94,13 @@ namespace DurakGame.Library.Game
         private Deck deck;
         private Card trumpCard;
 
-        public bool isBoutChanged;
-        public bool taking;
+        public bool isBoutChanged; // should be in bout 
+        public bool taking; // in player (Defending Player) 
 
         private int defendingPlayer;
         private int attackingPlayer;
 
-        public bool attackerTurn;
+        public bool attackerTurn; // in player (Attacker Player) 
 
         public int readyPlayers;
 
@@ -106,6 +108,7 @@ namespace DurakGame.Library.Game
         public Type type;
 
         public int durak;
+        public bool gameOver;
         public int totalUninterruptedDone;
 
         private int discardedHeapSize;
@@ -394,6 +397,8 @@ namespace DurakGame.Library.Game
         // players that will play
         private void ResetRound()
         {
+            Console.WriteLine("INSIDE RESET BUTTON");
+
             // update the cards for all attacking players until the deck is empty
             for (int i = 0; i < allAttackingPlayers.Count && deck.cardsLeft != 0; i++)
             {
@@ -429,6 +434,7 @@ namespace DurakGame.Library.Game
         // based on the outcome of the bout. 
         private void ChangeBattle(bool took)
         {
+            Console.WriteLine("INSIDE CHANGE BATTLE");
             // If any card was played by attacking player and done button was pressed
             if (isBoutChanged)
             {
@@ -480,6 +486,7 @@ namespace DurakGame.Library.Game
             if (IsGameOver())
             {
                 durak = GetDefendingPlayer();
+                gameOver = true;
             }
         }
 

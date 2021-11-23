@@ -5,6 +5,7 @@ using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.GamePlayer
 {
+    public enum PlayerState { Winner, Durak, Playing }
     public class Player
     {
         public string name;
