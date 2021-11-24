@@ -15,22 +15,21 @@ namespace DurakGame.Library.Game
     {
         public int numberOfCards;
         public bool isAttacking;
+        public PlayerState playerState;
     }
 
     public class GameView
     {
-        public int playerID;
-
-        public List<Card> hand = new List<Card>();
-
         private Durak game;
+
+        public int playerID;
+        public List<Card> hand = new List<Card>();
 
         public Card trumpCard;
 
         private int prevDiscardedHeapValue;
         public bool discardHeapChanged;
 
-        public int durak;
         public bool gameOver;
         public int playerTurn;
 
@@ -53,21 +52,23 @@ namespace DurakGame.Library.Game
             playerID = id;
             hand = players[id].GetPlayersHand();
 
-            List<PlayerView> pViews = new List<PlayerView>();
-            PlayerView playerView;
-
             if (prevDiscardedHeapValue != discardHeapSize)
             {
                 discardHeapChanged = true;
             }
             prevDiscardedHeapValue = discardHeapSize;
 
+            PlayerView playerView;
+            List<PlayerView> pViews = new List<PlayerView>();
+
+
             for (int i = 0; i < game.GetSizeOfPlayers(); i++)
             {
                 playerView = new PlayerView();
 
-                playerView.numberOfCards = players[i].GetPlayersHand().Count;
+                playerView.numberOfCards = players[i].GetNumberOfCards();
                 playerView.isAttacking = (attackingPlayer == i);
+                playerView.playerState = players[i].playerState;
 
                 pViews.Add(playerView);
             }
@@ -79,11 +80,10 @@ namespace DurakGame.Library.Game
             attackingCards = game.GetBoutInformation().GetAttackingCards();
             defendingCards = game.GetBoutInformation().GetDefendingCards();
 
-            takingCards = game.taking;
+            takingCards = game.GetPlayer(defendingPlayer).IsPlayerTaking();
 
             playerTurn = game.GetPlayersTurn();
 
-            durak = game.durak;
             gameOver = game.gameOver;
         }
     }
@@ -94,32 +94,21 @@ namespace DurakGame.Library.Game
         private Deck deck;
         private Card trumpCard;
 
-        public bool isBoutChanged; // should be in bout 
-        public bool taking; // in player (Defending Player) 
-
         private int defendingPlayer;
         private int attackingPlayer;
 
-        public bool attackerTurn; // in player (Attacker Player) 
-
-        public int readyPlayers;
-
-        public Variation variation = Variation.Classic;
         public Type type;
+        public Variation variation = Variation.Classic;
 
-        public int durak;
         public bool gameOver;
         public int totalUninterruptedDone;
 
         private int discardedHeapSize;
-        // public bool GameInProgress => players.Count > 1;
         public bool gameInProgress;
 
         public bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
 
         private List<Player> players = new List<Player>();
-        private string[] usernames;
-        private int[] icons;
 
         public int allAttackingPlayersIndex;
         private List<int> allAttackingPlayers = new List<int>();
@@ -131,9 +120,9 @@ namespace DurakGame.Library.Game
         public int GetDefendingPlayer() => defendingPlayer;
         public int GetAttackingPlayer() => attackingPlayer;
         public List<Player> GetPlayers() => players;
+        public Player GetPlayer(int index) => players[index];
         public int GetSizeOfPlayers() => players.Count;
         public Bout GetBoutInformation() => bout;
-        public bool IsBoutGoing() => bout.GetAttackingCardsSize() > 0;
         public bool[] GetAvailableIcons() => availableIcons;
         public void StartGame(int totalPlayers)
         {
@@ -145,7 +134,6 @@ namespace DurakGame.Library.Game
 
             // add players
             AddPlayers(totalPlayers);
-            
 
             // Each player draws 6 cards
             DistributeCardsToPlayers();
@@ -155,37 +143,85 @@ namespace DurakGame.Library.Game
 
             GetAttackers();
 
-            attackerTurn = true;
+            GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
 
             bout = new Bout();
-
-
         }
 
-        public string[] GetUserNames() => usernames;
-        public int[] GetIcons() => icons;
+        // returns how many players are still playing (have cards in the game)
+        private int GetSizeOfPlayingPlayers()
+        {
+            int total = 0;
+            foreach(Player p in players)
+            {
+                if (p.playerState == PlayerState.Playing)
+                {
+                    total += 1;
+                }
+            }
+            return total;
+        }
 
+        public string[] GetUserNames()
+        {
+            string[] names = new string[GetSizeOfPlayers()];
+            for (int i = 0; i < GetSizeOfPlayers(); i++)
+            {
+                names[i] = GetPlayer(i).GetPlayersName();
+            }
+            return names;
+        }
+
+        public int[] GetIcons()
+        {
+            int[] icons = new int[GetSizeOfPlayers()];
+            for (int i = 0; i < GetSizeOfPlayers(); i++)
+            {
+                icons[i] = GetPlayer(i).GetPlayersIcon();
+            }
+            return icons;
+        }
+
+        public int GetNumberOfReadyPlayers()
+        {
+            int total = 0;
+            foreach (Player p in players)
+            {
+                if (p.IsPlayerReady())
+                {
+                    total += 1;
+                }
+            }
+            return total;
+        }
+
+        // The game is over when there is only one playing player left
         private bool IsGameOver()
         {
-            return GetAttackingPlayer() == GetDefendingPlayer();
+            return GetSizeOfPlayingPlayers() == 1;
         }
         
         public void InstantiateGameSession(int totalPlayers)
         {
             gameInProgress = true;
-            usernames = new string[totalPlayers];
-            icons = new int[totalPlayers];
         }
         public bool IsUserNameAvailable(string name)
         {
-            return Array.IndexOf(usernames, name) == -1;
+            return Array.IndexOf(GetUserNames(), name) == -1;
         }
 
         public void AssignUserName(string name, int index)
         {
-            usernames[index] = name;
+            Console.WriteLine("PASSED INDEX: ", index);
+            for (int i = 0; i < players.Count; i++)
+            {
+                Console.Write("PLAYERS index: ", i, " Players name: ", players[i].GetPlayersName());
+                Console.WriteLine();
+            }
+
+            GetPlayer(index).SetPlayerName(name);
             Console.Write("SERVER: USERNAMES => ");
-            foreach (var v in usernames)
+            foreach (var v in GetUserNames())
             {
                 Console.Write(v + " ");
             }
@@ -194,9 +230,9 @@ namespace DurakGame.Library.Game
 
         public void AssignIcon(int number, int index)
         {
-            icons[index] = number;
+            GetPlayer(index).SetPlayerIcon(number);
             Console.Write("SERVER: ICONS => ");
-            foreach(var v in icons)
+            foreach(var v in GetIcons())
             {
                 Console.Write(v + " ");
             }
@@ -217,10 +253,6 @@ namespace DurakGame.Library.Game
             Console.WriteLine("The Type is " + type);
         }
 
-        public bool IsAttackerWinner() => !IsBoutGoing() && 
-            players[attackingPlayer].GetPlayersHand().Count == 0;
-
-
         public void RemovePlayer(int playerID)
         {
             players.RemoveAt(playerID);
@@ -231,6 +263,7 @@ namespace DurakGame.Library.Game
             for (int i = 0; i < totalPlayers; i++)
             {
                 Player p = new Player();
+                p.playerState = PlayerState.Playing;
                 players.Add(p);
             }
         }
@@ -277,6 +310,7 @@ namespace DurakGame.Library.Game
         }
 
 
+
         public bool IsTrumpSuit(Card card)
         {
             return card.suit == trumpCard.suit;
@@ -302,7 +336,7 @@ namespace DurakGame.Library.Game
         {
             foreach (Card c in bout.GetEverything())
             {
-                if (players[attackingPlayer].GetPlayersHand().Exists(card => card.rank == c.rank))
+                if (GetPlayer(attackingPlayer).GetPlayersHand().Exists(card => card.rank == c.rank))
                 {
                     return true;
                 }
@@ -317,7 +351,7 @@ namespace DurakGame.Library.Game
 
             Card attackingCard = bout.GetAttackingCard(attackCardIndex);
 
-            foreach (Card defendingCard in players[defendingPlayer].GetPlayersHand())
+            foreach (Card defendingCard in GetPlayer(defendingPlayer).GetPlayersHand())
             {
                 if (IsLegalDefense(attackingCard, defendingCard))
                 {
@@ -331,15 +365,16 @@ namespace DurakGame.Library.Game
         {
             attackingPlayer = (attackingPlayer + increment) % GetSizeOfPlayers();
 
-            while (players[attackingPlayer].GetPlayersHand().Count == 0 || 
-                  ((defendingPlayer == attackingPlayer) && taking))
+            while (GetPlayer(attackingPlayer).GetNumberOfCards() == 0 || 
+                  (GetSizeOfPlayingPlayers() > 2 && defendingPlayer == attackingPlayer && 
+                   GetPlayer(defendingPlayer).IsPlayerTaking()))
             {
                 attackingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
             }
 
             defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
 
-            while (players[defendingPlayer].GetPlayersHand().Count == 0)
+            while (GetPlayer(defendingPlayer).GetNumberOfCards() == 0)
             {
                 defendingPlayer = (defendingPlayer + 1) % GetSizeOfPlayers();
             }
@@ -349,7 +384,7 @@ namespace DurakGame.Library.Game
         private int GetNextAttackingPlayerIndex(int relativePlayer)
         {
             int newAttackingPlayer = (relativePlayer + 1) % GetSizeOfPlayers();
-            while (players[newAttackingPlayer].GetPlayersHand().Count == 0)
+            while (GetPlayer(newAttackingPlayer).GetNumberOfCards() == 0)
             {
                 newAttackingPlayer = (newAttackingPlayer + 1) % GetSizeOfPlayers();
             }
@@ -382,7 +417,7 @@ namespace DurakGame.Library.Game
                     for (int i = 1; i < players.Count; i++)
                     {
                         int index = (attackingPlayer + i) % players.Count;
-                        if (index == defendingPlayer || players[index].GetPlayersHand().Count == 0)
+                        if (index == defendingPlayer || GetPlayer(index).GetNumberOfCards() == 0)
                         {
                             continue;
                         }
@@ -397,29 +432,27 @@ namespace DurakGame.Library.Game
         // players that will play
         private void ResetRound()
         {
-            Console.WriteLine("INSIDE RESET BUTTON");
-
             // update the cards for all attacking players until the deck is empty
             for (int i = 0; i < allAttackingPlayers.Count && deck.cardsLeft != 0; i++)
             {
-                deck.UpdatePlayersHand(players[allAttackingPlayers[i]]);
+                deck.UpdatePlayersHand(GetPlayer(allAttackingPlayers[i]));
             }
             // set the initial attacking player
             attackingPlayer = allAttackingPlayers[0];
 
-            if (taking)
+            if (GetPlayer(defendingPlayer).IsPlayerTaking())
             {
                 // add all the cards from the bout to the defending player
-                players[defendingPlayer].AddCardsToHand(bout.GetEverything());
+                GetPlayer(defendingPlayer).AddCardsToHand(bout.GetEverything());
                 GetNextPlayingPlayer(2);
-                taking = false;
+                GetPlayer(defendingPlayer).SetIsTaking(false);
             }
             else
             {
                 // refill the cards for defending player 
                 if (deck.cardsLeft > 0)
                 {
-                    deck.UpdatePlayersHand(players[defendingPlayer]);
+                    deck.UpdatePlayersHand(GetPlayer(defendingPlayer));
                 }
 
                 UpdateDiscardedPile();
@@ -434,24 +467,23 @@ namespace DurakGame.Library.Game
         // based on the outcome of the bout. 
         private void ChangeBattle(bool took)
         {
-            Console.WriteLine("INSIDE CHANGE BATTLE");
             // If any card was played by attacking player and done button was pressed
-            if (isBoutChanged)
+            if (bout.IsBoutChanged())
             {
                 totalUninterruptedDone = 1;
-                isBoutChanged = false;
+                bout.SetBoutChanged(false);
                 // if defending player took the cards, decrement totalUninteruptedDone to
                 // avoid completing the bout. Also, decrement allAttackingPlayersIndex to ask the
                 // same player if there any cards to be added
                 if (took)
                 {
-                    taking = true;
+                    GetPlayer(defendingPlayer).SetIsTaking(true);
                     totalUninterruptedDone -= 1;
                     allAttackingPlayersIndex -= 1;
                 }
             }
             // this statement takes care the situation if the player pressed done and added no cards
-            else if (!isBoutChanged)
+            else if (!bout.IsBoutChanged())
             {
                 totalUninterruptedDone += 1;
             }
@@ -473,45 +505,75 @@ namespace DurakGame.Library.Game
 
                 // if defending player TAKEs cards then check if new attacking player can add any 
                 // cards to the bout. If not then skip his turn to the next attacking player. 
-                if (taking && !IsAttackPossible())
+                if (GetPlayer(defendingPlayer).IsPlayerTaking() && !IsAttackPossible())
                 {
                     ChangeBattle(false);
                 }
             }
-            attackerTurn = true;
+            GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
         }
 
         private void CheckEndGame()
         {
             if (IsGameOver())
             {
-                durak = GetDefendingPlayer();
+                GetPlayer(defendingPlayer).playerState = PlayerState.Durak;
+
                 gameOver = true;
             }
         }
 
         // controls flow of the game when the attacking player presses DONE. 
         public void AttackerDone() 
-        { 
-            ChangeBattle(false);
-
+        {
             CheckEndGame();
+
+            if (!gameOver)
+            {
+                ChangeBattle(false);
+            } else
+            {
+                // the game is over, durak is found and cards in the middle move to the
+                // discarded pile 
+                UpdateDiscardedPile();
+                bout.RemoveCardsFromBout();
+            }
         }
 
         // controls the flow of the game when the defending player takes the cards
         public void DefenderTake() 
-        { 
-            ChangeBattle(true);
-
+        {
             CheckEndGame();
+
+            if (!gameOver)
+            {
+                ChangeBattle(true);
+            }
+            else
+            {
+                // the game is over, durak is found and the cards in the middle move the defender
+                // because he/she took them
+
+                // add all the cards from the bout to the defending player
+                GetPlayer(defendingPlayer).AddCardsToHand(bout.GetEverything());
+                bout.RemoveCardsFromBout();
+            }
+        }
+
+        private void CheckIfPlayerIsWinner(int playerIndex)
+        {
+            if (!IsGameOver() && GetPlayer(playerIndex).GetNumberOfCards() == 0)
+            {
+                GetPlayer(playerIndex).playerState = PlayerState.Winner;
+            }
         }
 
         public MoveResult DefenderMove(int cardIndex)
         {
-            if (!taking)
+            if (!GetPlayer(defendingPlayer).IsPlayerTaking())
             {
                 // wait for the attack
-                if (attackerTurn)
+                if (GetPlayer(attackingPlayer).IsAttackersTurn())
                 {
                     return MoveResult.OutOfTurn;
                 }
@@ -519,7 +581,7 @@ namespace DurakGame.Library.Game
                 int attackCardIndex = bout.GetAttackingCardsSize() - 1;
 
                 Card attackingCard = bout.GetAttackingCard(attackCardIndex);
-                Card defendingCard = players[defendingPlayer].GetPlayersHand()[cardIndex];
+                Card defendingCard = GetPlayer(defendingPlayer).GetPlayersCard(cardIndex);
 
                 if (!IsLegalDefense(attackingCard, defendingCard))
                 {
@@ -527,10 +589,13 @@ namespace DurakGame.Library.Game
                 }
 
                 bout.AddDefendingCard(defendingCard);
-                players[defendingPlayer].RemoveCardFromHand(defendingCard);
+                GetPlayer(defendingPlayer).RemoveCardFromHand(defendingCard);
 
                 // set defense finished to true
-                attackerTurn = true;
+                GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
+
+                // When player defends check if they are a winner or still playing
+                CheckIfPlayerIsWinner(defendingPlayer);
 
                 return MoveResult.OK;
             }
@@ -540,24 +605,27 @@ namespace DurakGame.Library.Game
         public MoveResult AttackerMove(int cardIndex)
         {
             // if the attack started wait for the defense
-            if (!attackerTurn)
+            if (!GetPlayer(attackingPlayer).IsAttackersTurn())
             {
                 return MoveResult.OutOfTurn;
             }
 
-            Card attackingCard = players[attackingPlayer].GetPlayersHand()[cardIndex];
+            Card attackingCard = GetPlayer(attackingPlayer).GetPlayersCard(cardIndex);
 
             if (bout.GetAttackingCardsSize() == 0 || bout.ContainsRank(attackingCard.rank))
             {
                 bout.AddAttackingCard(attackingCard);
-                players[attackingPlayer].RemoveCardFromHand(attackingCard);
+                GetPlayer(attackingPlayer).RemoveCardFromHand(attackingCard);
 
-                isBoutChanged = true;
+                bout.SetBoutChanged(true);
 
-                if (!taking)
+                if (!GetPlayer(defendingPlayer).IsPlayerTaking())
                 {
-                    attackerTurn = false;
+                    GetPlayer(attackingPlayer).SetIsAttackersTurn(false);
                 }
+                // When player attacked check if they are a winner or still playing
+                CheckIfPlayerIsWinner(attackingPlayer);
+
                 return MoveResult.OK;
             }
             else
@@ -568,7 +636,7 @@ namespace DurakGame.Library.Game
 
         private bool IsDefenderTurn()
         {
-            if (!taking)
+            if (!GetPlayer(defendingPlayer).IsPlayerTaking())
             {
                 return bout.GetAttackingCardsSize() > bout.GetDefendingCardsSize();
             }

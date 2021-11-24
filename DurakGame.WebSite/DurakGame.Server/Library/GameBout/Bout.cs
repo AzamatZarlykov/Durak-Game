@@ -10,6 +10,7 @@ namespace DurakGame.Library.Game
     /// </summary>
     public class Bout
     {
+        private bool isBoutChanged;
         private List<Card> attackingCards = new List<Card>();
         private List<Card> defendingCards = new List<Card>();
         public Bout() { }
@@ -18,6 +19,13 @@ namespace DurakGame.Library.Game
         public List<Card> GetAttackingCards() => attackingCards;
         public List<Card> GetDefendingCards() => defendingCards;
         public Card GetAttackingCard(int index) => attackingCards[index];
+
+        public bool IsBoutChanged() => isBoutChanged;
+
+        public void SetBoutChanged(bool value)
+        {
+            isBoutChanged = value;
+        }
 
         public List<Card> GetEverything()
         {

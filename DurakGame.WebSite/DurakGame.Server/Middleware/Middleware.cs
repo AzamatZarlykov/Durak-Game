@@ -255,17 +255,19 @@ namespace DurakGame.Server.Middleware
             } 
             else
             {
+                
+                Console.WriteLine("Player Index MIDDLEWARE: ", route.From);
                 game.AssignUserName(route.Name, route.From);
                 game.AssignIcon(route.Icon, route.From);
                 // the icon on pos route.Icon is not available
                 game.GetAvailableIcons()[route.Icon] = false;
-                game.readyPlayers++;
+                game.GetPlayer(route.From).SetIsReady(true);
             }
             // send setup result to the user's websocket
             await SendJSON(websocket, new { command, playerSetupOK });
             // update other players' availableIcons list
             command = "UpdateAvailableIcons";
-            int readyPlayers = game.readyPlayers;
+            int readyPlayers = game.GetNumberOfReadyPlayers();
             bool[] availableIcons = game.GetAvailableIcons();
             await DistributeJSONToWebSockets(new { command, availableIcons, readyPlayers });
         }
@@ -299,6 +301,7 @@ namespace DurakGame.Server.Middleware
 
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
         {
+
             switch (route.Message)
             {
                 case "Attacking":
@@ -356,6 +359,12 @@ namespace DurakGame.Server.Middleware
                         // Deserialize from json string to an object 
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
+
+                        Console.WriteLine("Printing the ClientMessage fields: ");
+                        Console.WriteLine("Message: ", route.Message);
+                        Console.WriteLine("From: ", route.From);
+                        Console.WriteLine("Name: ", route.Name);
+                        Console.WriteLine("Icon: ", route.Icon);
 
                         await MessageHandle(route, websocket);
 

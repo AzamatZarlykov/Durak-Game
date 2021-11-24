@@ -8,14 +8,48 @@ namespace DurakGame.Library.GamePlayer
     public enum PlayerState { Winner, Durak, Playing }
     public class Player
     {
-        public string name;
-        public bool autoPlay;
+        private string name;
+        private int icon;
 
-        // private Icon icon;
+        private bool isTaking;
+        private bool isAttackersTurn;
+        private bool isReady;
+
+        public PlayerState playerState; // dont forget to assign states in each state of the game 
 
         private List<Card> playersHand = new List<Card>();
 
         public List<Card> GetPlayersHand() => playersHand;
+
+        public bool IsPlayerTaking() => isTaking;
+        public bool IsAttackersTurn() => isAttackersTurn;
+        public bool IsPlayerReady() => isReady;
+        public int GetNumberOfCards() => playersHand.Count;
+        public Card GetPlayersCard(int index) => playersHand[index];
+        public string GetPlayersName() => name;
+        public int GetPlayersIcon() => icon;
+        public void SetPlayerName(string n)
+        {
+            name = n;
+        }
+
+        public void SetPlayerIcon(int i)
+        {
+            icon = i;
+        }
+
+        public void SetIsTaking(bool value)
+        {
+            isTaking = value;
+        }
+        public void SetIsAttackersTurn(bool value)
+        {
+            isAttackersTurn = value;
+        }
+        public void SetIsReady(bool value)
+        {
+            isReady = value;
+        }
 
         public void AddCardsToHand(List<Card> cards)
         {

@@ -55,7 +55,7 @@ namespace DurakGame.Library.GameDeck
 
         public void UpdatePlayersHand(Player player)
         {
-            while (player.GetPlayersHand().Count < 6 && cards.Count != 0)
+            while (player.GetNumberOfCards() < 6 && cards.Count != 0)
             {
                 player.GetPlayersHand().Add(DrawCard());
             }

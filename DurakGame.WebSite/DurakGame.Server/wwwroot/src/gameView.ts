@@ -1,8 +1,7 @@
 ﻿import { Button } from './button.js';
 
-interface PlayerView {
-    numberOfCards: number;
-    isAttacking: boolean;
+enum PlayerState {
+    Winner, Durak, Playing
 }
 
 enum Rank {
@@ -16,6 +15,13 @@ enum Suit {
 export enum State {
     Menu, CreateGame, PlayerSetup, WaitingRoom, GameTable
 }
+
+interface PlayerView {
+    numberOfCards: number;
+    isAttacking: boolean;
+    playerState: PlayerState;
+}
+
 
 export interface Card {
     rank: Rank;
@@ -33,7 +39,6 @@ interface GameViewInfo {
     discardHeapSize: number;
     discardHeapChanged: boolean;
 
-    durak: number;
     gameOver: boolean;
 
     hand: Card[];
@@ -1133,7 +1138,7 @@ export class GameView {
         Displays the player who lost 
     */
     private displayDurakMessage(): void {
-        this.drawBox("Durak is " + this.playerUserNames[this.gameView.durak],
+        this.drawBox("Durak is " + this.playerUserNames[this.gameView.defendingPlayer],
             this.canvas.width / 2, this.deckPosY, 'white', 'white', true, this.fontSize);
     }
 
