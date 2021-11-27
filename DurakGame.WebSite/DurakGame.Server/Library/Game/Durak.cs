@@ -132,18 +132,11 @@ namespace DurakGame.Library.Game
             // the last card is the trump card(the one at the bottom face up)
             trumpCard = deck.GetCard(0);
 
-            // add players
-            AddPlayers(totalPlayers);
-
             // Each player draws 6 cards
             DistributeCardsToPlayers();
 
             // Set the attacking player
             SetAttacker();
-
-            GetAttackers();
-
-            GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
 
             bout = new Bout();
         }
@@ -204,7 +197,10 @@ namespace DurakGame.Library.Game
         public void InstantiateGameSession(int totalPlayers)
         {
             gameInProgress = true;
+            // add players
+            AddPlayers(totalPlayers);
         }
+
         public bool IsUserNameAvailable(string name)
         {
             return Array.IndexOf(GetUserNames(), name) == -1;
@@ -212,10 +208,11 @@ namespace DurakGame.Library.Game
 
         public void AssignUserName(string name, int index)
         {
-            Console.WriteLine("PASSED INDEX: ", index);
+            Console.WriteLine("PASSED INDEX: " + index);
+            Console.WriteLine("Size of Players List: " + players.Count);
             for (int i = 0; i < players.Count; i++)
             {
-                Console.Write("PLAYERS index: ", i, " Players name: ", players[i].GetPlayersName());
+                Console.Write("PLAYERS index: " + i + " Players name: " + players[i].GetPlayersName());
                 Console.WriteLine();
             }
 
@@ -272,7 +269,7 @@ namespace DurakGame.Library.Game
         {
             foreach (Player p in players)
             {
-                p.AddCardsToHand(deck.DrawUntilSix(4));
+                p.AddCardsToHand(deck.DrawUntilSix(0));
             }
         }
 
@@ -307,6 +304,11 @@ namespace DurakGame.Library.Game
             // then defending is 1
             attackingPlayer = players.IndexOf(pl);
             defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
+
+            GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
+            // Set the list of attackers with all the attacking players
+            // based on the type of the game
+            GetAttackers();
         }
 
 

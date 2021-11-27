@@ -196,7 +196,6 @@ namespace DurakGame.Server.Middleware
         {
             command = "JoinGame";
 
-
             int sizeOfPlayers;
             int totalPlayers = manager.GetTotalPlayers();
 
@@ -256,7 +255,7 @@ namespace DurakGame.Server.Middleware
             else
             {
                 
-                Console.WriteLine("Player Index MIDDLEWARE: ", route.From);
+                Console.WriteLine("Player Index MIDDLEWARE: " + route.From);
                 game.AssignUserName(route.Name, route.From);
                 game.AssignIcon(route.Icon, route.From);
                 // the icon on pos route.Icon is not available
@@ -326,6 +325,11 @@ namespace DurakGame.Server.Middleware
                     await UpdateAvailableIcons(websocket);
                     break;
                 case "PlayerSetup":
+                    Console.WriteLine("Printing the ClientMessage fields: ");
+                    Console.WriteLine("Message: "+ route.Message);
+                    Console.WriteLine("From: "+ route.From);
+                    Console.WriteLine("Name: "+ route.Name);
+                    Console.WriteLine("Icon: "+ route.Icon);
                     await CheckPlayerSetup(route, websocket);
                     break;
                 case "StartGame":
@@ -360,11 +364,7 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-                        Console.WriteLine("Printing the ClientMessage fields: ");
-                        Console.WriteLine("Message: ", route.Message);
-                        Console.WriteLine("From: ", route.From);
-                        Console.WriteLine("Name: ", route.Name);
-                        Console.WriteLine("Icon: ", route.Icon);
+
 
                         await MessageHandle(route, websocket);
 
