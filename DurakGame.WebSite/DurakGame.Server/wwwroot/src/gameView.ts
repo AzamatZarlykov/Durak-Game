@@ -1237,7 +1237,7 @@ export class GameView {
 
     private manageAttackingPlayerGameSetup(pos: { x: number, y: number, tWidth: number; }): void {
         // display "Attack" message if no cards were played 
-        if (this.gameView.attackingCards.length == 0) {
+        if (!this.gameView.gameOver && this.gameView.attackingCards.length == 0) {
             this.drawBox("Attack", pos.x + pos.tWidth + this.cardWidth,
                 pos.y + this.offset, 'white', 'white', false, this.fontSize);
         }
@@ -1450,6 +1450,10 @@ export class GameView {
                 return "Cannot Defend. You Decided To Take The Cards";
             case "takeCards":
                 return "Player " + this.gameView.defendingPlayer + " Takes The Cards";
+            case "extraCard":
+                return `This card is extra. Cannot fit in defender's hand`;
+            case "gameIsAlreadyOver":
+                return "The game is already over";
             case "GameIsBeingCreated":
                 return "The game is being created";
             case "LackOfPlayers":

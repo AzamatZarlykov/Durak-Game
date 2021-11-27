@@ -24,6 +24,8 @@ let TookCardsCommand: string = "TookCards";
 let UpdateAvailableIconsCommand: string = "UpdateAvailableIcons";
 let UpdatePlayerSetupCommand: string = "UpdatePlayerSetup";
 let StartGameCommand: string = "StartGame";
+let ExtraCardCommand: string = "ExtraCard";
+let GameIsAlreadyOverCommand: string = "GameIsAlreadyOver";
 
 let view: GameView;
 
@@ -39,7 +41,9 @@ let allCommands: string[] = [
     TookCardsCommand,
     UpdateAvailableIconsCommand,
     UpdatePlayerSetupCommand,
-    StartGameCommand
+    StartGameCommand,
+    ExtraCardCommand,
+    GameIsAlreadyOverCommand
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -156,6 +160,12 @@ socket.onmessage = function (event): void {
                 view.setUserNames(obj.playerUserNames);
                 view.setTakenIcons(obj.takenIcons);
                 view.switchPages(State.GameTable);
+                break;
+            case (ExtraCardCommand):
+                view.displayMessage("extraCard", false, 'white', 'white');
+                break;
+            case (GameIsAlreadyOverCommand):
+                view.displayMessage("gameIsAlreadyOver", false, 'white', 'white');
                 break;
         }
     } else {

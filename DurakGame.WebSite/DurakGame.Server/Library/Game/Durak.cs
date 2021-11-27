@@ -10,7 +10,7 @@ namespace DurakGame.Library.Game
 {
     public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
     public enum Variation { Classic, Passport }
-    public enum MoveResult { OK, OutOfTurn, IllegalMove, TookCards }
+    public enum MoveResult { OK, OutOfTurn, IllegalMove, TookCards, ExtraCard, GameIsOver }
     public class PlayerView
     {
         public int numberOfCards;
@@ -130,8 +130,8 @@ namespace DurakGame.Library.Game
             deck.Shuffle();
 
             // the last card is the trump card(the one at the bottom face up)
-            trumpCard = deck.GetCard(0);
-            // trumpCard = new Card((Suit)0, (Rank)6);
+            // trumpCard = deck.GetCard(0);
+            trumpCard = new Card((Suit)0, (Rank)6);
             // Each player draws 6 cards
             DistributeCardsToPlayers();
 
@@ -261,21 +261,21 @@ namespace DurakGame.Library.Game
 
         public void DistributeCardsToPlayers()
         {
-            foreach (Player p in players)
-            {
-                p.AddCardsToHand(deck.DrawUntilSix(0));
-            }
+            /*            foreach (Player p in players)
+                        {
+                            p.AddCardsToHand(deck.DrawUntilSix(0));
+                        }*/
 
-            /*            players[1].AddCardsToHand(new List<Card>
+            players[0].AddCardsToHand(new List<Card>
                         {
                             new Card((Suit)1, (Rank)13),
                             new Card((Suit)2, (Rank)13),
                         });
 
-                        players[0].AddCardsToHand(new List<Card>
+            players[1].AddCardsToHand(new List<Card>
                         {
                             new Card((Suit)1, (Rank)14),
-                        });*/
+                        });
         }
 
         // Function will find the player who has the card with
@@ -623,8 +623,25 @@ namespace DurakGame.Library.Game
             return MoveResult.TookCards;
         }
 
+        // In case defender takes the cards, if the number attacking cards size (including new one) 
+        // - defending cards size is greater than defenders hand then it is an extra card
+        // In case defender defends all the cards and attacker attacks do a simple check - if the 
+        // defender still has cards left
+        private bool CheckIfAttackingCardIsExtra()
+        {
+            Player defender = GetPlayer(defendingPlayer);
+            int leftOver = bout.GetAttackingCardsSize() + 1 - bout.GetDefendingCardsSize();
+
+            return leftOver > defender.GetNumberOfCards() && defender.IsPlayerTaking() ||
+                   defender.GetNumberOfCards() == 0 && !defender.IsPlayerTaking();
+        }
+
         public MoveResult AttackerMove(int cardIndex)
         {
+            if (IsGameOver())
+            {
+                return MoveResult.GameIsOver;
+            }
             // if the attack started wait for the defense
             if (!GetPlayer(attackingPlayer).IsAttackersTurn())
             {
@@ -635,6 +652,12 @@ namespace DurakGame.Library.Game
 
             if (bout.GetAttackingCardsSize() == 0 || bout.ContainsRank(attackingCard.rank))
             {
+                
+                if (CheckIfAttackingCardIsExtra())
+                {
+                    return MoveResult.ExtraCard;
+                } 
+
                 bout.AddAttackingCard(attackingCard);
                 GetPlayer(attackingPlayer).RemoveCardFromHand(attackingCard);
 

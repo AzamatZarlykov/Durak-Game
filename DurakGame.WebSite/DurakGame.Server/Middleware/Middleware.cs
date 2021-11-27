@@ -58,6 +58,14 @@ namespace DurakGame.Server.Middleware
                         {
                             command = "Illegal";
                         }
+                        else if (outcome == MoveResult.ExtraCard)
+                        {
+                            command = "ExtraCard";
+                        }
+                        else if (outcome == MoveResult.GameIsOver)
+                        {
+                            command = "GameIsAlreadyOver";
+                        }
                         await SendJSON(socket, new
                         {
                             command
