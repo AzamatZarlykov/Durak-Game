@@ -94,6 +94,8 @@ namespace DurakGame.Library.Game
         private Deck deck;
         private Card trumpCard;
 
+        private bool test;
+
         private int defendingPlayer;
         private int attackingPlayer;
 
