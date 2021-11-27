@@ -94,8 +94,6 @@ namespace DurakGame.Library.Game
         private Deck deck;
         private Card trumpCard;
 
-        private bool test;
-
         private int defendingPlayer;
         private int attackingPlayer;
 
@@ -133,7 +131,7 @@ namespace DurakGame.Library.Game
 
             // the last card is the trump card(the one at the bottom face up)
             trumpCard = deck.GetCard(0);
-
+            // trumpCard = new Card((Suit)0, (Rank)6);
             // Each player draws 6 cards
             DistributeCardsToPlayers();
 
@@ -188,12 +186,6 @@ namespace DurakGame.Library.Game
                 }
             }
             return total;
-        }
-
-        // The game is over when there is only one playing player left
-        private bool IsGameOver()
-        {
-            return GetSizeOfPlayingPlayers() == 1;
         }
         
         public void InstantiateGameSession(int totalPlayers)
@@ -273,6 +265,17 @@ namespace DurakGame.Library.Game
             {
                 p.AddCardsToHand(deck.DrawUntilSix(0));
             }
+
+            /*            players[1].AddCardsToHand(new List<Card>
+                        {
+                            new Card((Suit)1, (Rank)13),
+                            new Card((Suit)2, (Rank)13),
+                        });
+
+                        players[0].AddCardsToHand(new List<Card>
+                        {
+                            new Card((Suit)1, (Rank)14),
+                        });*/
         }
 
         // Function will find the player who has the card with
@@ -517,11 +520,25 @@ namespace DurakGame.Library.Game
             GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
         }
 
+        // The game is over when there is only one playing player left
+        private bool IsGameOver()
+        {
+            return GetSizeOfPlayingPlayers() == 1;
+        }
+
+        private Player GetLastPlayer()
+        {
+            return GetPlayer(defendingPlayer).GetNumberOfCards() > 0 ? 
+                                              GetPlayer(defendingPlayer) :
+                                              GetPlayer(attackingPlayer);
+        }
+
         private void CheckEndGame()
         {
             if (IsGameOver())
             {
-                GetPlayer(defendingPlayer).playerState = PlayerState.Durak;
+                Player lastPlayer = GetLastPlayer();
+                lastPlayer.playerState = PlayerState.Durak;
 
                 gameOver = true;
             }

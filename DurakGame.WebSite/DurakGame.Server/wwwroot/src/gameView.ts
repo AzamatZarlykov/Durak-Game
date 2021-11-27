@@ -1134,11 +1134,19 @@ export class GameView {
         return "CDHS"[enumSuit];
     }
 
+    private getDurakIndex(): number {
+        for (let i: number = 0; i < this.gameView.playersView.length; i++) {
+            if (this.gameView.playersView[i].playerState == PlayerState.Durak) {
+                return i;
+            }
+        }
+    }
+
     /*
         Displays the player who lost 
     */
     private displayDurakMessage(): void {
-        this.drawBox("Durak is " + this.playerUserNames[this.gameView.defendingPlayer],
+        this.drawBox("Durak is " + this.playerUserNames[this.getDurakIndex()],
             this.canvas.width / 2, this.deckPosY, 'white', 'white', true, this.fontSize);
     }
 
@@ -1204,11 +1212,12 @@ export class GameView {
     }
 
     private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number;
-    }): void {
+        x: number, y: number, tWidth: number;}, noCards:boolean = true): void {
 
-        this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
-            pos.y + this.offset, 'white', 'white', false, this.fontSize);
+        if (noCards) {
+            this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
+                pos.y + this.offset, 'white', 'white', false, this.fontSize);
+        }
 
         this.button = new Button(this, pos.x + pos.tWidth + this.cardWidth +
             this.nTextMetrics.width / 2 + 8 * this.textLeftMargin,
@@ -1242,7 +1251,7 @@ export class GameView {
             }
             // display message "Continue Attack" if the player defended successfully
             else {
-                this.displayPlayerOptions("Continue Attack", "Done", pos);
+                this.displayPlayerOptions("Continue Attack", "Done", pos, false);
             }
         }
     }
