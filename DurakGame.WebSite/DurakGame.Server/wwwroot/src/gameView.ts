@@ -1510,17 +1510,3 @@ export class GameView {
         this.context.restore();
     }
 }
-
-// Passport
-
-// Do not display "Continue Attack" when the defending player is already out of hands
-// Just display "Done"
-
-// implement option at the end of the game: "Back To Lobby"
-
-// When there are two players, if player A attacks its last card and player B defends with its
-// last cards, the game displays the defending player as "Winner" as well.
-
-// Handle when players leave the game
-
-// at the end, refactor the code: remove duplicate code, make it more OO(if possible), add comments
