@@ -878,11 +878,10 @@ export class GameView {
     }
 
     /*
-        helper function that handles different circumstances of when pressing Create button 
+        helper function that handles different circumstances when pressing Create button 
     */
     private handleCreateButtonInstructions(): void {
         let strJSON: string;
-        console.log("Total Players " + this.totalPlayers);
         if (this.totalPlayers < 2) {
             this.displayMessage("LackOfPlayers", true, 'red', 'red',
                 this.canvas.width / 2, this.deckPosY +
@@ -1154,34 +1153,26 @@ export class GameView {
         displays the cards from the gameView object 
     */
     private displayMainPlayersHand(hand: Card[], x: number, y: number, tWidth: number) {
-        if (hand.length != 0) {
-            for (let i = 0; i < hand.length; i++) {
-                let img: HTMLImageElement = this.getImage(hand[i], true);
-                this.context.drawImage(
-                    img, x + i * this.cardCorner, y, this.cardWidth,
-                    this.cardHeight
-                );
-            }
-        } else {
-            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true, this.fontSize);
+        for (let i = 0; i < hand.length; i++) {
+            let img: HTMLImageElement = this.getImage(hand[i], true);
+            this.context.drawImage(
+                img, x + i * this.cardCorner, y, this.cardWidth,
+                this.cardHeight
+            );
         }
     }
 
     /*
         Displays the face down cards of opponents
     */
-    private displayFaceDownCards(playerView: PlayerView, currentID: number, x: number,
+    private displayFaceDownCards(playerView: PlayerView, x: number,
         y: number, tWidth: number) {
-        if (playerView.numberOfCards != 0) {
-            for (let i = 0; i < playerView.numberOfCards; i++) {
-                let img: HTMLImageElement = this.getImage(undefined, true);
-                this.context.drawImage(
-                    img, x + i * this.cardCorner, y, this.cardWidth,
-                    this.cardHeight
-                );
-            }
-        } else {
-            this.drawBox("Winner", x + tWidth / 2, y, 'white', 'white', true, this.fontSize);
+        for (let i = 0; i < playerView.numberOfCards; i++) {
+            let img: HTMLImageElement = this.getImage(undefined, true);
+            this.context.drawImage(
+                img, x + i * this.cardCorner, y, this.cardWidth,
+                this.cardHeight
+            );
         }
     }
 
@@ -1213,7 +1204,6 @@ export class GameView {
 
     private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
         x: number, y: number, tWidth: number;}, noCards:boolean = true): void {
-
         if (noCards) {
             this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
                 pos.y + this.offset, 'white', 'white', false, this.fontSize);
@@ -1275,6 +1265,14 @@ export class GameView {
         );
     }
 
+    private displayWinner(currentID: number, pos:{ x: number, y: number, tWidth: number; }):void {
+        if (this.gameView.playersView[currentID].playerState == PlayerState.Winner) {
+            this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y,
+                'white', 'white', true, this.fontSize
+            );
+        }
+    }
+
     /*
         Given the positions and boolean variables position around the table, display main players
         and opponenets hand, display attacking and defending players
@@ -1291,6 +1289,9 @@ export class GameView {
             this.drawArrow(arrowPos.x - 130, pos.y + this.offset, arrowPos.x - 70, pos.y +
                 this.offset, 'white');
         }
+
+        // Display the winners
+        this.displayWinner(currentID, pos);
 
         if (this.id == currentID) {
             this.drawBox(this.userName, pos.x + pos.tWidth / 2,
@@ -1313,7 +1314,7 @@ export class GameView {
 
             this.checkEndGame();
         } else {
-            this.displayFaceDownCards(this.gameView.playersView[currentID], currentID, pos.x,
+            this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x,
                 pos.y, pos.tWidth);
 
             this.displayPlayerIconInGame(currentID, pos);
