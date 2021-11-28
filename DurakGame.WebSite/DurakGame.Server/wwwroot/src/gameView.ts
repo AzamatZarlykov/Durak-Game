@@ -1246,12 +1246,6 @@ export class GameView {
         }
     }
 
-    private checkEndGame(): void {
-        if (this.gameView.gameOver) {
-            this.displayDurakMessage();
-        }
-    }
-
     private displayPlayerIconInGame(indexOfIcon: number,
         pos: { x: number, y: number, tWidth: number; }): void {
 
@@ -1309,11 +1303,9 @@ export class GameView {
 
                 this.displayPlayerOptions("Defend", "Take", pos);
             }
-
             this.displayPlayerIconInGame(this.id, pos);
-
-            this.checkEndGame();
-        } else {
+        }
+        else {
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x,
                 pos.y, pos.tWidth);
 
@@ -1413,6 +1405,12 @@ export class GameView {
         }
 
         this.displayBout();
+
+        if (this.gameView.gameOver) {
+            this.displayDurakMessage();
+
+        }
+
     }
 
     /*
