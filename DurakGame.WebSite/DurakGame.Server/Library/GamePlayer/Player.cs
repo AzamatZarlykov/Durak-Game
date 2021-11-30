@@ -5,7 +5,8 @@ using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.GamePlayer
 {
-    public enum PlayerState { Winner, Durak, Playing }
+    public enum WaitingRoomState { NotReady, Ready }
+    public enum PlayerState { Playing, Winner, Durak }
     public class Player
     {
         private string name;
@@ -13,9 +14,9 @@ namespace DurakGame.Library.GamePlayer
 
         private bool isTaking;
         private bool isAttackersTurn;
-        private bool isReady;
 
-        public PlayerState playerState; // dont forget to assign states in each state of the game 
+        public WaitingRoomState waitingRoomState; 
+        public PlayerState playerState;
 
         private List<Card> playersHand = new List<Card>();
 
@@ -23,7 +24,6 @@ namespace DurakGame.Library.GamePlayer
 
         public bool IsPlayerTaking() => isTaking;
         public bool IsAttackersTurn() => isAttackersTurn;
-        public bool IsPlayerReady() => isReady;
         public int GetNumberOfCards() => playersHand.Count;
         public Card GetPlayersCard(int index) => playersHand[index];
         public string GetPlayersName() => name;
@@ -45,10 +45,6 @@ namespace DurakGame.Library.GamePlayer
         public void SetIsAttackersTurn(bool value)
         {
             isAttackersTurn = value;
-        }
-        public void SetIsReady(bool value)
-        {
-            isReady = value;
         }
 
         public void AddCardsToHand(List<Card> cards)

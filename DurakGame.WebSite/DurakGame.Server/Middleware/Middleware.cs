@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 
 using DurakGame.Library.Game;
+using DurakGame.Library.GamePlayer;
 
 namespace DurakGame.Server.Middleware
 {
@@ -174,6 +175,11 @@ namespace DurakGame.Server.Middleware
             game.SetupGameType(gameSetting[2]);
         }
 
+        private bool DecideIfPlaying(GameStatus gs, int index, WebSocket socket)
+        {
+            return gs == GameStatus.NotCreated && index < 7 || manager.IsSocketInTheGame(socket);
+        }
+
         // When someone connects, send to everyone how many people are in the server/game
         private async Task InformPlayerInformationAsync(WebSocket websocket)
         {
@@ -182,45 +188,36 @@ namespace DurakGame.Server.Middleware
             manager.AddSocket(websocket);
 
             int totalPlayers = manager.GetTotalPlayers();
-            int sizeOfPlayers = 0;
-            bool gameInProgress = game.gameInProgress;
+            GameStatus gameStatus = game.gameStatus;
             bool isPlaying;
 
-            if (gameInProgress)
+            foreach (var socket in manager.GetAllSockets())
             {
-                isPlaying = false;
-                sizeOfPlayers = game.GetSizeOfPlayers();
-            }  else
-            {
-                isPlaying = true;
+                isPlaying = DecideIfPlaying(gameStatus, manager.GetIndexOfSocket(socket), socket);
+
+                await SendJSON(socket, new
+                {
+                    command,
+                    totalPlayers,
+                    gameStatus,
+                    isPlaying
+                });
             }
-
-            await DistributeJSONToWebSockets(new { command, totalPlayers, sizeOfPlayers, 
-                gameInProgress, isPlaying});
-
         }
 
         private async Task InitializationOfTheGame(WebSocket websocket)
         {
             command = "JoinGame";
 
-            int sizeOfPlayers;
-            int totalPlayers = manager.GetTotalPlayers();
+            int sizeOfPlayers = manager.GetTotalPlayers() > 6 ? 6 : manager.GetTotalPlayers();
 
-            game.InstantiateGameSession(totalPlayers);
-
-
-            if (totalPlayers > 6)
-            {
-                sizeOfPlayers = 6;
-            } else
-            {
-                sizeOfPlayers = totalPlayers;
-            }
-
+            game.InstantiateGameSession(sizeOfPlayers);
             List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(sizeOfPlayers);
 
             bool isCreator;
+            bool isPlaying = true;
+
+            GameStatus gameStatus = game.gameStatus;
 
             for (int playerID = 0; playerID < playersPlaying.Count; playerID++)
             {
@@ -236,9 +233,10 @@ namespace DurakGame.Server.Middleware
                 await SendJSON(playersPlaying[playerID], new
                 {
                     command,
+                    gameStatus,
                     playerID,
                     sizeOfPlayers,
-                    totalPlayers,
+                    isPlaying,
                     isCreator
                 });
             }
@@ -262,13 +260,11 @@ namespace DurakGame.Server.Middleware
             } 
             else
             {
-                
-                Console.WriteLine("Player Index MIDDLEWARE: " + route.From);
                 game.AssignUserName(route.Name, route.From);
                 game.AssignIcon(route.Icon, route.From);
                 // the icon on pos route.Icon is not available
                 game.GetAvailableIcons()[route.Icon] = false;
-                game.GetPlayer(route.From).SetIsReady(true);
+                game.GetPlayer(route.From).waitingRoomState = WaitingRoomState.Ready;
             }
             // send setup result to the user's websocket
             await SendJSON(websocket, new { command, playerSetupOK });
@@ -283,11 +279,10 @@ namespace DurakGame.Server.Middleware
         {
             command = "StartGame";
 
-            int totalPlayers = manager.GetTotalPlayers();
-            if (totalPlayers > 6) totalPlayers = 6;
+            int totalPlayers = manager.GetTotalPlayingPlayers();
 
             game.StartGame(totalPlayers);
-            List<WebSocket> playersPlaying = manager.GetFirstPlayersPlaying(totalPlayers);
+            List<WebSocket> playersPlaying = manager.GetPlayingSockets();
             GameView gameView;
 
             string[] playerUserNames = game.GetUserNames();
@@ -304,6 +299,27 @@ namespace DurakGame.Server.Middleware
                     takenIcons
                 });
             }
+        }
+
+        private async Task HandleResetGameCommand()
+        {
+            // resets the game
+            game.Reset();
+
+            command = "ResetSuccess";
+            // send the success message to playing players 
+            foreach(WebSocket socket in manager.GetPlayingSockets())
+            {
+                await SendJSON(socket, new 
+                { 
+                    command
+                    // no need to send the reset gameView. it is done in client-side
+                });
+            }
+
+            // reconnect the sockets of players who finished the game to maintain the 
+            // order with sockets that already were waiting in the lobby
+            manager.ReconnectTheConnectionOfOldPlayers();
         }
 
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
@@ -333,15 +349,13 @@ namespace DurakGame.Server.Middleware
                     await UpdateAvailableIcons(websocket);
                     break;
                 case "PlayerSetup":
-                    Console.WriteLine("Printing the ClientMessage fields: ");
-                    Console.WriteLine("Message: "+ route.Message);
-                    Console.WriteLine("From: "+ route.From);
-                    Console.WriteLine("Name: "+ route.Name);
-                    Console.WriteLine("Icon: "+ route.Icon);
                     await CheckPlayerSetup(route, websocket);
                     break;
                 case "StartGame":
                     await InformStartGame();
+                    break;
+                case "ResetGame":
+                    await HandleResetGameCommand();
                     break;
                 default:
                     Console.WriteLine("Unknown Message from the client");
@@ -389,7 +403,7 @@ namespace DurakGame.Server.Middleware
                             // Send messages to players informing which player leaves and update
                             // the number of players
                             // only if the game is on
-                            if (game.gameInProgress)
+                            if (game.gameStatus == GameStatus.GameInProcess)
                             {
                                 // Remove the players from the game 
                                 game.RemovePlayer(id);

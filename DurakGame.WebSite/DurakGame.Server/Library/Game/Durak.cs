@@ -1,22 +1,33 @@
-﻿using System;
+﻿using DurakGame.Library.GameCard;
+using DurakGame.Library.GameDeck;
+using DurakGame.Library.GamePlayer;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using DurakGame.Library.GamePlayer;
-using DurakGame.Library.GameDeck;
-using DurakGame.Library.GameCard;
 
 namespace DurakGame.Library.Game
 {
     public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
     public enum Variation { Classic, Passport }
     public enum MoveResult { OK, OutOfTurn, IllegalMove, TookCards, ExtraCard, GameIsOver }
+    public enum GameStatus { NotCreated, GameInProcess, GameOver }
     public class PlayerView
     {
         public int numberOfCards;
         public bool isAttacking;
         public PlayerState playerState;
     }
+
+    // InformPlayerInformation:(When Connects) C, totalPlayers, sizeOfPlayers, gameInProgress, isPlaying
+    // InitializationOfTheGame:(CreateGamePRESSED) C, playerID, sizeOfPlayers, totalPlayers, isCreator
+    // UpdateAvailableIcons:(WhenGameSetupDone) C, availableIcons[]
+    // CheckPlayerSetup: C, playerSetupOK
+    // CheckPlayerSetup: C, availableIcons, readyPlayers
+    // InformStartGame: C, gameView, playerUserName, takenIcons
+    
+    // Instead of gameInProgress, GameOver, GameCreated -> create an enum
+    // CARE: When game is created, players are automatically assigned by their enums (PlayingState,
+    // WaitingRoomState). When resetting do not forget to update
 
     public class GameView
     {
@@ -30,7 +41,7 @@ namespace DurakGame.Library.Game
         private int prevDiscardedHeapValue;
         public bool discardHeapChanged;
 
-        public bool gameOver;
+        public GameStatus gameStatus;
         public int playerTurn;
 
         public bool takingCards;
@@ -84,7 +95,7 @@ namespace DurakGame.Library.Game
 
             playerTurn = game.GetPlayersTurn();
 
-            gameOver = game.gameOver;
+            gameStatus = game.gameStatus;
         }
     }
 
@@ -100,11 +111,12 @@ namespace DurakGame.Library.Game
         public Type type;
         public Variation variation = Variation.Classic;
 
-        public bool gameOver;
+        /*public bool gameCreated;
+        public bool gameOver;*/
+        public GameStatus gameStatus;
         public int totalUninterruptedDone;
 
         private int discardedHeapSize;
-        public bool gameInProgress;
 
         public bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
 
@@ -139,6 +151,25 @@ namespace DurakGame.Library.Game
             SetAttacker();
 
             bout = new Bout();
+        }
+
+        private void ResetAvailableIcons()
+        {
+            availableIcons = new bool[6] { true, true, true, true, true, true };
+        }
+
+        public void Reset()
+        {
+            gameStatus = GameStatus.NotCreated;
+            discardedHeapSize = 0;
+
+            // reset available icons
+            ResetAvailableIcons();
+            // reset the players list
+            players.Clear();
+            // reset set of attacking players
+            allAttackingPlayersIndex = 0;
+            allAttackingPlayers.Clear();
         }
 
         // returns how many players are still playing (have cards in the game)
@@ -180,17 +211,26 @@ namespace DurakGame.Library.Game
             int total = 0;
             foreach (Player p in players)
             {
-                if (p.IsPlayerReady())
+                if (p.waitingRoomState == WaitingRoomState.Ready)
                 {
                     total += 1;
                 }
             }
             return total;
         }
-        
+
+        public void AddPlayers(int totalPlayers)
+        {
+            for (int i = 0; i < totalPlayers; i++)
+            {
+                Player p = new Player();
+                players.Add(p);
+            }
+        }
+
         public void InstantiateGameSession(int totalPlayers)
         {
-            gameInProgress = true;
+            gameStatus = GameStatus.GameInProcess;
             // add players
             AddPlayers(totalPlayers);
         }
@@ -202,14 +242,6 @@ namespace DurakGame.Library.Game
 
         public void AssignUserName(string name, int index)
         {
-            Console.WriteLine("PASSED INDEX: " + index);
-            Console.WriteLine("Size of Players List: " + players.Count);
-            for (int i = 0; i < players.Count; i++)
-            {
-                Console.Write("PLAYERS index: " + i + " Players name: " + players[i].GetPlayersName());
-                Console.WriteLine();
-            }
-
             GetPlayer(index).SetPlayerName(name);
             Console.Write("SERVER: USERNAMES => ");
             foreach (var v in GetUserNames())
@@ -249,15 +281,6 @@ namespace DurakGame.Library.Game
             players.RemoveAt(playerID);
         }
 
-        public void AddPlayers(int totalPlayers)
-        {
-            for (int i = 0; i < totalPlayers; i++)
-            {
-                Player p = new Player();
-                p.playerState = PlayerState.Playing;
-                players.Add(p);
-            }
-        }
 
         public void DistributeCardsToPlayers()
         {
@@ -276,6 +299,12 @@ namespace DurakGame.Library.Game
                         {
                             new Card((Suit)1, (Rank)14),
                         });
+
+            players[2].AddCardsToHand(new List<Card>
+            {
+                new Card((Suit)2, (Rank)12),
+                new Card((Suit)3, (Rank)12)
+            });
         }
 
         // Function will find the player who has the card with
@@ -535,13 +564,23 @@ namespace DurakGame.Library.Game
 
         private void CheckEndGame()
         {
+            Console.WriteLine("Inside CheckEndGame()");
             if (IsGameOver())
             {
                 Player lastPlayer = GetLastPlayer();
+                Console.WriteLine("Durak is " + lastPlayer.GetPlayersName());
+
                 lastPlayer.playerState = PlayerState.Durak;
 
-                gameOver = true;
+                gameStatus = GameStatus.GameOver;
             }
+        }
+
+        private void RemovePlayersCards()
+        {
+            Player lastPlayer = GetLastPlayer();
+            discardedHeapSize += lastPlayer.GetNumberOfCards();
+            lastPlayer.RemoveAllCardsFromHand();
         }
 
         // controls flow of the game when the attacking player presses DONE. 
@@ -549,15 +588,19 @@ namespace DurakGame.Library.Game
         {
             CheckEndGame();
 
-            if (!gameOver)
+            if (gameStatus == GameStatus.GameInProcess)
             {
                 ChangeBattle(false);
-            } else
+            }
+            else if (gameStatus == GameStatus.GameOver) 
             {
                 // the game is over, durak is found and cards in the middle move to the
                 // discarded pile 
                 UpdateDiscardedPile();
                 bout.RemoveCardsFromBout();
+
+                // at the end remove the losers cards to discarded heap
+                RemovePlayersCards();
             }
         }
 
@@ -566,11 +609,11 @@ namespace DurakGame.Library.Game
         {
             CheckEndGame();
 
-            if (!gameOver)
+            if (gameStatus == GameStatus.GameInProcess)
             {
                 ChangeBattle(true);
             }
-            else
+            else if (gameStatus == GameStatus.GameOver)
             {
                 // the game is over, durak is found and the cards in the middle move the defender
                 // because he/she took them
@@ -578,6 +621,9 @@ namespace DurakGame.Library.Game
                 // add all the cards from the bout to the defending player
                 GetPlayer(defendingPlayer).AddCardsToHand(bout.GetEverything());
                 bout.RemoveCardsFromBout();
+
+                // at the end remove the losers cards to discarded heap
+                RemovePlayersCards();
             }
         }
 

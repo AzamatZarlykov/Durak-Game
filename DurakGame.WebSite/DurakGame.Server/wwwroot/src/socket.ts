@@ -26,6 +26,7 @@ let UpdatePlayerSetupCommand: string = "UpdatePlayerSetup";
 let StartGameCommand: string = "StartGame";
 let ExtraCardCommand: string = "ExtraCard";
 let GameIsAlreadyOverCommand: string = "GameIsAlreadyOver";
+let ResetSuccessCommand: string = "ResetSuccess";
 
 let view: GameView;
 
@@ -43,7 +44,8 @@ let allCommands: string[] = [
     UpdatePlayerSetupCommand,
     StartGameCommand,
     ExtraCardCommand,
-    GameIsAlreadyOverCommand
+    GameIsAlreadyOverCommand,
+    ResetSuccessCommand
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -96,21 +98,17 @@ socket.onmessage = function (event): void {
                     console.log("Player" + obj.leavingPlayerID + " left the server");
                 }
                 break;
-            // game to join the playing room. This statement displays number of playing players and displays
-            // each players position on the table
             case (joinGameCommand):
                 setPlayerID(obj.playerID);
-
+                view.gameStatus = obj.gameStatus;
                 view.setID(id);
-                view.setTotalPlayers(nPlayers);
+                view.updatePlayingStatus(obj.isPlaying);
+                // view.setTotalPlayers(nPlayers);
                 view.setCreator(obj.isCreator);
                 view.setTotalPlayersPlaying(nPlayersPlaying);
-                view.gameInProgress = true;
 
                 if (obj.isCreator) {
                     view.loadGameSettingMenu();
-                } else {
-                    view.displayMenu();
                 }
                 break;
             case (UpdateGameProcessCommand):
@@ -119,9 +117,8 @@ socket.onmessage = function (event): void {
                 break;
             case (setTotalPlayersCommand):
                 view.setTotalPlayers(nPlayers);
-                view.setTotalPlayersPlaying(nPlayersPlaying);
-                view.gameInProgress = obj.gameInProgress;
-                view.updatePlayingStatus(obj.isPlaying);
+                // view.updatePlayingStatus(obj.isPlaying);
+                view.gameStatus = obj.gameStatus;
                 break;
             case (UpdateAvailableIconsCommand):
                 view.updateAvailableIcons(obj.availableIcons);
@@ -166,6 +163,9 @@ socket.onmessage = function (event): void {
                 break;
             case (GameIsAlreadyOverCommand):
                 view.displayMessage("gameIsAlreadyOver", false, 'white', 'white');
+                break;
+            case (ResetSuccessCommand):
+                view.backToLobby();
                 break;
         }
     } else {

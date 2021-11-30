@@ -1,7 +1,11 @@
 ﻿import { Button } from './button.js';
 
+enum GameStatus {
+    NotCreated, GameInProgress, GameOver
+}
+
 enum PlayerState {
-    Winner, Durak, Playing
+    Playing, Winner, Durak
 }
 
 enum Rank {
@@ -39,7 +43,7 @@ interface GameViewInfo {
     discardHeapSize: number;
     discardHeapChanged: boolean;
 
-    gameOver: boolean;
+    gameStatus: GameStatus;
 
     hand: Card[];
 
@@ -113,6 +117,8 @@ export class GameView {
     private isPlaying: boolean;
     private readyPlayers: number;
 
+    public gameStatus: GameStatus;
+
     public userName: string = "";
     private input: HTMLInputElement;
     private nTextMetrics: TextMetrics;
@@ -126,8 +132,6 @@ export class GameView {
 
     public fontSize: number = 20;
     private hasInput: boolean = false;
-
-    public gameInProgress: boolean;
 
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
@@ -420,12 +424,12 @@ export class GameView {
     public drawBox(text: string, x: number, y: number, strokeStyle: string,
         textStyle: string, withRectangle: boolean, fontS: number) {
 
-        this.context.save();
         this.context.font = "bold " + fontS + "px serif";
 
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
+        console.log("IN DRAWBOX: " + fontS);
         if (withRectangle) {
             let textM: TextMetrics = this.context.measureText(text);
 
@@ -440,7 +444,6 @@ export class GameView {
             this.nTextMetrics = this.context.measureText(text);
             this.context.fillText(text, x - this.nTextMetrics.width / 2, y);
         }
-        this.context.restore();
     }
 
     /*
@@ -595,10 +598,10 @@ export class GameView {
         let textM: TextMetrics = this.context.measureText(text);
         // write text
         this.drawBox(text, this.canvas.width / 2, this.deckPosY - this.canvas.height / 4, 'black',
-            'black', false, 80
+            'black', false, this.fontSize
         );
 
-        // make a line under MENU
+        // make a line under Text
         this.context.save();
         this.context.beginPath();
         this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
@@ -725,6 +728,9 @@ export class GameView {
         // display the main text "Player Setup"
         this.writeMainTextWithUnderlying("Player Setup");
 
+        this.context.save();
+        this.context.fillStyle = 'black';
+        this.context.strokeStyle = 'black';
         // display form for name this.input
         textMetric = this.context.measureText("Name: ");
         this.context.fillText("Name: ", this.canvas.width / 2 - 2 * textMetric.width,
@@ -736,7 +742,7 @@ export class GameView {
         textMetric = this.context.measureText("Select an Icon:");
         this.context.fillText("Select an Icon:", this.canvas.width / 2 - textMetric.width / 2,
             this.canvas.height / 2);
-
+        this.context.restore();
         // display the setting of the game
         this.displaySettingImages();
 
@@ -771,6 +777,8 @@ export class GameView {
     }
 
     public switchPages(state: State): void {
+        console.log("SWITCHING PAGES");
+
         this.state = state;
         switch (this.state) {
             case State.WaitingRoom:
@@ -781,6 +789,8 @@ export class GameView {
                 break;
         }
         this.setFontSize();
+        this.selectedModes = [0, 0, 0];
+        console.log("FONT SIZE: " + this.fontSize);
     }
 
     /*
@@ -802,7 +812,7 @@ export class GameView {
             if (this.state == State.PlayerSetup) {
                 this.resetSetupPageSettings();
             }
-            this.changeStates(State.Menu);
+            this.switchPages(State.Menu);
             this.displayMenu();
         }
 
@@ -828,7 +838,7 @@ export class GameView {
                     GameSetting: this.selectedModes
                 });
                 this.socket.send(strJSON);
-                this.changeStates(State.PlayerSetup);
+                this.switchPages(State.PlayerSetup);
             }
         }
 
@@ -848,26 +858,17 @@ export class GameView {
     }
 
     /*
-        Helper function that changes the state settings 
-    */
-    private changeStates(newState: State) {
-        this.state = newState;
-        this.setFontSize();
-        this.selectedModes = [0, 0, 0];
-    }
-
-    /*
        helper function that handles different circumstances of when pressing Join button
     */
     private handleJoinButtonInstructions(): void {
         // if game is not being created then players cant join
-        if (!this.gameInProgress) {
+        if (this.gameStatus == GameStatus.NotCreated) {
             this.displayMessage("GameNotCreated", true, 'red', 'red',
                 this.canvas.width / 2, this.deckPosY +
                 this.boxHeight + 25 * this.canvas.height / 100
             );
-        } else if (this.gameInProgress && this.isPlaying) {
-            this.changeStates(State.PlayerSetup);
+        } else if (this.gameStatus == GameStatus.GameInProgress && this.isPlaying) {
+            this.switchPages(State.PlayerSetup);
             this.loadPlayerSetupPage();
         } else if (!this.isPlaying) {
             this.displayMessage("CannotJoin", true, 'red', 'red',
@@ -888,13 +889,13 @@ export class GameView {
                 this.boxHeight + 25 * this.canvas.height / 100
             );
         }
-        else if (!this.gameInProgress) {
+        else if (this.gameStatus == GameStatus.NotCreated) {
             strJSON = JSON.stringify({
                 From: this.id,
                 Message: "CreateGame"
             });
             this.socket.send(strJSON);
-            this.changeStates(State.CreateGame);
+            this.switchPages(State.CreateGame);
 
         } else if (this.isPlaying) {
             // display that game is being created
@@ -938,7 +939,8 @@ export class GameView {
             strJSON = JSON.stringify({
                 Message: this.isAttacking() ? "Done" : "Take"
             });
-        } else {
+        }
+        else {
             return;
         }
         this.socket.send(strJSON);
@@ -954,12 +956,42 @@ export class GameView {
         }
     }
 
+    public backToLobby(): void {
+        this.switchPages(State.Menu);
+        this.displayMenu();
+        this.gameStatus = GameStatus.NotCreated;
+        this.availableIcons = [true, true, true, true, true, true];
+        this.userName = "";
+        this.id = undefined;
+        this.selectedIcon = 0;
+    }
+    /*
+        When the game is over, if the creator presses the back to lobby button
+        this function will send the commands to server
+    */
+    private handleEndGameInstructions(): void {
+        let strJSON: string;
+        if (this.isBackToMenuPressed()) {
+            strJSON = JSON.stringify({
+                Message: "ResetGame"
+            });
+            this.socket.send(strJSON);
+        }
+    }
+
     /*
         Function that tells which card the attacking player has selected to attack 
     */
     private CheckMouseClick(): void {
-        if (this.state == State.GameTable && (this.isAttacking() || this.isDefending())) {
-            this.handleCardClickInstructions();
+        if (this.state == State.GameTable) {
+            if (this.gameView.gameStatus == GameStatus.GameInProgress &&
+                (this.isAttacking() || this.isDefending())) {
+
+                this.handleCardClickInstructions();
+            }
+            else if (this.gameView.gameStatus == GameStatus.GameOver) {
+                this.handleEndGameInstructions();
+            }
         }
         else if (this.state == State.Menu) {
             if (this.isJoinPressed()) {
@@ -1217,6 +1249,10 @@ export class GameView {
     }
 
     private GetBoxStyle(currentID: number): string {
+        if (this.gameView.gameStatus == GameStatus.GameOver) {
+            return 'black';
+        }
+
         if (currentID == this.gameView.attackingPlayer) {
             return 'lime';
         } else if (currentID == this.gameView.defendingPlayer) {
@@ -1226,8 +1262,13 @@ export class GameView {
     }
 
     private manageAttackingPlayerGameSetup(pos: { x: number, y: number, tWidth: number; }): void {
+        if (this.gameView.gameStatus == GameStatus.GameOver) {
+            return;
+        }
+
         // display "Attack" message if no cards were played 
-        if (!this.gameView.gameOver && this.gameView.attackingCards.length == 0) {
+        if (this.gameView.attackingCards.length == 0) {
+
             this.drawBox("Attack", pos.x + pos.tWidth + this.cardWidth,
                 pos.y + this.offset, 'white', 'white', false, this.fontSize);
         }
@@ -1288,6 +1329,8 @@ export class GameView {
         this.displayWinner(currentID, pos);
 
         if (this.id == currentID) {
+            console.log("IN PLayer Helper: " + this.fontSize);
+
             this.drawBox(this.userName, pos.x + pos.tWidth / 2,
                 pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
 
@@ -1341,11 +1384,11 @@ export class GameView {
     public displayPlayers(): void {
         this.context.fillStyle = 'white';
 
-        let position: number[] = this.getPositions(this.totalPlayers);
+        let position: number[] = this.getPositions(this.gameView.playersView.length);
         let currentID: number;
 
-        for (let i = 0; i < this.totalPlayers; i++) {
-            currentID = (this.id + i) % this.totalPlayers;
+        for (let i = 0; i < this.gameView.playersView.length; i++) {
+            currentID = (this.id + i) % this.gameView.playersView.length;
 
             // calculate the total width of cards 
             this.totalCardWidth = (this.gameView.playersView[currentID].numberOfCards - 1) *
@@ -1406,9 +1449,16 @@ export class GameView {
 
         this.displayBout();
 
-        if (this.gameView.gameOver) {
+        if (this.gameView.gameStatus == GameStatus.GameOver) {
             this.displayDurakMessage();
 
+            // display "Back To Lobby" button for the creator. When pressed every player moves 
+            // to the lobby
+            if (this.isCreator) {
+                this.buttonMenu = new Button(this, this.canvas.width / 2,
+                    60 / 100 * this.canvas.height, "Back To Lobby", 45);
+                this.buttonMenu.draw('white', 'white');
+            }
         }
 
     }
@@ -1508,3 +1558,7 @@ export class GameView {
         this.context.restore();
     }
 }
+
+
+// there is a problem when you reset the game and play again the font size of the text in gameboard
+// is 80 but should be 20; The problem is that the drawBox takes teh value from the previous call 
