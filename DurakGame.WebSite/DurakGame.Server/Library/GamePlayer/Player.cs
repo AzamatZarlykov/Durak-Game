@@ -72,5 +72,17 @@ namespace DurakGame.Library.GamePlayer
                 Console.WriteLine("The rank : " + c.rank + ". The suit : " + c.suit);
             }
         }
+
+        public void PrintInfo(bool isAttacker)
+        {
+            Console.WriteLine("PRINTING PLAYER INFORMATION:");
+            Console.WriteLine("NAME: " + name);
+            Console.WriteLine("IS " + (isAttacker ? "ATTACKING: ": "TAKING: ") + 
+                (isAttacker ? isAttackersTurn : isTaking));
+            Console.WriteLine("PLAYER STATE: " + playerState);
+            Console.WriteLine("CARDS: ");
+            PrintCards();
+            Console.WriteLine();
+        }
     }
 }

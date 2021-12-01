@@ -1562,3 +1562,16 @@ export class GameView {
 
 // there is a problem when you reset the game and play again the font size of the text in gameboard
 // is 80 but should be 20; The problem is that the drawBox takes teh value from the previous call 
+
+// PLAYER 0 TAKES THE CARDS
+
+// Durking the game, the game assigns for the defender that they automatically take the cards 
+// even tho they did not
+
+// Turn does not work correctly
+
+// Imaging 3 players game(A,B,C), A is attacker and B is defender. A has 1 card and B has 1 card
+// Currently, when A attacks (attackMove checks if this player is winner and assigns winner),
+// defender defends (check as well and becomes winner).Then Done button pressed that checks 
+// if GameOver. Yes the game is over bc only one player left (C) but the function assigns the last 
+// player to be durak

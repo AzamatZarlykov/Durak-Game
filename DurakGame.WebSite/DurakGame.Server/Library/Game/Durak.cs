@@ -142,8 +142,8 @@ namespace DurakGame.Library.Game
             deck.Shuffle();
 
             // the last card is the trump card(the one at the bottom face up)
-            // trumpCard = deck.GetCard(0);
-            trumpCard = new Card((Suit)0, (Rank)6);
+            trumpCard = deck.GetCard(0);
+            // trumpCard = new Card((Suit)0, (Rank)6);
             // Each player draws 6 cards
             DistributeCardsToPlayers();
 
@@ -284,27 +284,22 @@ namespace DurakGame.Library.Game
 
         public void DistributeCardsToPlayers()
         {
-            /*            foreach (Player p in players)
-                        {
-                            p.AddCardsToHand(deck.DrawUntilSix(0));
-                        }*/
-
-            players[0].AddCardsToHand(new List<Card>
-                        {
-                            new Card((Suit)1, (Rank)13),
-                            new Card((Suit)2, (Rank)13),
-                        });
-
-            players[1].AddCardsToHand(new List<Card>
-                        {
-                            new Card((Suit)1, (Rank)14),
-                        });
-
-            players[2].AddCardsToHand(new List<Card>
+            foreach (Player p in players)
             {
-                new Card((Suit)2, (Rank)12),
-                new Card((Suit)3, (Rank)12)
-            });
+                p.AddCardsToHand(deck.DrawUntilSix(0));
+            }
+
+            /*            players[0].AddCardsToHand(new List<Card>
+                                    {
+                                        new Card((Suit)1, (Rank)13),
+                                        new Card((Suit)2, (Rank)13),
+                                    });
+
+                        players[1].AddCardsToHand(new List<Card>
+                                    {
+                                        new Card((Suit)1, (Rank)14),
+                                    });*/
+
         }
 
         // Function will find the player who has the card with
@@ -397,13 +392,13 @@ namespace DurakGame.Library.Game
             return false;
         }
 
-        private void GetNextPlayingPlayer(int increment)
+        private void GetNextPlayingPlayer(int increment, bool defTaking)
         {
             attackingPlayer = (attackingPlayer + increment) % GetSizeOfPlayers();
 
             while (GetPlayer(attackingPlayer).GetNumberOfCards() == 0 || 
-                  (GetSizeOfPlayingPlayers() > 2 && defendingPlayer == attackingPlayer && 
-                   GetPlayer(defendingPlayer).IsPlayerTaking()))
+                  (GetSizeOfPlayingPlayers() > 1 && defendingPlayer == attackingPlayer &&
+                   defTaking))
             {
                 attackingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
             }
@@ -476,12 +471,14 @@ namespace DurakGame.Library.Game
             // set the initial attacking player
             attackingPlayer = allAttackingPlayers[0];
 
-            if (GetPlayer(defendingPlayer).IsPlayerTaking())
+            bool prevDefenderTaking = GetPlayer(defendingPlayer).IsPlayerTaking();
+            if (prevDefenderTaking)
             {
+
                 // add all the cards from the bout to the defending player
                 GetPlayer(defendingPlayer).AddCardsToHand(bout.GetEverything());
-                GetNextPlayingPlayer(2);
                 GetPlayer(defendingPlayer).SetIsTaking(false);
+                GetNextPlayingPlayer(2, prevDefenderTaking);
             }
             else
             {
@@ -493,7 +490,7 @@ namespace DurakGame.Library.Game
 
                 UpdateDiscardedPile();
 
-                GetNextPlayingPlayer(1);
+                GetNextPlayingPlayer(1, prevDefenderTaking);
             }
 
             bout.RemoveCardsFromBout();
@@ -503,6 +500,8 @@ namespace DurakGame.Library.Game
         // based on the outcome of the bout. 
         private void ChangeBattle(bool took)
         {
+            Console.WriteLine("BEFORE CHANGEBATTLE");
+            GetPlayer(defendingPlayer).PrintInfo(false);
             // If any card was played by attacking player and done button was pressed
             if (bout.IsBoutChanged())
             {
@@ -547,6 +546,8 @@ namespace DurakGame.Library.Game
                 }
             }
             GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
+            Console.WriteLine("AFTER CHANGEBATTLE");
+            GetPlayer(defendingPlayer).PrintInfo(false);
         }
 
         // The game is over when there is only one playing player left
@@ -555,32 +556,58 @@ namespace DurakGame.Library.Game
             return GetSizeOfPlayingPlayers() == 1;
         }
 
+        // Checking just defender or attacker isnt enough, case with 3 players e.g A wins by
+        // attacking and B wins by defending. Since Done is pressed consequently, GameOVer check
+        // called which finds there is only one player left and assigns DURAK to attacker (A).
+        // which is incorrect. NOTE: SLOW -> bc needs to check every players hands 
         private Player GetLastPlayer()
         {
-            return GetPlayer(defendingPlayer).GetNumberOfCards() > 0 ? 
+            foreach (Player p in players)
+            {
+                if (p.GetNumberOfCards() > 0) 
+                {
+                    return p;
+                }
+            }
+            return null;
+/*            return GetPlayer(defendingPlayer).GetNumberOfCards() > 0 ? 
                                               GetPlayer(defendingPlayer) :
-                                              GetPlayer(attackingPlayer);
+                                              GetPlayer(attackingPlayer);*/
         }
 
         private void CheckEndGame()
         {
-            Console.WriteLine("Inside CheckEndGame()");
-            if (IsGameOver())
+            try
             {
-                Player lastPlayer = GetLastPlayer();
-                Console.WriteLine("Durak is " + lastPlayer.GetPlayersName());
+                if (IsGameOver())
+                {
+                    Player lastPlayer = GetLastPlayer();
 
-                lastPlayer.playerState = PlayerState.Durak;
+                    lastPlayer.playerState = PlayerState.Durak;
 
-                gameStatus = GameStatus.GameOver;
+                    gameStatus = GameStatus.GameOver;
+                }
+            } catch (NullReferenceException ex)
+            {
+                Console.WriteLine("Last player has a null reference");
+                Console.WriteLine(ex.Message);
             }
+            
         }
 
         private void RemovePlayersCards()
         {
-            Player lastPlayer = GetLastPlayer();
-            discardedHeapSize += lastPlayer.GetNumberOfCards();
-            lastPlayer.RemoveAllCardsFromHand();
+            try
+            {
+                Player lastPlayer = GetLastPlayer();
+                discardedHeapSize += lastPlayer.GetNumberOfCards();
+                lastPlayer.RemoveAllCardsFromHand();
+            }
+            catch (NullReferenceException ex)
+            {
+                Console.WriteLine("Last player has a null reference");
+                Console.WriteLine(ex.Message);
+            }
         }
 
         // controls flow of the game when the attacking player presses DONE. 
