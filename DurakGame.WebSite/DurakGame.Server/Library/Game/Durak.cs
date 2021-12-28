@@ -109,7 +109,7 @@ namespace DurakGame.Library.Game
         private int attackingPlayer;
 
         public Type type;
-        public Variation variation = Variation.Classic;
+        public Variation variation;
 
         /*public bool gameCreated;
         public bool gameOver;*/
@@ -570,9 +570,6 @@ namespace DurakGame.Library.Game
                 }
             }
             return null;
-/*            return GetPlayer(defendingPlayer).GetNumberOfCards() > 0 ? 
-                                              GetPlayer(defendingPlayer) :
-                                              GetPlayer(attackingPlayer);*/
         }
 
         private void CheckEndGame()
