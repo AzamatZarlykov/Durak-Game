@@ -55,5 +55,18 @@ namespace DurakGame.Library.Game
             attackingCards.Clear();
             defendingCards.Clear();
         }
+
+        // returns true if all attacking cards are passport
+        public bool AllPassport(PassportCards passport)
+        {
+            foreach (Card card in attackingCards)
+            {
+                if ((int)card.rank != (int)passport)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

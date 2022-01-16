@@ -12,10 +12,10 @@ let id: number; // id of the player
 let nPlayers: number = 0; // total number of players on the webpage
 let nPlayersPlaying: number = 0; // total number of players playing on the table
 
-let informLeavingCommand: string = "InformLeaving";
-let joinGameCommand: string = "JoinGame";
-let requestStateGameCommand: string = "RequestStateGame";
-let setTotalPlayersCommand: string = "SetTotalPlayers";
+let InformLeavingCommand: string = "InformLeaving";
+let JoinGameCommand: string = "JoinGame";
+let RequestStateGameCommand: string = "RequestStateGame";
+let SetTotalPlayersCommand: string = "SetTotalPlayers";
 let UpdateGameProcessCommand: string = "UpdateGameProcess";
 let IllegalCommand: string = "Illegal";
 let WaitCommand: string = "Wait";
@@ -27,14 +27,16 @@ let StartGameCommand: string = "StartGame";
 let ExtraCardCommand: string = "ExtraCard";
 let GameIsAlreadyOverCommand: string = "GameIsAlreadyOver";
 let ResetSuccessCommand: string = "ResetSuccess";
+let PassportViolationCommand: string = "PassportViolation";
+let UseDisplayButtonCommand: string = "UseDisplayButton";
 
 let view: GameView;
 
 let allCommands: string[] = [
-    informLeavingCommand,
-    joinGameCommand,
-    requestStateGameCommand,
-    setTotalPlayersCommand,
+    InformLeavingCommand,
+    JoinGameCommand,
+    RequestStateGameCommand,
+    SetTotalPlayersCommand,
     UpdateGameProcessCommand,
     IllegalCommand,
     WaitCommand,
@@ -45,7 +47,9 @@ let allCommands: string[] = [
     StartGameCommand,
     ExtraCardCommand,
     GameIsAlreadyOverCommand,
-    ResetSuccessCommand
+    ResetSuccessCommand,
+    PassportViolationCommand,
+    UseDisplayButtonCommand
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -69,7 +73,7 @@ socket.onmessage = function (event): void {
 
     if (allCommands.indexOf(obj.command) > -1) {
 
-        if ([informLeavingCommand, setTotalPlayersCommand, joinGameCommand].includes(obj.command)) {
+        if ([InformLeavingCommand, SetTotalPlayersCommand, JoinGameCommand].includes(obj.command)) {
             setTotalPlayers(obj.totalPlayers);
             setPlayingPlayers(obj.sizeOfPlayers);
         }
@@ -78,7 +82,7 @@ socket.onmessage = function (event): void {
             // Handles the event when the player leaves when the game is on. It updates the value of
             // number of people playing and rearranges the position
             // of players depending on IDs
-            case (informLeavingCommand):
+            case (InformLeavingCommand):
                 if (playingTable.hidden == false) {
 
                     if (nPlayersPlaying > 1) {
@@ -98,28 +102,33 @@ socket.onmessage = function (event): void {
                     console.log("Player" + obj.leavingPlayerID + " left the server");
                 }
                 break;
-            case (joinGameCommand):
+
+            case (JoinGameCommand):
                 setPlayerID(obj.playerID);
                 view.gameStatus = obj.gameStatus;
                 view.setID(id);
                 view.updatePlayingStatus(obj.isPlaying);
-                // view.setTotalPlayers(nPlayers);
                 view.setCreator(obj.isCreator);
                 view.setTotalPlayersPlaying(nPlayersPlaying);
-
-                if (obj.isCreator) {
-                    view.loadGameSettingMenu();
-                }
                 break;
+
+            case (StartGameCommand):
+                view.updateGameView(obj.gameView);
+                view.setUserNames(obj.playerUserNames);
+                view.setTakenIcons(obj.takenIcons);
+                view.switchPages(State.GameTable, false);
+                break;
+
             case (UpdateGameProcessCommand):
                 view.updateGameView(obj.gameView);
                 view.displayStateOfTheGame();
                 break;
-            case (setTotalPlayersCommand):
+
+            case (SetTotalPlayersCommand):
                 view.setTotalPlayers(nPlayers);
-                // view.updatePlayingStatus(obj.isPlaying);
                 view.gameStatus = obj.gameStatus;
                 break;
+
             case (UpdateAvailableIconsCommand):
                 view.updateAvailableIcons(obj.availableIcons);
                 view.updateReadyPlayers(obj.readyPlayers);
@@ -129,43 +138,52 @@ socket.onmessage = function (event): void {
                     view.loadWaitingRoomPage();
                 }
                 break;
+
             case (UpdatePlayerSetupCommand):
                 if (!obj.playerSetupOK) {
                     view.loadPlayerSetupPage();
                     alert("The user name is already taken. Try another one.");
                 } else {
                     // Move to the waiting room
-                    view.switchPages(State.WaitingRoom);
+                    view.switchPages(State.WaitingRoom, false);
                 }
                 break;
+
             case (IllegalCommand):
                 view.displayMessage("illegal", false, 'white', 'white');
                 break;
+
             case (WaitCommand):
                 view.displayMessage("wait", false, 'white', 'white');
                 break;
+
             case (TakeCardsCommand):
                 view.updateGameView(obj.gameView);
                 view.displayStateOfTheGame();
                 view.displayMessage("takeCards", false, 'white', 'white');
                 break;
+
             case (TookCardsCommand):
                 view.displayMessage("tookCards", false, 'white', 'white');
                 break;
-            case (StartGameCommand):
-                view.updateGameView(obj.gameView);
-                view.setUserNames(obj.playerUserNames);
-                view.setTakenIcons(obj.takenIcons);
-                view.switchPages(State.GameTable);
-                break;
+
             case (ExtraCardCommand):
                 view.displayMessage("extraCard", false, 'white', 'white');
                 break;
+
             case (GameIsAlreadyOverCommand):
                 view.displayMessage("gameIsAlreadyOver", false, 'white', 'white');
                 break;
+
             case (ResetSuccessCommand):
                 view.backToLobby();
+                break;
+
+            case (PassportViolationCommand):
+                view.displayMessage("passport", false, 'white', 'white');
+                break;
+            case (UseDisplayButtonCommand):
+                view.displayMessage("displayPassport", false, 'white', 'white');
                 break;
         }
     } else {

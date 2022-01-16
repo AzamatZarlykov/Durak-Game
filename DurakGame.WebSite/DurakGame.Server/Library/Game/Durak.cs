@@ -9,13 +9,21 @@ namespace DurakGame.Library.Game
 {
     public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
     public enum Variation { Classic, Passport }
-    public enum MoveResult { OK, OutOfTurn, IllegalMove, TookCards, ExtraCard, GameIsOver }
+    public enum MoveResult { 
+        OK, OutOfTurn, IllegalMove, TookCards, ExtraCard, 
+        GameIsOver, PassportViolation, UseDisplayButton
+    }
     public enum GameStatus { NotCreated, GameInProcess, GameOver }
+    public enum PassportCards { 
+        Six = 6, Ten = 10, Jack = 11, Queen = 12, King = 13, Ace = 14
+    }
     public class PlayerView
     {
         public int numberOfCards;
         public bool isAttacking;
+        public bool allCardsPassport;
         public PlayerState playerState;
+        public PassportCards passport;
     }
 
     // InformPlayerInformation:(When Connects) C, totalPlayers, sizeOfPlayers, gameInProgress, isPlaying
@@ -54,9 +62,13 @@ namespace DurakGame.Library.Game
         public List<Card> attackingCards;
         public List<Card> defendingCards;
 
+        public Variation variation;
+        public bool passportGameOver;
+
         public GameView(Durak game, int id)
         {
             this.game = game;
+            variation = game.variation;
 
             List<Player> players = game.GetPlayers();
 
@@ -80,6 +92,17 @@ namespace DurakGame.Library.Game
                 playerView.numberOfCards = players[i].GetNumberOfCards();
                 playerView.isAttacking = (attackingPlayer == i);
                 playerView.playerState = players[i].playerState;
+                playerView.passport = players[i].passport;
+
+                if (players[i].playerState == PlayerState.Winner)
+                {
+                    passportGameOver = true;
+                }
+
+                if (variation == Variation.Passport && players[i].CheckIfAllCardsPassport())
+                {
+                    playerView.allCardsPassport = true;
+                }
 
                 pViews.Add(playerView);
             }
@@ -94,7 +117,6 @@ namespace DurakGame.Library.Game
             takingCards = game.GetPlayer(defendingPlayer).IsPlayerTaking();
 
             playerTurn = game.GetPlayersTurn();
-
             gameStatus = game.gameStatus;
         }
     }
@@ -111,8 +133,6 @@ namespace DurakGame.Library.Game
         public Type type;
         public Variation variation;
 
-        /*public bool gameCreated;
-        public bool gameOver;*/
         public GameStatus gameStatus;
         public int totalUninterruptedDone;
 
@@ -136,7 +156,106 @@ namespace DurakGame.Library.Game
         public int GetSizeOfPlayers() => players.Count;
         public Bout GetBoutInformation() => bout;
         public bool[] GetAvailableIcons() => availableIcons;
-        public void StartGame(int totalPlayers)
+
+        private void ResetAvailableIcons()
+        {
+            availableIcons = new bool[6] { true, true, true, true, true, true };
+        }
+
+        public void DistributeCardsToPlayers()
+        {
+            foreach (Player p in players)
+            {
+                p.AddCardsToHand(deck.DrawUntilSix(0));
+            }
+            /*
+                        players[0].AddCardsToHand(new List<Card>
+                                                {
+                                                    new Card((Suit)1, (Rank)6),
+                                                    new Card((Suit)2, (Rank)6),
+                                                    new Card((Suit)1, (Rank)13),
+                                                });
+
+                        players[1].AddCardsToHand(new List<Card>
+                                                {
+                                                    new  Card((Suit)1, (Rank)10),
+                                                    new  Card((Suit)1, (Rank)11),
+                                                    new  Card((Suit)1, (Rank)12),
+                                                    new  Card((Suit)2, (Rank)13),
+                                                    new Card((Suit)1, (Rank)14),
+                                                    new Card((Suit)0, (Rank)6),
+                                                    new Card((Suit)3, (Rank)6),
+                                                });*/
+        }
+
+        // Returns the list of attacking player based on the type of Durak
+        public void GetAttackers()
+        {
+            allAttackingPlayers.Clear();
+            allAttackingPlayers.Add(attackingPlayer);
+
+            switch (type)
+            {
+                case Type.OneSideAttacking:
+                    break;
+                case Type.NeighboursAttacking:
+                    allAttackingPlayers.Add(GetNextAttackingPlayerIndex(defendingPlayer));
+                    break;
+                case Type.AllSidesAttacking:
+
+                    for (int i = 1; i < players.Count; i++)
+                    {
+                        int index = (attackingPlayer + i) % players.Count;
+                        if (index == defendingPlayer || GetPlayer(index).GetNumberOfCards() == 0)
+                        {
+                            continue;
+                        }
+                        allAttackingPlayers.Add(index);
+                    }
+                    break;
+            }
+        }
+
+        // Function will find the player who has the card with
+        // lowest rank of the trump card's suit.
+        public void SetAttacker()
+        {
+            Player pl = null;
+            Rank lowTrump = 0;
+
+            foreach (Player p in players)
+            {
+                foreach (Card c in p.GetPlayersHand())
+                {
+                    if (c.suit == trumpCard.suit && (pl == null ||
+                        c.rank < lowTrump))
+                    {
+                        pl = p;
+                        lowTrump = c.rank;
+                    }
+                }
+            }
+
+            // If no player has a trump card then the first player
+            // connected to the game will be the attacking player
+            if (pl == null)
+            {
+                pl = players.First();
+            }
+
+            // e.g in the game of 3 players, if attacking player is 3
+            // then defending is 1
+            attackingPlayer = players.IndexOf(pl);
+            defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
+
+            GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
+            // Set the list of attackers with all the attacking players
+            // based on the type of the game
+            GetAttackers();
+        }
+
+
+        public void StartGame()
         {
             deck = new Deck();
             deck.Shuffle();
@@ -144,6 +263,7 @@ namespace DurakGame.Library.Game
             // the last card is the trump card(the one at the bottom face up)
             trumpCard = deck.GetCard(0);
             // trumpCard = new Card((Suit)0, (Rank)6);
+
             // Each player draws 6 cards
             DistributeCardsToPlayers();
 
@@ -153,9 +273,38 @@ namespace DurakGame.Library.Game
             bout = new Bout();
         }
 
-        private void ResetAvailableIcons()
+        public void AddPlayers(int totalPlayers)
         {
-            availableIcons = new bool[6] { true, true, true, true, true, true };
+            for (int i = 0; i < totalPlayers; i++)
+            {
+                Player p = new Player();
+                players.Add(p);
+            }
+        }
+
+        public void InstantiateGameSession(int totalPlayers)
+        {
+            gameStatus = GameStatus.GameInProcess;
+            // add players
+            AddPlayers(totalPlayers);
+        }
+
+        // Passport Variation Round reset
+        public void ResetPassportRound()
+        {
+            // game status
+            gameStatus = GameStatus.GameInProcess;
+
+            discardedHeapSize = 0;
+
+            // reset playher status
+            foreach (Player p in players)
+            {
+                p.Reset();
+            }
+
+            // Deck
+            StartGame();
         }
 
         public void Reset()
@@ -219,22 +368,6 @@ namespace DurakGame.Library.Game
             return total;
         }
 
-        public void AddPlayers(int totalPlayers)
-        {
-            for (int i = 0; i < totalPlayers; i++)
-            {
-                Player p = new Player();
-                players.Add(p);
-            }
-        }
-
-        public void InstantiateGameSession(int totalPlayers)
-        {
-            gameStatus = GameStatus.GameInProcess;
-            // add players
-            AddPlayers(totalPlayers);
-        }
-
         public bool IsUserNameAvailable(string name)
         {
             return Array.IndexOf(GetUserNames(), name) == -1;
@@ -280,67 +413,6 @@ namespace DurakGame.Library.Game
         {
             players.RemoveAt(playerID);
         }
-
-
-        public void DistributeCardsToPlayers()
-        {
-            foreach (Player p in players)
-            {
-                p.AddCardsToHand(deck.DrawUntilSix(0));
-            }
-
-            /*            players[0].AddCardsToHand(new List<Card>
-                                    {
-                                        new Card((Suit)1, (Rank)13),
-                                        new Card((Suit)2, (Rank)13),
-                                    });
-
-                        players[1].AddCardsToHand(new List<Card>
-                                    {
-                                        new Card((Suit)1, (Rank)14),
-                                    });*/
-
-        }
-
-        // Function will find the player who has the card with
-        // lowest rank of the trump card's suit.
-        public void SetAttacker()
-        {
-            Player pl = null;
-            Rank lowTrump = 0;
-
-            foreach (Player p in players)
-            {
-                foreach (Card c in p.GetPlayersHand())
-                {
-                    if (c.suit == trumpCard.suit && (pl == null || 
-                        c.rank < lowTrump))
-                    {
-                        pl = p;
-                        lowTrump = c.rank;
-                    }
-                }
-            }
-
-            // If no player has a trump card then the first player
-            // connected to the game will be the attacking player
-            if (pl == null)
-            {
-                pl = players.First();
-            }
-
-            // e.g in the game of 3 players, if attacking player is 3
-            // then defending is 1
-            attackingPlayer = players.IndexOf(pl);
-            defendingPlayer = (attackingPlayer + 1) % GetSizeOfPlayers();
-
-            GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
-            // Set the list of attackers with all the attacking players
-            // based on the type of the game
-            GetAttackers();
-        }
-
-
 
         public bool IsTrumpSuit(Card card)
         {
@@ -430,34 +502,6 @@ namespace DurakGame.Library.Game
             discardedHeapSize = discardedHeapSize + attCards + defCards;
         }
 
-        // Returns the list of attacking player based on the type of Durak
-        public void GetAttackers()
-        {
-            allAttackingPlayers.Clear();
-            allAttackingPlayers.Add(attackingPlayer);
-
-            switch (type)
-            {
-                case Type.OneSideAttacking:
-                    break;
-                case Type.NeighboursAttacking:
-                    allAttackingPlayers.Add(GetNextAttackingPlayerIndex(defendingPlayer));
-                    break;
-                case Type.AllSidesAttacking:
-
-                    for (int i = 1; i < players.Count; i++)
-                    {
-                        int index = (attackingPlayer + i) % players.Count;
-                        if (index == defendingPlayer || GetPlayer(index).GetNumberOfCards() == 0)
-                        {
-                            continue;
-                        }
-                        allAttackingPlayers.Add(index);
-                    }
-                    break;
-            }
-        }
-
         // Resets the round i.e distributes the cards to attacking players, based on bool taking,
         // distribute bout cards to defending player or remove to discarded pile, and get next 
         // players that will play
@@ -500,8 +544,6 @@ namespace DurakGame.Library.Game
         // based on the outcome of the bout. 
         private void ChangeBattle(bool took)
         {
-            Console.WriteLine("BEFORE CHANGEBATTLE");
-            GetPlayer(defendingPlayer).PrintInfo(false);
             // If any card was played by attacking player and done button was pressed
             if (bout.IsBoutChanged())
             {
@@ -546,8 +588,6 @@ namespace DurakGame.Library.Game
                 }
             }
             GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
-            Console.WriteLine("AFTER CHANGEBATTLE");
-            GetPlayer(defendingPlayer).PrintInfo(false);
         }
 
         // The game is over when there is only one playing player left
@@ -606,10 +646,59 @@ namespace DurakGame.Library.Game
                 Console.WriteLine(ex.Message);
             }
         }
+        private PassportCards GetNextEnumValue(PassportCards current)
+        {
+            PassportCards[] Arr = (PassportCards[])Enum.GetValues(current.GetType());
+            int j = Array.IndexOf(Arr, current) + 1;
+            return Arr[j];
+        }
+
+        private void UpdatePlayerPassport(Player p, bool update)
+        {
+            if (p.passport == PassportCards.Ace)
+            {
+                p.playerState = PlayerState.Winner;
+                return;
+            }
+            if (update)
+            {
+                p.playerState = PlayerState.Ascended;
+                p.passport = GetNextEnumValue(p.passport);
+                return;
+            }
+            p.playerState = PlayerState.NotAscended;
+        }
+
+        private void CheckIfPlayerIsWinner(int playerIndex)
+        {
+            if (!IsGameOver() && GetPlayer(playerIndex).GetNumberOfCards() == 0)
+            {
+                Player p = GetPlayer(playerIndex);
+                if (variation != Variation.Passport)
+                {
+                    p.playerState = PlayerState.Winner;
+                    return;
+                }
+                if (bout.AllPassport(p.passport))
+                {
+                    UpdatePlayerPassport(p, true);
+                    return;
+                }
+                UpdatePlayerPassport(p, false);
+            }
+        }
+
 
         // controls flow of the game when the attacking player presses DONE. 
         public void AttackerDone() 
         {
+            // if the board has only passports -> the attacking player has won the round
+            // hence, update 
+            if (isPassportVariation())
+            {
+                CheckIfPlayerIsWinner(attackingPlayer);
+            }
+
             CheckEndGame();
 
             if (gameStatus == GameStatus.GameInProcess)
@@ -651,17 +740,25 @@ namespace DurakGame.Library.Game
             }
         }
 
-        private void CheckIfPlayerIsWinner(int playerIndex)
+        private bool isPassportVariation()
         {
-            if (!IsGameOver() && GetPlayer(playerIndex).GetNumberOfCards() == 0)
-            {
-                GetPlayer(playerIndex).playerState = PlayerState.Winner;
-            }
+            return Variation.Passport == variation;
+        }
+
+        private bool isCardPassport(Card card, bool attacking)
+        {
+            Player player = attacking ? GetPlayer(attackingPlayer) : GetPlayer(defendingPlayer);
+
+            int passportNumber = (int)player.passport;
+            int cardNumber = (int)card.rank;
+
+            return passportNumber == cardNumber;
         }
 
         public MoveResult DefenderMove(int cardIndex)
         {
-            if (!GetPlayer(defendingPlayer).IsPlayerTaking())
+            Player defPlayer = GetPlayer(defendingPlayer);
+            if (!defPlayer.IsPlayerTaking())
             {
                 // wait for the attack
                 if (GetPlayer(attackingPlayer).IsAttackersTurn())
@@ -672,15 +769,19 @@ namespace DurakGame.Library.Game
                 int attackCardIndex = bout.GetAttackingCardsSize() - 1;
 
                 Card attackingCard = bout.GetAttackingCard(attackCardIndex);
-                Card defendingCard = GetPlayer(defendingPlayer).GetPlayersCard(cardIndex);
+                Card defendingCard = defPlayer.GetPlayersCard(cardIndex);
 
                 if (!IsLegalDefense(attackingCard, defendingCard))
                 {
                     return MoveResult.IllegalMove;
                 }
+                if (defPlayer.IsPassport(defendingCard) && !IsTrumpSuit(defendingCard))
+                {
+                    return MoveResult.PassportViolation;
+                }
 
                 bout.AddDefendingCard(defendingCard);
-                GetPlayer(defendingPlayer).RemoveCardFromHand(defendingCard);
+                defPlayer.RemoveCardFromHand(defendingCard);
 
                 // set defense finished to true
                 GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
@@ -708,34 +809,43 @@ namespace DurakGame.Library.Game
 
         public MoveResult AttackerMove(int cardIndex)
         {
+            Player player = GetPlayer(attackingPlayer);
             if (IsGameOver())
             {
                 return MoveResult.GameIsOver;
             }
             // if the attack started wait for the defense
-            if (!GetPlayer(attackingPlayer).IsAttackersTurn())
+            if (!player.IsAttackersTurn())
             {
                 return MoveResult.OutOfTurn;
             }
 
-            Card attackingCard = GetPlayer(attackingPlayer).GetPlayersCard(cardIndex);
+            Card attackingCard = player.GetPlayersCard(cardIndex);
 
             if (bout.GetAttackingCardsSize() == 0 || bout.ContainsRank(attackingCard.rank))
             {
-                
                 if (CheckIfAttackingCardIsExtra())
                 {
                     return MoveResult.ExtraCard;
-                } 
+                }
+
+                if (isPassportVariation())
+                    if (isCardPassport(attackingCard, true))
+                    {
+                        if (!GetPlayer(attackingPlayer).CheckIfAllCardsPassport())
+                            // cannot attack with passport when there are other nonpassport cards
+                            return MoveResult.PassportViolation;
+                        return MoveResult.UseDisplayButton;
+                    }
 
                 bout.AddAttackingCard(attackingCard);
-                GetPlayer(attackingPlayer).RemoveCardFromHand(attackingCard);
+                player.RemoveCardFromHand(attackingCard);
 
                 bout.SetBoutChanged(true);
 
                 if (!GetPlayer(defendingPlayer).IsPlayerTaking())
                 {
-                    GetPlayer(attackingPlayer).SetIsAttackersTurn(false);
+                    player.SetIsAttackersTurn(false);
                 }
                 // When player attacked check if they are a winner or still playing
                 CheckIfPlayerIsWinner(attackingPlayer);
@@ -752,7 +862,8 @@ namespace DurakGame.Library.Game
         {
             if (!GetPlayer(defendingPlayer).IsPlayerTaking())
             {
-                return bout.GetAttackingCardsSize() > bout.GetDefendingCardsSize();
+                return bout.GetAttackingCardsSize() > bout.GetDefendingCardsSize() && 
+                    !bout.AllPassport(GetPlayer(attackingPlayer).passport);
             }
             return false;
         }
@@ -765,5 +876,28 @@ namespace DurakGame.Library.Game
             }
             return attackingPlayer;
         }
+
+        public void DisplayPassports()
+        {
+            Card card;
+            Player player = GetPlayer(attackingPlayer);
+
+            int subtractor = 0;
+            int size = player.GetNumberOfCards();
+            for (int i = 0; i < size; i++)
+            {
+                card = player.GetPlayersCard(i - subtractor);
+                bout.AddAttackingCard(card);
+                player.RemoveCardFromHand(card);
+                subtractor++;
+            }
+
+            bout.SetBoutChanged(true);
+            // CheckIfPlayerIsWinner(attackingPlayer);
+        }
     }
 }
+
+
+// Winner should be given once the DONE/TAKE button pressed
+// Consider removing "Winner" enum from passport cards 

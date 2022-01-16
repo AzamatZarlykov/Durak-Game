@@ -5,7 +5,7 @@ enum GameStatus {
 }
 
 enum PlayerState {
-    Playing, Winner, Durak
+    Playing, NotAscended, Ascended, Winner, Durak
 }
 
 enum Rank {
@@ -16,16 +16,24 @@ enum Suit {
     Club, Diamonds, Heart, Spade
 }
 
+enum PassportCards {
+    Six = 6, Ten = 10, Jack = 11, Queen = 12, King = 13, Ace = 14
+}
+
+enum Variation { Classic, Passport }
+
 export enum State {
     Menu, CreateGame, PlayerSetup, WaitingRoom, GameTable
 }
 
+
 interface PlayerView {
     numberOfCards: number;
     isAttacking: boolean;
+    allCardsPassport: boolean;
     playerState: PlayerState;
+    passport: PassportCards;
 }
-
 
 export interface Card {
     rank: Rank;
@@ -44,6 +52,7 @@ interface GameViewInfo {
     discardHeapChanged: boolean;
 
     gameStatus: GameStatus;
+    variation: Variation;
 
     hand: Card[];
 
@@ -54,6 +63,7 @@ interface GameViewInfo {
     defendingCards: Card[];
 
     takingCards: boolean;
+    passportGameOver: boolean;
 }
 
 class MousePos {
@@ -66,7 +76,7 @@ class MousePos {
 }
 
 export class GameView {
-    private canvas: HTMLCanvasElement;
+    public canvas: HTMLCanvasElement;
     public context: CanvasRenderingContext2D;
 
     private cardWidth: number;
@@ -83,7 +93,7 @@ export class GameView {
     private cardRightX: number;
 
     private deckPosX: number;
-    private deckPosY: number;
+    public deckPosY: number;
 
     private modeHeight: number;
 
@@ -331,7 +341,7 @@ export class GameView {
                     this.fontSize = 50;
                     break;
                 case State.GameTable:
-                    this.fontSize = 20;
+                    this.fontSize = 21;
                     break;
                 case State.CreateGame:
                     this.fontSize = 45;
@@ -347,7 +357,6 @@ export class GameView {
             this.fontSize = size;
         }
 
-        this.context.lineWidth = 5;
         this.context.font = "bold " + this.fontSize + "px Serif";
         this.boxHeight = this.fontSize + this.textUpperMargin;
     }
@@ -363,6 +372,7 @@ export class GameView {
 
         this.canvas = canvas;
         this.context = context;
+        this.context.lineWidth = 3;
 
         this.textUpperMargin = 20;
         this.textLeftMargin = this.canvas.width / 251;
@@ -380,13 +390,13 @@ export class GameView {
         this.cardLeftX = this.canvas.width / 7;
         this.cardRightX = this.canvas.width / 7 * 6;
 
-        this.cardUpperY = 5 / 100 * this.canvas.height;
+        this.cardUpperY = 5 / 100 * this.canvas.height + 35;
         this.cardLowerY = this.canvas.height - 25 / 100 * this.canvas.height;
 
         this.deckPosX = this.canvas.width / 10 * 0.5;
         this.deckPosY = this.canvas.height / 2 - 90;
 
-        this.offset = this.cardHeight + 30;
+        this.offset = this.cardHeight + 35;
 
         this.selectedIcon = this.getAvailableIcon();
 
@@ -411,6 +421,10 @@ export class GameView {
         this.setBoutPositions();
         this.setModesPositions();
         this.setIconsPositions();
+    }
+
+    private myTurn(): boolean {
+        return this.gameView.playerTurn == this.id;
     }
 
     private isDefending(): boolean {
@@ -594,22 +608,20 @@ export class GameView {
     /*
         Displays the main text in the middle of the screen. Also underlines the text 
     */
-    private writeMainTextWithUnderlying(text: string): void {
+    private writeTextWithUnderlying(text: string, x: number, y: number, color: string): void {
         let textM: TextMetrics = this.context.measureText(text);
         // write text
-        this.drawBox(text, this.canvas.width / 2, this.deckPosY - this.canvas.height / 4, 'black',
-            'black', false, this.fontSize
+        this.drawBox(text, x, y, color,
+            color, false, this.fontSize
         );
 
         // make a line under Text
         this.context.save();
         this.context.beginPath();
         this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
-            textM.width % 10, this.deckPosY - this.canvas.height / 4 +
-        this.textUpperMargin);
+            textM.width % 10, y + this.fontSize / 2);
         this.context.lineTo(this.canvas.width / 2 + textM.width / 2 +
-            textM.width % 10, this.deckPosY - this.canvas.height / 4 +
-        this.textUpperMargin);
+            textM.width % 10, y + this.fontSize / 2);
         this.context.stroke();
         this.context.restore();
     }
@@ -638,7 +650,8 @@ export class GameView {
         this.drawScreen('lavender', 'black');
 
         // display "Choose Modes" text
-        this.writeMainTextWithUnderlying("Choose Modes");
+        this.writeTextWithUnderlying("Choose Modes", this.canvas.width / 2,
+            this.deckPosY - this.canvas.height / 4, "black");
 
         // display the setting of the game
         this.displaySettingImages();
@@ -726,7 +739,8 @@ export class GameView {
         this.renderKeyButtons("Create");
 
         // display the main text "Player Setup"
-        this.writeMainTextWithUnderlying("Player Setup");
+        this.writeTextWithUnderlying("Player Setup", this.canvas.width / 2,
+            this.deckPosY - this.canvas.height / 4, "black");
 
         this.context.save();
         this.context.fillStyle = 'black';
@@ -776,7 +790,7 @@ export class GameView {
         }
     }
 
-    public switchPages(state: State): void {
+    public switchPages(state: State, refresh: boolean): void {
         console.log("SWITCHING PAGES");
 
         this.state = state;
@@ -787,9 +801,17 @@ export class GameView {
             case State.GameTable:
                 this.displayStateOfTheGame();
                 break;
+            case State.CreateGame:
+                this.loadGameSettingMenu();
+                break;
+            case State.PlayerSetup:
+                this.loadPlayerSetupPage();
+                break;
         }
         this.setFontSize();
-        this.selectedModes = [0, 0, 0];
+        if (refresh) {
+            this.selectedModes = [0, 0, 0];
+        }
         console.log("FONT SIZE: " + this.fontSize);
     }
 
@@ -812,7 +834,7 @@ export class GameView {
             if (this.state == State.PlayerSetup) {
                 this.resetSetupPageSettings();
             }
-            this.switchPages(State.Menu);
+            this.switchPages(State.Menu, false);
             this.displayMenu();
         }
 
@@ -838,7 +860,7 @@ export class GameView {
                     GameSetting: this.selectedModes
                 });
                 this.socket.send(strJSON);
-                this.switchPages(State.PlayerSetup);
+                this.switchPages(State.PlayerSetup, true);
             }
         }
 
@@ -868,8 +890,7 @@ export class GameView {
                 this.boxHeight + 25 * this.canvas.height / 100
             );
         } else if (this.gameStatus == GameStatus.GameInProgress && this.isPlaying) {
-            this.switchPages(State.PlayerSetup);
-            this.loadPlayerSetupPage();
+            this.switchPages(State.PlayerSetup, true);
         } else if (!this.isPlaying) {
             this.displayMessage("CannotJoin", true, 'red', 'red',
                 this.canvas.width / 2, this.deckPosY +
@@ -895,7 +916,7 @@ export class GameView {
                 Message: "CreateGame"
             });
             this.socket.send(strJSON);
-            this.switchPages(State.CreateGame);
+            this.switchPages(State.CreateGame, false);
 
         } else if (this.isPlaying) {
             // display that game is being created
@@ -912,40 +933,6 @@ export class GameView {
         }
     }
 
-    /*
-        helper function that handles different circumstances of when cards are clicked 
-        during the game.
-    */
-    private handleCardClickInstructions(): void {
-        let strJSON: string;
-
-        if (this.isCardSelected()) {
-            let cardIndex: number = Math.floor(this.GetCardSelected());
-
-            if (cardIndex >= this.gameView.hand.length) {
-                cardIndex = this.gameView.hand.length - 1;
-            }
-
-            console.log("Card Index clicked is " + cardIndex);
-
-            strJSON = JSON.stringify({
-                Message: this.isAttacking() ? "Attacking" : "Defending",
-                Card: cardIndex
-            });
-
-        }
-        else if (this.isButtonSelected() && this.gameView.attackingCards.length > 0) {
-            console.log("SELECTED");
-            strJSON = JSON.stringify({
-                Message: this.isAttacking() ? "Done" : "Take"
-            });
-        }
-        else {
-            return;
-        }
-        this.socket.send(strJSON);
-    }
-
     private handleWaitingRoomInstructions(): void {
         let strJSON: string;
         if (this.isButtonSelected()) {
@@ -957,7 +944,7 @@ export class GameView {
     }
 
     public backToLobby(): void {
-        this.switchPages(State.Menu);
+        this.switchPages(State.Menu, false);
         this.displayMenu();
         this.gameStatus = GameStatus.NotCreated;
         this.availableIcons = [true, true, true, true, true, true];
@@ -971,12 +958,74 @@ export class GameView {
     */
     private handleEndGameInstructions(): void {
         let strJSON: string;
-        if (this.isBackToMenuPressed()) {
+        if (this.buttonMenu.getName() == "Back To Lobby") {
             strJSON = JSON.stringify({
                 Message: "ResetGame"
             });
-            this.socket.send(strJSON);
         }
+        else {
+            strJSON = JSON.stringify({
+                Message: "NextRound"
+            });
+        }
+        this.socket.send(strJSON);
+    }
+
+    /*
+         returns true if the bout contains only the passport of the attacking player 
+     */
+    private passportDisplayed(): boolean {
+        let cards: Card[] = this.gameView.attackingCards;   // all attacking cards in bout
+        let attackerPassport: PassportCards = this.gameView.playersView // passport 
+        [this.gameView.attackingPlayer].passport;
+
+        for (let i = 0; i < cards.length; i++) {
+            if (cards[i].rank.valueOf() != attackerPassport.valueOf()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /*
+     helper function that handles different circumstances of when cards are clicked 
+     during the game.
+ */
+    private handleCardClickInstructions(): void {
+        let strJSON: string;
+
+        if (this.isCardSelected()) {
+            let cardIndex: number = Math.floor(this.GetCardSelected());
+
+            if (cardIndex >= this.gameView.hand.length) {
+                cardIndex = this.gameView.hand.length - 1;
+            }
+
+            strJSON = JSON.stringify({
+                Message: this.isAttacking() ? "Attacking" : "Defending",
+                Card: cardIndex
+            });
+        }
+        // Done or Display Passport buttons
+        else if (this.isButtonSelected()) {
+            // Send "Display passport" message
+            if (this.button.getName() == "Show Passport") {
+                strJSON = JSON.stringify({
+                    Message: "Show Passport"
+                });
+            }
+            // send Done/Take message
+            else if (this.gameView.attackingCards.length > 0) {
+                strJSON = JSON.stringify({
+                    Message: this.isAttacking() ? "Done" : "Take"
+                });
+            }
+        }
+        else {
+            console.log("Not defined click");
+            return;
+        }
+        this.socket.send(strJSON);
     }
 
     /*
@@ -1008,7 +1057,7 @@ export class GameView {
             this.checkKeyButtonPress();
 
             if (this.anyModePressed()) {
-                this.loadGameSettingMenu();
+                this.switchPages(State.CreateGame, false);
             }
         }
         else if (this.state == State.PlayerSetup) {
@@ -1017,7 +1066,7 @@ export class GameView {
             this.checkKeyButtonPress();
 
             if (this.anyIconPressed()) {
-                this.loadPlayerSetupPage();
+                this.switchPages(State.PlayerSetup, false);
             }
         }
         else if (this.state == State.WaitingRoom) {
@@ -1261,8 +1310,131 @@ export class GameView {
         return 'black';
     }
 
+    /*
+        function that displays the button that will display all the passport cards
+        of the player
+    */
+    public createButtonForPassport(str: string, pos: { x: number, y: number, tWidth: number; }): void {
+        let tM: TextMetrics = this.context.measureText(str);
+
+        this.button = new Button(
+            this, pos.x + pos.tWidth + this.cardWidth + tM.width / 2 + 8 * this.textLeftMargin,
+            pos.y + this.offset, str, this.fontSize
+        );
+
+        this.button.draw('white', 'white');
+    }
+
+
+    private displayPlayerIconInGame(indexOfIcon: number,
+        pos: { x: number, y: number, tWidth: number; }): void {
+
+        let img: HTMLImageElement;
+
+        img = this.getImage(undefined, false, "icon" + this.takenIcons[indexOfIcon]);
+
+        this.context.drawImage(
+            img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
+            pos.y + this.cardHeight - 75 / this.cardWidth * 100,
+            75 / this.cardWidth * 100,
+            75 / this.cardWidth * 100
+        );
+    }
+
+    private getPassportString(enumPassporty: PassportCards): string {
+        switch (enumPassporty) {
+            case PassportCards.Six:
+                return "6";
+            case PassportCards.Ten:
+                return "10";
+            case PassportCards.Jack:
+                return "J";
+            case PassportCards.Queen:
+                return "Q";
+            case PassportCards.King:
+                return "K";
+            case PassportCards.Ace:
+                return "A";
+            default:
+                console.log("Unknown Passport Index Given");
+                break;
+        }
+    }
+
+    private PlayerWon(currentID: number): boolean {
+        return this.gameView.playersView[currentID].playerState == PlayerState.Winner;
+    }
+
+    private PlayerAscended(currentID: number): boolean {
+        return this.gameView.playersView[currentID].playerState == PlayerState.Ascended;
+    }
+
+    private displayPlayersSetup(currentID: number, 
+        pos: { x: number, y: number, tWidth: number; }): void {
+
+        let color: string = this.GetBoxStyle(currentID);
+
+        // display the players user names 
+        this.drawBox(
+            this.playerUserNames[currentID], pos.x + pos.tWidth / 2,
+            pos.y + this.offset,
+            color, 'white', true, this.fontSize
+        );
+
+        // dispaly the players icons
+        this.displayPlayerIconInGame(currentID, pos);
+
+        // setup for passport variation
+        if (this.gameView.variation == Variation.Passport) {
+            if (this.PlayerWon(currentID)) {
+                this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 4,
+                    'white', 'white', true, this.fontSize
+                );
+            } else if (this.PlayerAscended(currentID)) {
+                this.drawBox("Passport upgraded to " +
+                    this.getPassportString(this.gameView.playersView[currentID].passport),
+                    pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 4,
+                    'white', 'white', true, this.fontSize
+                );
+            }
+            // display the players passport
+            this.writeTextWithUnderlying("Passport: " + this.getPassportString
+                (this.gameView.playersView[currentID].passport),
+                pos.x + pos.tWidth / 2, pos.y - 2 * this.fontSize, "white"
+            );
+/*            this.drawBox(
+                "Passport: " + this.getPassportString(this.gameView.playersView[currentID].passport),
+                pos.x + pos.tWidth / 2, pos.y - 2 * this.fontSize,
+                style, 'white', false, this.fontSize
+            );*/
+        }
+        // setup for classic variation
+        else {
+            // display winner
+            if (this.PlayerWon(currentID)) {
+                this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 2,
+                    'white', 'white', true, this.fontSize
+                );
+            }
+        }
+    }
+
+    /*
+        returns true when the defending player should display Take and Defend
+    */
+    private checkTakingCondition(): boolean {
+        return this.gameView.attackingCards.length >
+            this.gameView.defendingCards.length && !this.gameView.takingCards
+    }
+
     private manageAttackingPlayerGameSetup(pos: { x: number, y: number, tWidth: number; }): void {
         if (this.gameView.gameStatus == GameStatus.GameOver) {
+            return;
+        }
+        // just display button "Show Passport"
+        if (this.gameView.playersView[this.id].allCardsPassport &&
+            this.gameView.attackingCards.length == 0) {
+            this.createButtonForPassport("Show Passport", pos);
             return;
         }
 
@@ -1285,26 +1457,9 @@ export class GameView {
                 this.displayPlayerOptions("Continue Attack", "Done", pos, false);
             }
         }
-    }
-
-    private displayPlayerIconInGame(indexOfIcon: number,
-        pos: { x: number, y: number, tWidth: number; }): void {
-
-        let img: HTMLImageElement;
-
-        img = this.getImage(undefined, false, "icon" + this.takenIcons[indexOfIcon]);
-
-        this.context.drawImage(img, pos.x + pos.tWidth / 2 - this.cardWidth / 4,
-            pos.y + this.cardHeight / 2 + 7, 75 / this.cardWidth * 100,
-            75 / this.cardWidth * 100
-        );
-    }
-
-    private displayWinner(currentID: number, pos:{ x: number, y: number, tWidth: number; }):void {
-        if (this.gameView.playersView[currentID].playerState == PlayerState.Winner) {
-            this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y,
-                'white', 'white', true, this.fontSize
-            );
+        // display "Done" in case when player display all passports
+        else if (this.passportDisplayed()) {
+            this.createButtonForPassport("Done", pos);
         }
     }
 
@@ -1316,24 +1471,15 @@ export class GameView {
         let pos: { x: number, y: number, tWidth: number; } =
             this.positionsAroundTable[position[index] - 1];
 
-        this.context.strokeStyle = this.GetBoxStyle(currentID);
-
         // Add an arrow indicating whose turn it is to play
-        if (currentID == this.gameView.playerTurn) {
+        if (currentID == this.gameView.playerTurn &&
+            this.gameView.gameStatus != GameStatus.GameOver) {
             let arrowPos = this.positionsAroundTableDuplicate[position[index] - 1];
             this.drawArrow(arrowPos.x - 130, pos.y + this.offset, arrowPos.x - 70, pos.y +
                 this.offset, 'white');
         }
 
-        // Display the winners
-        this.displayWinner(currentID, pos);
-
         if (this.id == currentID) {
-            console.log("IN PLayer Helper: " + this.fontSize);
-
-            this.drawBox(this.userName, pos.x + pos.tWidth / 2,
-                pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
-
             this.displayMainPlayersHand(this.gameView.hand, pos.x, pos.y, pos.tWidth);
 
             if (this.isAttacking()) {
@@ -1341,22 +1487,18 @@ export class GameView {
             }
 
             // display "Take" button on the defending player if cannot defend / just want to
-            if (this.isDefending() && this.gameView.attackingCards.length >
-                this.gameView.defendingCards.length && !this.gameView.takingCards) {
-
-                this.displayPlayerOptions("Defend", "Take", pos);
+            if (this.isDefending() && this.checkTakingCondition()) {
+                if (!this.passportDisplayed()) {
+                    this.displayPlayerOptions("Defend", "Take", pos);
+                }
             }
-            this.displayPlayerIconInGame(this.id, pos);
         }
         else {
             this.displayFaceDownCards(this.gameView.playersView[currentID], pos.x,
                 pos.y, pos.tWidth);
-
-            this.displayPlayerIconInGame(currentID, pos);
-
-            this.drawBox(this.playerUserNames[currentID], pos.x + pos.tWidth / 2,
-                pos.y + this.offset, this.context.strokeStyle, 'white', true, this.fontSize);
         }
+
+        this.displayPlayersSetup(currentID, pos);
     }
 
     /*
@@ -1433,7 +1575,7 @@ export class GameView {
         deck size, discarded heap, defending player, hands etc.)
     */
     public displayStateOfTheGame(): void {
-        this.drawScreen('green', 'black');
+        this.drawScreen('#2C974F', 'black');
 
         this.displayPlayers();
 
@@ -1450,14 +1592,27 @@ export class GameView {
         this.displayBout();
 
         if (this.gameView.gameStatus == GameStatus.GameOver) {
-            this.displayDurakMessage();
 
             // display "Back To Lobby" button for the creator. When pressed every player moves 
             // to the lobby
             if (this.isCreator) {
-                this.buttonMenu = new Button(this, this.canvas.width / 2,
-                    60 / 100 * this.canvas.height, "Back To Lobby", 45);
-                this.buttonMenu.draw('white', 'white');
+                if (this.gameView.variation == Variation.Passport &&
+                    !this.gameView.passportGameOver) {
+                    this.buttonMenu = new Button(this, this.canvas.width / 2,
+                        60 / 100 * this.canvas.height, "Start Next Round", 45);
+                    this.buttonMenu.draw('white', 'white');
+                }
+                else if (this.gameView.variation != Variation.Passport || 
+                    this.gameView.passportGameOver) {
+                    if (!this.gameView.passportGameOver) {
+                        this.displayDurakMessage();
+                    }
+
+                    this.buttonMenu = new Button(this, this.canvas.width / 2,
+                        60 / 100 * this.canvas.height, "Back To Lobby", 45);
+                    this.buttonMenu.draw('white', 'white');
+                } 
+
             }
         }
 
@@ -1474,7 +1629,8 @@ export class GameView {
         this.drawScreen('Lavender', 'black');
 
         this.context.save();
-        this.writeMainTextWithUnderlying("MENU");
+        this.writeTextWithUnderlying("MENU", this.canvas.width / 2,
+            this.deckPosY - this.canvas.height / 4, "black");
 
         // create buttons for JOIN and CREATE
         this.joinButton = new Button(this, this.canvas.width / 2,
@@ -1488,6 +1644,8 @@ export class GameView {
         this.context.restore();
     }
 
+    
+
     private getSuitableErrorMessage(type: string): string {
         switch (type) {
             case "illegal":
@@ -1498,7 +1656,8 @@ export class GameView {
             case "tookCards":
                 return "Cannot Defend. You Decided To Take The Cards";
             case "takeCards":
-                return "Player " + this.gameView.defendingPlayer + " Takes The Cards";
+                return this.playerUserNames[this.gameView.defendingPlayer] + " takes the " +
+                    (this.gameView.attackingCards.length == 1 ? "Card" : "Cards");
             case "extraCard":
                 return `This card is extra. Cannot fit in defender's hand`;
             case "gameIsAlreadyOver":
@@ -1515,6 +1674,11 @@ export class GameView {
                 return "Cannot Join. Game has already started";
             case "UserNameTaken":
                 return "The user name is already taken. Try another one";
+            case "passport":
+                return "Passport Violation. Your Passport is " +
+                    this.getPassportString(this.gameView.playersView[this.id].passport);
+            case "displayPassport":
+                return "To display passports, use display passport button";
             default:
                 console.log("Unknown type of the string (Check the error types)");
                 break;

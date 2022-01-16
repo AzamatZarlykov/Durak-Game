@@ -35,5 +35,17 @@ export class Button {
             mousePos.y < this.y - this.fontSize / 2 + bHeight - lineW;
     }
 
+    public getName(): string {
+        return this.name;
+    }
+
+    public info(): void {
+        console.log("X: " + this.x);
+        console.log("Y: " + this.y);
+        let a = this.gameView.context.measureText(this.name);
+        console.log("Width: " + a.width);
+        console.log("Height: " + this.fontSize);
+
+    }
 
 }

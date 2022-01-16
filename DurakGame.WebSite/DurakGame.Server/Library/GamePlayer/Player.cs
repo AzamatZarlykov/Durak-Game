@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 
 using DurakGame.Library.GameCard;
+using DurakGame.Library.Game;
 
 namespace DurakGame.Library.GamePlayer
 {
     public enum WaitingRoomState { NotReady, Ready }
-    public enum PlayerState { Playing, Winner, Durak }
+    public enum PlayerState { Playing, NotAscended, Ascended, Winner, Durak }
     public class Player
     {
         private string name;
@@ -15,6 +16,7 @@ namespace DurakGame.Library.GamePlayer
         private bool isTaking;
         private bool isAttackersTurn;
 
+        public PassportCards passport = PassportCards.Six;
         public WaitingRoomState waitingRoomState; 
         public PlayerState playerState;
 
@@ -65,6 +67,35 @@ namespace DurakGame.Library.GamePlayer
             playersHand.Clear();
         }
 
+        // function that checks if the remaining cards of a player are passports
+        public bool CheckIfAllCardsPassport()
+        {
+            int p = (int)passport;
+            int r;
+
+            foreach (Card card in playersHand)
+            {
+                r = (int)card.rank;
+                if (r != p)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // return true if the card is player's passport
+        public bool IsPassport(Card card)
+        {
+            return (int)card.rank == (int)passport;
+        }
+
+        public void Reset()
+        {
+            isTaking = false;
+            isAttackersTurn = false;
+            playerState = PlayerState.Playing;
+        }
         public void PrintCards()
         {
             foreach (Card c in playersHand)

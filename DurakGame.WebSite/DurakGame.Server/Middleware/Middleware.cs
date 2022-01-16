@@ -38,90 +38,6 @@ namespace DurakGame.Server.Middleware
             manager = _manager;
         }
 
-        private async Task UpdateGameProcess(ClientMessage route, WebSocket socket)
-        {
-            command = "UpdateGameProcess";
-            GameView gameView;
-            MoveResult outcome;
-
-            switch (route.Message)
-            {
-                case "Attacking":
-                    outcome = game.AttackerMove(route.Card);
-
-                    if (outcome != MoveResult.OK)
-                    {
-                        if (outcome == MoveResult.OutOfTurn)
-                        {
-                            command = "Wait";
-                        }
-                        else if (outcome == MoveResult.IllegalMove)
-                        {
-                            command = "Illegal";
-                        }
-                        else if (outcome == MoveResult.ExtraCard)
-                        {
-                            command = "ExtraCard";
-                        }
-                        else if (outcome == MoveResult.GameIsOver)
-                        {
-                            command = "GameIsAlreadyOver";
-                        }
-                        await SendJSON(socket, new
-                        {
-                            command
-                        });
-                        return;
-                    }
-
-                    break;
-                case "Defending":
-                    outcome = game.DefenderMove(route.Card);
-
-                    if (outcome != MoveResult.OK)
-                    {
-                        if (outcome == MoveResult.OutOfTurn)
-                        {
-                            command = "Wait";
-                        }
-                        else if (outcome == MoveResult.IllegalMove)
-                        {
-                            command = "Illegal";
-                        }
-                        else if (outcome == MoveResult.TookCards)
-                        {
-                            command = "TookCards";
-                        }
-
-                        await SendJSON(socket, new
-                        {
-                            command
-                        });
-                        return;
-                    }
-
-                    break;
-                case "Done":
-                    game.AttackerDone();
-                    break;
-                case "Take":
-                    command = "TakeCards";
-                    game.DefenderTake();
-                    break;
-            }
-
-            // Distribute updated GameView to players
-            for (int i = 0; i < game.GetPlayers().Count; i++)
-            {
-                gameView = new GameView(game, i);
-                await SendJSON(manager.GetAllSockets()[i], new
-                {
-                    command,
-                    gameView
-                });
-            }
-        }
-
         private async Task SendJSON<T>(WebSocket socket, T data)
         {
             var options = new JsonSerializerOptions { IncludeFields = true };
@@ -141,6 +57,116 @@ namespace DurakGame.Server.Middleware
                 }
                 await SendJSON(socket, data);
             }
+        }
+
+        private async Task DistributeGameViewToPlayers()
+        {
+            for (int i = 0; i < game.GetPlayers().Count; i++)
+            {
+                GameView gameView = new GameView(game, i);
+                await SendJSON(manager.GetAllSockets()[i], new
+                {
+                    command,
+                    gameView
+                });
+            }
+        }
+
+        private async Task ManageAttackOutcomeWarnings(MoveResult outcome, WebSocket socket)
+        {
+                if (outcome == MoveResult.OutOfTurn)
+                {
+                    command = "Wait";
+                }
+                else if (outcome == MoveResult.IllegalMove)
+                {
+                    command = "Illegal";
+                }
+                else if (outcome == MoveResult.ExtraCard)
+                {
+                    command = "ExtraCard";
+                }
+                else if (outcome == MoveResult.GameIsOver)
+                {
+                    command = "GameIsAlreadyOver";
+                }
+                else if (outcome == MoveResult.PassportViolation)
+                {
+                    command = "PassportViolation";
+                }
+                else if (outcome == MoveResult.UseDisplayButton)
+                {
+                    command = "UseDisplayButton";
+                }
+                await SendJSON(socket, new
+                {
+                    command
+                });
+        }
+
+        private async Task ManageDefenseOutcomeWarning(MoveResult outcome, WebSocket socket)
+        {
+            if (outcome == MoveResult.OutOfTurn)
+            {
+                command = "Wait";
+            }
+            else if (outcome == MoveResult.IllegalMove)
+            {
+                command = "Illegal";
+            }
+            else if (outcome == MoveResult.TookCards)
+            {
+                command = "TookCards";
+            }
+            else if (outcome == MoveResult.PassportViolation)
+            {
+                command = "PassportViolation";
+            }
+
+            await SendJSON(socket, new
+            {
+                command
+            });
+        }
+
+        private async Task UpdateGameProcess(ClientMessage route, WebSocket socket)
+        {
+            command = "UpdateGameProcess";
+            MoveResult outcome;
+
+            switch (route.Message)
+            {
+                case "Attacking":
+                    outcome = game.AttackerMove(route.Card);
+
+                    if (outcome != MoveResult.OK)
+                    {
+                        await ManageAttackOutcomeWarnings(outcome, socket);
+                        return;
+                    }
+
+                    break;
+                case "Defending":
+                    outcome = game.DefenderMove(route.Card);
+
+                    if (outcome != MoveResult.OK)
+                    {
+                        await ManageDefenseOutcomeWarning(outcome, socket);
+                        return;
+                    }
+
+                    break;
+                case "Done":
+                    game.AttackerDone();
+                    break;
+                case "Take":
+                    command = "TakeCards";
+                    game.DefenderTake();
+                    break;
+            }
+
+            // Distribute updated GameView to players
+            await DistributeGameViewToPlayers();
         }
 
         private async Task InformLeavingToOtherPlayers(int leavingPlayerID)
@@ -279,9 +305,7 @@ namespace DurakGame.Server.Middleware
         {
             command = "StartGame";
 
-            int totalPlayers = manager.GetTotalPlayingPlayers();
-
-            game.StartGame(totalPlayers);
+            game.StartGame();
             List<WebSocket> playersPlaying = manager.GetPlayingSockets();
             GameView gameView;
 
@@ -322,6 +346,20 @@ namespace DurakGame.Server.Middleware
             manager.ReconnectTheConnectionOfOldPlayers();
         }
 
+        private async Task HandleDisplayingPassports()
+        {
+            command = "UpdateGameProcess";
+            game.DisplayPassports();
+            // Distribute updated GameView to players
+            await DistributeGameViewToPlayers();
+        }
+
+        private async Task NextRound()
+        {
+            game.ResetPassportRound();
+            await DistributeGameViewToPlayers();
+        }
+
         private async Task MessageHandle(ClientMessage route, WebSocket websocket)
         {
 
@@ -356,6 +394,12 @@ namespace DurakGame.Server.Middleware
                     break;
                 case "ResetGame":
                     await HandleResetGameCommand();
+                    break;
+                case "Show Passport":
+                    await HandleDisplayingPassports();
+                    break;
+                case "NextRound":
+                    await NextRound();
                     break;
                 default:
                     Console.WriteLine("Unknown Message from the client");
