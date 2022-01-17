@@ -164,28 +164,21 @@ namespace DurakGame.Library.Game
 
         public void DistributeCardsToPlayers()
         {
-            foreach (Player p in players)
-            {
-                p.AddCardsToHand(deck.DrawUntilSix(0));
-            }
-            /*
-                        players[0].AddCardsToHand(new List<Card>
+            /*            foreach (Player p in players)
+                        {
+                            p.AddCardsToHand(deck.DrawUntilSix(0));
+                        }*/
+
+            players[0].AddCardsToHand(new List<Card>
                                                 {
-                                                    new Card((Suit)1, (Rank)6),
-                                                    new Card((Suit)2, (Rank)6),
                                                     new Card((Suit)1, (Rank)13),
+                                                    new Card((Suit)0, (Rank)13),
                                                 });
 
-                        players[1].AddCardsToHand(new List<Card>
+            players[1].AddCardsToHand(new List<Card>
                                                 {
-                                                    new  Card((Suit)1, (Rank)10),
-                                                    new  Card((Suit)1, (Rank)11),
-                                                    new  Card((Suit)1, (Rank)12),
-                                                    new  Card((Suit)2, (Rank)13),
                                                     new Card((Suit)1, (Rank)14),
-                                                    new Card((Suit)0, (Rank)6),
-                                                    new Card((Suit)3, (Rank)6),
-                                                });*/
+                                                });
         }
 
         // Returns the list of attacking player based on the type of Durak
@@ -261,8 +254,8 @@ namespace DurakGame.Library.Game
             deck.Shuffle();
 
             // the last card is the trump card(the one at the bottom face up)
-            trumpCard = deck.GetCard(0);
-            // trumpCard = new Card((Suit)0, (Rank)6);
+            // trumpCard = deck.GetCard(0);
+            trumpCard = new Card((Suit)0, (Rank)6);
 
             // Each player draws 6 cards
             DistributeCardsToPlayers();
@@ -560,7 +553,7 @@ namespace DurakGame.Library.Game
                 }
             }
             // this statement takes care the situation if the player pressed done and added no cards
-            else if (!bout.IsBoutChanged())
+            else
             {
                 totalUninterruptedDone += 1;
             }
@@ -596,10 +589,9 @@ namespace DurakGame.Library.Game
             return GetSizeOfPlayingPlayers() == 1;
         }
 
-        // Checking just defender or attacker isnt enough, case with 3 players e.g A wins by
-        // attacking and B wins by defending. Since Done is pressed consequently, GameOVer check
-        // called which finds there is only one player left and assigns DURAK to attacker (A).
-        // which is incorrect. NOTE: SLOW -> bc needs to check every players hands 
+        // Returns the last player with cards. If no players with cards found then 
+        // this implies the case when attacker attacks and defender defends in one
+        // bout. This suggest that defender is durak
         private Player GetLastPlayer()
         {
             foreach (Player p in players)
@@ -609,43 +601,31 @@ namespace DurakGame.Library.Game
                     return p;
                 }
             }
-            return null;
+            return GetPlayer(defendingPlayer);
         }
 
         private void CheckEndGame()
         {
-            try
+            if (IsGameOver())
             {
-                if (IsGameOver())
-                {
-                    Player lastPlayer = GetLastPlayer();
+                Player lastPlayer = GetLastPlayer();
 
-                    lastPlayer.playerState = PlayerState.Durak;
+                lastPlayer.playerState = PlayerState.Durak;
 
-                    gameStatus = GameStatus.GameOver;
-                }
-            } catch (NullReferenceException ex)
-            {
-                Console.WriteLine("Last player has a null reference");
-                Console.WriteLine(ex.Message);
+                gameStatus = GameStatus.GameOver;
             }
-            
         }
 
         private void RemovePlayersCards()
         {
-            try
+            Player lastPlayer = GetLastPlayer();
+            if (lastPlayer.GetNumberOfCards() > 0)
             {
-                Player lastPlayer = GetLastPlayer();
                 discardedHeapSize += lastPlayer.GetNumberOfCards();
                 lastPlayer.RemoveAllCardsFromHand();
             }
-            catch (NullReferenceException ex)
-            {
-                Console.WriteLine("Last player has a null reference");
-                Console.WriteLine(ex.Message);
-            }
         }
+
         private PassportCards GetNextEnumValue(PassportCards current)
         {
             PassportCards[] Arr = (PassportCards[])Enum.GetValues(current.GetType());
@@ -692,12 +672,8 @@ namespace DurakGame.Library.Game
         // controls flow of the game when the attacking player presses DONE. 
         public void AttackerDone() 
         {
-            // if the board has only passports -> the attacking player has won the round
-            // hence, update 
-            if (isPassportVariation())
-            {
-                CheckIfPlayerIsWinner(attackingPlayer);
-            }
+            CheckIfPlayerIsWinner(attackingPlayer);
+            CheckIfPlayerIsWinner(defendingPlayer);
 
             CheckEndGame();
 
@@ -720,6 +696,8 @@ namespace DurakGame.Library.Game
         // controls the flow of the game when the defending player takes the cards
         public void DefenderTake() 
         {
+            CheckIfPlayerIsWinner(attackingPlayer);
+
             CheckEndGame();
 
             if (gameStatus == GameStatus.GameInProcess)
@@ -786,9 +764,6 @@ namespace DurakGame.Library.Game
                 // set defense finished to true
                 GetPlayer(attackingPlayer).SetIsAttackersTurn(true);
 
-                // When player defends check if they are a winner or still playing
-                CheckIfPlayerIsWinner(defendingPlayer);
-
                 return MoveResult.OK;
             }
             return MoveResult.TookCards;
@@ -847,8 +822,6 @@ namespace DurakGame.Library.Game
                 {
                     player.SetIsAttackersTurn(false);
                 }
-                // When player attacked check if they are a winner or still playing
-                CheckIfPlayerIsWinner(attackingPlayer);
 
                 return MoveResult.OK;
             }

@@ -1402,17 +1402,12 @@ export class GameView {
                 (this.gameView.playersView[currentID].passport),
                 pos.x + pos.tWidth / 2, pos.y - 2 * this.fontSize, "white"
             );
-/*            this.drawBox(
-                "Passport: " + this.getPassportString(this.gameView.playersView[currentID].passport),
-                pos.x + pos.tWidth / 2, pos.y - 2 * this.fontSize,
-                style, 'white', false, this.fontSize
-            );*/
         }
         // setup for classic variation
         else {
             // display winner
             if (this.PlayerWon(currentID)) {
-                this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 2,
+                this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y + this.fontSize,
                     'white', 'white', true, this.fontSize
                 );
             }
@@ -1592,6 +1587,10 @@ export class GameView {
         this.displayBout();
 
         if (this.gameView.gameStatus == GameStatus.GameOver) {
+            if (this.gameView.variation != Variation.Passport ||
+                this.gameView.passportGameOver) {
+                this.displayDurakMessage();
+            }
 
             // display "Back To Lobby" button for the creator. When pressed every player moves 
             // to the lobby
@@ -1604,9 +1603,6 @@ export class GameView {
                 }
                 else if (this.gameView.variation != Variation.Passport || 
                     this.gameView.passportGameOver) {
-                    if (!this.gameView.passportGameOver) {
-                        this.displayDurakMessage();
-                    }
 
                     this.buttonMenu = new Button(this, this.canvas.width / 2,
                         60 / 100 * this.canvas.height, "Back To Lobby", 45);

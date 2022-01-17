@@ -16,13 +16,13 @@ namespace DurakGame.Library.GameDeck
         // initializes the deck by creating all the ranks with the corresponding suits
         public Deck()
         {
-            for (int suit = 0; suit < 4; suit++)
+/*            for (int suit = 0; suit < 4; suit++)
             {
                 for (int rank = 6; rank < 15; rank++)
                 {
                     cards.Add(new Card((Suit)suit, (Rank)rank));
                 }
-            }
+            }*/
         }
 
         public int GetDecksSize() => cards.Count();
