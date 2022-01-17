@@ -212,7 +212,6 @@ export class GameView {
     public updateAvailableIcons(availableIcons: boolean[]): void {
         this.availableIcons = availableIcons;
         this.selectedIcon = this.getAvailableIcon();
-        console.log(this.availableIcons);
     }
 
     public setUserNames(names: string[]): void {
@@ -303,11 +302,11 @@ export class GameView {
 
     private setIconsPositions(): void {
         let startPos: number = this.canvas.width / 2 - (this.cardWidth * 6 + 5 *
-            (this.canvas.width * 10 / 100 - this.cardWidth)) / 2;
+            (this.canvas.width * 15 / 100 - this.cardWidth)) / 2;
 
         for (let i: number = 0; i < 6; i++) {
             this.iconsPositions.set(i, {
-                x: startPos + (i * 10) / 100 * this.canvas.width,
+                x: startPos + (i * 15) / 100 * this.canvas.width,
                 y: this.canvas.height / 2 + (10 / 100) * this.canvas.height
             });
         }
@@ -362,13 +361,8 @@ export class GameView {
     }
 
     private windowObjectsResize(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D): void {
-        console.log("WINDOW CHANGES");
-
         canvas.width = window.innerWidth - 50;
         canvas.height = window.innerHeight - 50;
-
-        console.log(canvas.width);
-        console.log(canvas.height);
 
         this.canvas = canvas;
         this.context = context;
@@ -393,7 +387,7 @@ export class GameView {
         this.cardUpperY = 5 / 100 * this.canvas.height + 35;
         this.cardLowerY = this.canvas.height - 25 / 100 * this.canvas.height;
 
-        this.deckPosX = this.canvas.width / 10 * 0.5;
+        this.deckPosX = this.canvas.width / 11 * 0.5 - 25;
         this.deckPosY = this.canvas.height / 2 - 90;
 
         this.offset = this.cardHeight + 35;
@@ -443,7 +437,6 @@ export class GameView {
         this.context.fillStyle = textStyle;
         this.context.strokeStyle = strokeStyle;
 
-        console.log("IN DRAWBOX: " + fontS);
         if (withRectangle) {
             let textM: TextMetrics = this.context.measureText(text);
 
@@ -791,8 +784,6 @@ export class GameView {
     }
 
     public switchPages(state: State, refresh: boolean): void {
-        console.log("SWITCHING PAGES");
-
         this.state = state;
         switch (this.state) {
             case State.WaitingRoom:
@@ -812,14 +803,12 @@ export class GameView {
         if (refresh) {
             this.selectedModes = [0, 0, 0];
         }
-        console.log("FONT SIZE: " + this.fontSize);
     }
 
     /*
         Resets the user name, the icon selected and removes already created input element 
     */
     private resetSetupPageSettings(): void {
-        console.log("RESETTING");
         this.removeInputBox();
         this.userName = "";
         this.selectedIcon = this.getAvailableIcon();
@@ -870,7 +859,6 @@ export class GameView {
         for (let i: number = 0; i < 6; i++) {
             if (this.isSettingPressed(this.iconsPositions.get(i), this.cardWidth)) {
                 if (this.availableIcons[i]) {
-                    console.log("ID: " + this.id + " Selected this icon: " + i);
                     this.selectedIcon = i;
                     return true;
                 }
@@ -1007,7 +995,6 @@ export class GameView {
             }
         }
         else {
-            console.log("Not defined click");
             return;
         }
         this.socket.send(strJSON);
@@ -1035,7 +1022,6 @@ export class GameView {
                 this.handleCreateButtonInstructions();
             }
             else {
-                console.log("SOMETHING ELSE WAS PRESSED");
             }
         }
         else if (this.state == State.CreateGame) {
@@ -1163,7 +1149,7 @@ export class GameView {
             this.deckPosY + this.cardHeight / 2);
         this.context.rotate(Math.PI / 2);
         this.context.translate(-this.deckPosX - this.cardWidth / 2,
-            -this.deckPosY - this.cardHeight / 2);
+            -this.deckPosY - this.cardHeight / 2 + 25);
         this.context.drawImage(img, this.deckPosX, this.deckPosY,
             this.cardWidth, this.cardHeight);
 
@@ -1268,21 +1254,6 @@ export class GameView {
         this.context.restore();
     }
 
-    private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number;
-    }, noCards: boolean = true): void {
-        if (noCards) {
-            this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
-                pos.y + this.offset, 'white', 'white', false, this.fontSize);
-        }
-
-        this.button = new Button(this, pos.x + pos.tWidth + this.cardWidth +
-            this.nTextMetrics.width / 2 + 8 * this.textLeftMargin,
-            pos.y + this.offset, buttonStr, this.fontSize
-        );
-        this.button.draw('white', 'white');
-    }
-
     private GetBoxStyle(currentID: number): string {
         if (this.gameView.gameStatus == GameStatus.GameOver) {
             return 'black';
@@ -1382,6 +1353,8 @@ export class GameView {
                     pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 4,
                     'white', 'white', true, this.fontSize
                 );
+            }
+            if (!this.PlayerWon(currentID)) {
                 // display the players passport
                 this.writeTextWithUnderlying("Passport: " + this.getPassportString
                     (this.gameView.playersView[currentID].passport),
@@ -1425,6 +1398,22 @@ export class GameView {
         return true;
     }
 
+    private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
+        x: number, y: number, tWidth: number; }, noCards: boolean): void {
+        if (noCards) {
+            this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth / 2,
+                pos.y + this.offset, 'white', 'white', false, this.fontSize);
+        }
+        let x: number = noCards ? pos.x + pos.tWidth + this.cardWidth +
+            this.nTextMetrics.width / 2 + 8 * this.textLeftMargin : pos.x + pos.tWidth +
+        this.cardWidth / 2 + this.nTextMetrics.width / 2 + 8 * this.textLeftMargin
+
+        this.button = new Button(this, x,
+            pos.y + this.offset, buttonStr, this.fontSize
+        );
+        this.button.draw('white', 'white');
+    }
+
     private manageAttackingPlayerGameSetup(pos: { x: number, y: number, tWidth: number; }): void {
         if (this.gameView.gameStatus == GameStatus.GameOver) {
             return;
@@ -1442,17 +1431,16 @@ export class GameView {
             this.drawBox("Attack", pos.x + pos.tWidth + this.cardWidth,
                 pos.y + this.offset, 'white', 'white', false, this.fontSize);
         }
-        // display "Done" button on the attacking player if attack successfully defeated or
-        // if defending player took cards 
         else if (this.gameView.attackingCards.length == this.gameView.defendingCards.length
             || this.gameView.takingCards) {
             // display message "Add Cards" if the player took cards
             if (this.gameView.takingCards) {
-                this.displayPlayerOptions("Add Cards", "Done", pos);
+                this.displayPlayerOptions("Add Cards", "Done", pos, true);
             }
             // display message "Continue Attack" if the player defended successfully
             else {
-                this.displayPlayerOptions("Continue Attack", "Done", pos, false);
+                console.log("1");
+                this.displayPlayerOptions("Continue Attack", "Done", pos, true);
             }
         }
         // display "Done" in case when player display all passports
@@ -1487,7 +1475,7 @@ export class GameView {
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.isDefending() && this.checkTakingCondition()) {
                 if (this.gameView.variation == Variation.Classic || !this.passportDisplayed()) {
-                    this.displayPlayerOptions("Defend", "Take", pos);
+                    this.displayPlayerOptions("Defend", "Take", pos, true);
                 }
             }
         }

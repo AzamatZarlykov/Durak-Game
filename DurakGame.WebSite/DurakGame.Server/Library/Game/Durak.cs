@@ -35,10 +35,6 @@ namespace DurakGame.Library.Game
     // CheckPlayerSetup: C, availableIcons, readyPlayers
     // InformStartGame: C, gameView, playerUserName, takenIcons
 
-    // Instead of gameInProgress, GameOver, GameCreated -> create an enum
-    // CARE: When game is created, players are automatically assigned by their enums (PlayingState,
-    // WaitingRoomState). When resetting do not forget to update
-
     public class GameView
     {
         private Durak game;
