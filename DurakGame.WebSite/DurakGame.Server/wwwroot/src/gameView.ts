@@ -952,6 +952,7 @@ export class GameView {
         this.id = undefined;
         this.selectedIcon = 0;
     }
+
     /*
         When the game is over, if the creator presses the back to lobby button
         this function will send the commands to server
@@ -969,22 +970,6 @@ export class GameView {
             });
         }
         this.socket.send(strJSON);
-    }
-
-    /*
-         returns true if the bout contains only the passport of the attacking player 
-     */
-    private passportDisplayed(): boolean {
-        let cards: Card[] = this.gameView.attackingCards;   // all attacking cards in bout
-        let attackerPassport: PassportCards = this.gameView.playersView // passport 
-        [this.gameView.attackingPlayer].passport;
-
-        for (let i = 0; i < cards.length; i++) {
-            if (cards[i].rank.valueOf() != attackerPassport.valueOf()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /*
@@ -1284,7 +1269,8 @@ export class GameView {
     }
 
     private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number;}, noCards:boolean = true): void {
+        x: number, y: number, tWidth: number;
+    }, noCards: boolean = true): void {
         if (noCards) {
             this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
                 pos.y + this.offset, 'white', 'white', false, this.fontSize);
@@ -1369,7 +1355,7 @@ export class GameView {
         return this.gameView.playersView[currentID].playerState == PlayerState.Ascended;
     }
 
-    private displayPlayersSetup(currentID: number, 
+    private displayPlayersSetup(currentID: number,
         pos: { x: number, y: number, tWidth: number; }): void {
 
         let color: string = this.GetBoxStyle(currentID);
@@ -1396,12 +1382,12 @@ export class GameView {
                     pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 4,
                     'white', 'white', true, this.fontSize
                 );
+                // display the players passport
+                this.writeTextWithUnderlying("Passport: " + this.getPassportString
+                    (this.gameView.playersView[currentID].passport),
+                    pos.x + pos.tWidth / 2, pos.y - 2 * this.fontSize, "white"
+                );
             }
-            // display the players passport
-            this.writeTextWithUnderlying("Passport: " + this.getPassportString
-                (this.gameView.playersView[currentID].passport),
-                pos.x + pos.tWidth / 2, pos.y - 2 * this.fontSize, "white"
-            );
         }
         // setup for classic variation
         else {
@@ -1419,7 +1405,24 @@ export class GameView {
     */
     private checkTakingCondition(): boolean {
         return this.gameView.attackingCards.length >
-            this.gameView.defendingCards.length && !this.gameView.takingCards
+            this.gameView.defendingCards.length && !this.gameView.takingCards;
+    }
+
+
+    /*
+         returns true if the bout contains only the passport of the attacking player 
+    */
+    private passportDisplayed(): boolean {
+        let cards: Card[] = this.gameView.attackingCards;   // all attacking cards in bout
+        let attackerPassport: PassportCards = this.gameView.playersView // passport 
+        [this.gameView.attackingPlayer].passport;
+
+        for (let i = 0; i < cards.length; i++) {
+            if (cards[i].rank.valueOf() != attackerPassport.valueOf()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private manageAttackingPlayerGameSetup(pos: { x: number, y: number, tWidth: number; }): void {
@@ -1453,7 +1456,7 @@ export class GameView {
             }
         }
         // display "Done" in case when player display all passports
-        else if (this.passportDisplayed()) {
+        else if (this.gameView.variation == Variation.Passport && this.passportDisplayed()) {
             this.createButtonForPassport("Done", pos);
         }
     }
@@ -1483,7 +1486,7 @@ export class GameView {
 
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.isDefending() && this.checkTakingCondition()) {
-                if (!this.passportDisplayed()) {
+                if (this.gameView.variation == Variation.Classic || !this.passportDisplayed()) {
                     this.displayPlayerOptions("Defend", "Take", pos);
                 }
             }
@@ -1601,13 +1604,13 @@ export class GameView {
                         60 / 100 * this.canvas.height, "Start Next Round", 45);
                     this.buttonMenu.draw('white', 'white');
                 }
-                else if (this.gameView.variation != Variation.Passport || 
+                else if (this.gameView.variation != Variation.Passport ||
                     this.gameView.passportGameOver) {
 
                     this.buttonMenu = new Button(this, this.canvas.width / 2,
                         60 / 100 * this.canvas.height, "Back To Lobby", 45);
                     this.buttonMenu.draw('white', 'white');
-                } 
+                }
 
             }
         }
@@ -1640,7 +1643,7 @@ export class GameView {
         this.context.restore();
     }
 
-    
+
 
     private getSuitableErrorMessage(type: string): string {
         switch (type) {
@@ -1674,7 +1677,7 @@ export class GameView {
                 return "Passport Violation. Your Passport is " +
                     this.getPassportString(this.gameView.playersView[this.id].passport);
             case "displayPassport":
-                return "To display passports, use display passport button";
+                return "To display passports, use Show Passport button";
             default:
                 console.log("Unknown type of the string (Check the error types)");
                 break;
