@@ -158,6 +158,7 @@ socket.onmessage = function (event): void {
                 break;
 
             case (TakeCardsCommand):
+                view.storePreviousBoutState();
                 view.updateGameView(obj.gameView);
                 view.displayStateOfTheGame();
                 view.displayMessage("takeCards", false, 'white', 'white');

@@ -8,10 +8,11 @@ using System.Text.Json;
 using System.Collections.Generic;
 
 using DurakGame.Library.Game;
-using DurakGame.Library.GamePlayer;
 
 namespace DurakGame.Server.Middleware
 {
+    public enum WaitingRoomState { NotReady, Ready }
+
     public class ClientMessage
     {
         public int From;
@@ -29,6 +30,8 @@ namespace DurakGame.Server.Middleware
         private readonly RequestDelegate next;
 
         private readonly ConnectionManager manager;
+
+        private bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
 
         private Durak game = new Durak();
 
@@ -271,7 +274,6 @@ namespace DurakGame.Server.Middleware
         private async Task UpdateAvailableIcons(WebSocket websocket)
         {
             command = "UpdateAvailableIcons";
-            bool[] availableIcons = game.GetAvailableIcons();
             await SendJSON(websocket, new { command, availableIcons }); 
         }
 
@@ -289,7 +291,7 @@ namespace DurakGame.Server.Middleware
                 game.AssignUserName(route.Name, route.From);
                 game.AssignIcon(route.Icon, route.From);
                 // the icon on pos route.Icon is not available
-                game.GetAvailableIcons()[route.Icon] = false;
+                availableIcons[route.Icon] = false;
                 game.GetPlayer(route.From).waitingRoomState = WaitingRoomState.Ready;
             }
             // send setup result to the user's websocket
@@ -297,7 +299,6 @@ namespace DurakGame.Server.Middleware
             // update other players' availableIcons list
             command = "UpdateAvailableIcons";
             int readyPlayers = game.GetNumberOfReadyPlayers();
-            bool[] availableIcons = game.GetAvailableIcons();
             await DistributeJSONToWebSockets(new { command, availableIcons, readyPlayers });
         }
 
@@ -328,6 +329,7 @@ namespace DurakGame.Server.Middleware
         private async Task HandleResetGameCommand()
         {
             // resets the game
+            availableIcons = new bool[6] { true, true, true, true, true, true };
             game.Reset();
 
             command = "ResetSuccess";

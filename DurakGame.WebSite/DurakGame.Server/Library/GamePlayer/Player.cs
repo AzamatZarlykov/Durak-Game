@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 using DurakGame.Library.GameCard;
 using DurakGame.Library.Game;
+using DurakGame.Server.Middleware;
 
 namespace DurakGame.Library.GamePlayer
 {
-    public enum WaitingRoomState { NotReady, Ready }
     public enum PlayerState { Playing, NotAscended, Ascended, Winner, Durak }
     public class Player
     {

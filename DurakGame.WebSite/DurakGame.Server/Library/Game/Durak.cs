@@ -1,13 +1,15 @@
 ﻿using DurakGame.Library.GameCard;
 using DurakGame.Library.GameDeck;
 using DurakGame.Library.GamePlayer;
+using DurakGame.Server.Middleware;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace DurakGame.Library.Game
 {
-    public enum Type { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
+    public enum AttackType { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
     public enum Variation { Classic, Passport }
     public enum MoveResult
     {
@@ -27,13 +29,6 @@ namespace DurakGame.Library.Game
         public PlayerState playerState;
         public PassportCards passport;
     }
-
-    // InformPlayerInformation:(When Connects) C, totalPlayers, sizeOfPlayers, gameInProgress, isPlaying
-    // InitializationOfTheGame:(CreateGamePRESSED) C, playerID, sizeOfPlayers, totalPlayers, isCreator
-    // UpdateAvailableIcons:(WhenGameSetupDone) C, availableIcons[]
-    // CheckPlayerSetup: C, playerSetupOK
-    // CheckPlayerSetup: C, availableIcons, readyPlayers
-    // InformStartGame: C, gameView, playerUserName, takenIcons
 
     public class GameView
     {
@@ -128,15 +123,13 @@ namespace DurakGame.Library.Game
         private int defendingPlayer;
         private int attackingPlayer;
 
-        public Type type;
+        public AttackType type;
         public Variation variation;
 
         public GameStatus gameStatus;
         public int totalUninterruptedDone;
 
         private int discardedHeapSize;
-
-        public bool[] availableIcons = new bool[6] { true, true, true, true, true, true };
 
         private List<Player> players = new List<Player>();
 
@@ -153,12 +146,6 @@ namespace DurakGame.Library.Game
         public Player GetPlayer(int index) => players[index];
         public int GetSizeOfPlayers() => players.Count;
         public Bout GetBoutInformation() => bout;
-        public bool[] GetAvailableIcons() => availableIcons;
-
-        private void ResetAvailableIcons()
-        {
-            availableIcons = new bool[6] { true, true, true, true, true, true };
-        }
 
         public void DistributeCardsToPlayers()
         {
@@ -176,12 +163,12 @@ namespace DurakGame.Library.Game
 
             switch (type)
             {
-                case Type.OneSideAttacking:
+                case AttackType.OneSideAttacking:
                     break;
-                case Type.NeighboursAttacking:
+                case AttackType.NeighboursAttacking:
                     allAttackingPlayers.Add(GetNextAttackingPlayerIndex(defendingPlayer));
                     break;
-                case Type.AllSidesAttacking:
+                case AttackType.AllSidesAttacking:
 
                     for (int i = 1; i < players.Count; i++)
                     {
@@ -291,8 +278,6 @@ namespace DurakGame.Library.Game
             gameStatus = GameStatus.NotCreated;
             discardedHeapSize = 0;
 
-            // reset available icons
-            ResetAvailableIcons();
             // reset the players list
             players.Clear();
             // reset set of attacking players
@@ -384,7 +369,7 @@ namespace DurakGame.Library.Game
         // Sets up the type of Durak: One side, neighbours or all side attacking 
         public void SetupGameType(int typeIndex)
         {
-            type = (Type)typeIndex;
+            type = (AttackType)typeIndex;
             Console.WriteLine("The Type is " + type);
         }
 

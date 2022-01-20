@@ -143,6 +143,9 @@ export class GameView {
     public fontSize: number = 20;
     private hasInput: boolean = false;
 
+    private prevDefender: string;
+    private attackCardsSize: number;
+
     // setting is the first mode of each row
     private selectedModes: number[] = [0, 0, 0];
     private selectedIcon: number;
@@ -191,6 +194,12 @@ export class GameView {
 
     public setTotalPlayers(players: number): void {
         this.totalPlayers = players;
+    }
+
+    public storePreviousBoutState(): void {
+        console.log("Defender: " + this.gameView.defendingPlayer);
+        this.prevDefender = this.playerUserNames[this.gameView.defendingPlayer];
+        this.attackCardsSize = this.gameView.attackingCards.length;
     }
 
     public setTotalPlayersPlaying(players: number): void {
@@ -611,9 +620,9 @@ export class GameView {
         // make a line under Text
         this.context.save();
         this.context.beginPath();
-        this.context.moveTo(this.canvas.width / 2 - textM.width / 2 -
+        this.context.moveTo(x - textM.width / 2 -
             textM.width % 10, y + this.fontSize / 2);
-        this.context.lineTo(this.canvas.width / 2 + textM.width / 2 +
+        this.context.lineTo(x + textM.width / 2 +
             textM.width % 10, y + this.fontSize / 2);
         this.context.stroke();
         this.context.restore();
@@ -1643,8 +1652,8 @@ export class GameView {
             case "tookCards":
                 return "Cannot Defend. You Decided To Take The Cards";
             case "takeCards":
-                return this.playerUserNames[this.gameView.defendingPlayer] + " takes the " +
-                    (this.gameView.attackingCards.length == 1 ? "Card" : "Cards");
+                return this.prevDefender + " takes the " +
+                    (this.attackCardsSize == 1 ? "Card" : "Cards");
             case "extraCard":
                 return `This card is extra. Cannot fit in defender's hand`;
             case "gameIsAlreadyOver":
@@ -1677,12 +1686,15 @@ export class GameView {
     */
     public displayMessage(type: string, settings: boolean, fillS: string, strokeS: string,
         x?: number, y?: number): void {
+        console.log("SHOW TAKE MESSAGE");
+
         this.context.save();
 
         this.context.fillStyle = fillS;
         this.context.strokeStyle = strokeS;
 
         let textStr: string = this.getSuitableErrorMessage(type);
+        console.log(textStr);
 
         let xP: number;
         let yP: number;
@@ -1709,20 +1721,3 @@ export class GameView {
         this.context.restore();
     }
 }
-
-
-// there is a problem when you reset the game and play again the font size of the text in gameboard
-// is 80 but should be 20; The problem is that the drawBox takes teh value from the previous call 
-
-// PLAYER 0 TAKES THE CARDS
-
-// Durking the game, the game assigns for the defender that they automatically take the cards 
-// even tho they did not
-
-// Turn does not work correctly
-
-// Imaging 3 players game(A,B,C), A is attacker and B is defender. A has 1 card and B has 1 card
-// Currently, when A attacks (attackMove checks if this player is winner and assigns winner),
-// defender defends (check as well and becomes winner).Then Done button pressed that checks 
-// if GameOver. Yes the game is over bc only one player left (C) but the function assigns the last 
-// player to be durak
