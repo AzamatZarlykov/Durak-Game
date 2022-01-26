@@ -153,6 +153,7 @@ namespace DurakGame.Library.Game
             {
                 p.AddCardsToHand(deck.DrawUntilSix(0));
             }
+
         }
 
         // Returns the list of attacking player based on the type of Durak

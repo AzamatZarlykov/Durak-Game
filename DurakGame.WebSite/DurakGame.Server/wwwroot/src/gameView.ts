@@ -1065,6 +1065,9 @@ export class GameView {
         }
 
         for (let i = from; i < toDefending; i++) {
+            if (i > this.gameView.defendingCards.length - 1) {
+                return;
+            }
             let img: HTMLImageElement = this.getImage(this.gameView.defendingCards[i], true);
 
             this.context.drawImage(img, pos[i % 4].x + 20, pos[i % 4].y - yOffset, this.cardWidth, this.cardHeight);
@@ -1087,9 +1090,9 @@ export class GameView {
         while (count > 0) {
             from = from + 4;
             toAttacking = toAttacking + 4;
-            toDefending = toDefending + 4 - (attackingCardSize - defendingCardSize);
+            toDefending = toDefending + 4;
             pos = this.boutCardPositions.get(4);
-            this.displayBoutHelper(pos, count * 25, from, toAttacking, toDefending);
+            this.displayBoutHelper(pos, count * 30, from, toAttacking, toDefending);
             count = count - 1;
         }
 
@@ -1142,7 +1145,7 @@ export class GameView {
     */
     public displayTrumpSuit(): void {
         let img: HTMLImageElement = this.getImage(this.gameView.trumpCard, true);
-        this.context.drawImage(img, this.cardLeftX, this.deckPosY,
+        this.context.drawImage(img, this.cardLeftX - this.cardWidth, this.deckPosY,
             this.cardWidth, this.cardHeight);
     }
 
@@ -1207,7 +1210,8 @@ export class GameView {
     */
     private displayDurakMessage(): void {
         this.drawBox("Durak is " + this.playerUserNames[this.getDurakIndex()],
-            this.canvas.width / 2, this.deckPosY, 'white', 'white', true, this.fontSize);
+            this.canvas.width / 2, this.deckPosY + this.cardHeight / 2,
+            'white', 'white', true, this.fontSize);
     }
 
     /*
@@ -1275,22 +1279,6 @@ export class GameView {
         }
         return 'black';
     }
-
-    /*
-        function that displays the button that will display all the passport cards
-        of the player
-    */
-    public createButtonForPassport(str: string, pos: { x: number, y: number, tWidth: number; }): void {
-        let tM: TextMetrics = this.context.measureText(str);
-
-        this.button = new Button(
-            this, pos.x + pos.tWidth + this.cardWidth + tM.width / 2 + 8 * this.textLeftMargin,
-            pos.y + this.offset, str, this.fontSize
-        );
-
-        this.button.draw('white', 'white');
-    }
-
 
     private displayPlayerIconInGame(indexOfIcon: number,
         pos: { x: number, y: number, tWidth: number; }): void {
@@ -1407,17 +1395,16 @@ export class GameView {
         return true;
     }
 
-    private displayPlayerOptions(textStr: string, buttonStr: string, pos: {
-        x: number, y: number, tWidth: number; }, noCards: boolean): void {
+    private displayPlayerOptions(textStr?: string, buttonStr?: string, pos?: {
+        x: number, y: number, tWidth: number;
+    }, noCards: boolean = true): void {
         if (noCards) {
-            this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth / 2,
+            this.drawBox(textStr, pos.x + pos.tWidth + this.cardWidth,
                 pos.y + this.offset, 'white', 'white', false, this.fontSize);
         }
-        let x: number = noCards ? pos.x + pos.tWidth + this.cardWidth +
-            this.nTextMetrics.width / 2 + 8 * this.textLeftMargin : pos.x + pos.tWidth +
-        this.cardWidth / 2 + this.nTextMetrics.width / 2 + 8 * this.textLeftMargin
 
-        this.button = new Button(this, x,
+        this.button = new Button(this, pos.x + pos.tWidth + this.cardWidth +
+            this.nTextMetrics.width + 8 * this.textLeftMargin,
             pos.y + this.offset, buttonStr, this.fontSize
         );
         this.button.draw('white', 'white');
@@ -1430,7 +1417,7 @@ export class GameView {
         // just display button "Show Passport"
         if (this.gameView.playersView[this.id].allCardsPassport &&
             this.gameView.attackingCards.length == 0) {
-            this.createButtonForPassport("Show Passport", pos);
+            this.displayPlayerOptions(undefined, "Show Passport",  pos, false);
             return;
         }
 
@@ -1448,13 +1435,16 @@ export class GameView {
             }
             // display message "Continue Attack" if the player defended successfully
             else {
-                console.log("1");
-                this.displayPlayerOptions("Continue Attack", "Done", pos, true);
+                if (this.gameView.playersView[this.gameView.attackingPlayer].numberOfCards != 0) {
+                    this.displayPlayerOptions("Continue Attack", "Done", pos, true);
+                } else {
+                    this.displayPlayerOptions(undefined, "Done", pos, false);
+                }
             }
         }
         // display "Done" in case when player display all passports
         else if (this.gameView.variation == Variation.Passport && this.passportDisplayed()) {
-            this.createButtonForPassport("Done", pos);
+            this.displayPlayerOptions(undefined, "Done", pos, false);
         }
     }
 
@@ -1704,7 +1694,9 @@ export class GameView {
             yP = y;
         } else {
             xP = this.positionsAroundTable[0].x + this.positionsAroundTable[0].tWidth / 2;
-            yP = this.deckPosY - 2 * this.textUpperMargin;
+            yP = this.gameView.attackingCards.length == 0 ?
+                this.deckPosY - 2 * this.textUpperMargin : 
+                this.deckPosY + this.cardHeight + 2 * this.textUpperMargin ;
         }
 
         this.drawBox(textStr, xP, yP, fillS, strokeS, true, this.fontSize);
