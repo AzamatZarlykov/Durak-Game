@@ -948,6 +948,7 @@ export class GameView {
         this.userName = "";
         this.id = undefined;
         this.selectedIcon = 0;
+        this.totalPlayers--;    // call to function when one player disconnects
     }
 
     /*

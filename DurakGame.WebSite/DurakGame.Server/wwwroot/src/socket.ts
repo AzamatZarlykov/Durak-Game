@@ -29,6 +29,7 @@ let GameIsAlreadyOverCommand: string = "GameIsAlreadyOver";
 let ResetSuccessCommand: string = "ResetSuccess";
 let PassportViolationCommand: string = "PassportViolation";
 let UseDisplayButtonCommand: string = "UseDisplayButton";
+let TerminateGameCommand: string = "Terminate";
 
 let view: GameView;
 
@@ -49,7 +50,8 @@ let allCommands: string[] = [
     GameIsAlreadyOverCommand,
     ResetSuccessCommand,
     PassportViolationCommand,
-    UseDisplayButtonCommand
+    UseDisplayButtonCommand,
+    TerminateGameCommand
 ];
 
 connectionUrl = scheme + "://" + document.location.hostname + port + "/ws";
@@ -185,6 +187,9 @@ socket.onmessage = function (event): void {
                 break;
             case (UseDisplayButtonCommand):
                 view.displayMessage("displayPassport", false, 'white', 'white');
+                break;
+            case (TerminateGameCommand):
+                view.backToLobby();
                 break;
         }
     } else {

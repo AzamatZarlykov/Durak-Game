@@ -326,15 +326,16 @@ namespace DurakGame.Server.Middleware
             }
         }
 
-        private async Task HandleResetGameCommand()
+        private async Task HandleResetGameCommand(bool gameTerminate)
         {
             // resets the game
             availableIcons = new bool[6] { true, true, true, true, true, true };
             game.Reset();
 
-            command = "ResetSuccess";
+            command = gameTerminate ? "Terminate" : "ResetSuccess";
+
             // send the success message to playing players 
-            foreach(WebSocket socket in manager.GetPlayingSockets())
+            foreach (WebSocket socket in manager.GetPlayingSockets())
             {
                 await SendJSON(socket, new 
                 { 
@@ -395,7 +396,7 @@ namespace DurakGame.Server.Middleware
                     await InformStartGame();
                     break;
                 case "ResetGame":
-                    await HandleResetGameCommand();
+                    await HandleResetGameCommand(false);
                     break;
                 case "Show Passport":
                     await HandleDisplayingPassports();
@@ -432,8 +433,6 @@ namespace DurakGame.Server.Middleware
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
 
-
-
                         await MessageHandle(route, websocket);
 
                         return;
@@ -445,7 +444,10 @@ namespace DurakGame.Server.Middleware
                         // Get the ID of the player that wants to leave/disconnect
                         if (manager.IsPlayingSocket(websocket))
                         {
-                            int id = manager.GetPlayingSockets().IndexOf(websocket);
+                            await HandleResetGameCommand(true);
+
+
+                            /*int id = manager.GetPlayingSockets().IndexOf(websocket);
                             // Send messages to players informing which player leaves and update
                             // the number of players
                             // only if the game is on
@@ -456,7 +458,7 @@ namespace DurakGame.Server.Middleware
 
                                 // During the game inform other players who left
                                 await InformLeavingToOtherPlayers(id);
-                            }
+                            }*/
                         }
                         // Remove the player from the collection of players 
                         manager.RemoveElementFromSockets(websocket);
