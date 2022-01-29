@@ -1,13 +1,14 @@
-﻿using DurakGame.Library.GameCard;
-using DurakGame.Library.GameDeck;
-using DurakGame.Library.GamePlayer;
+﻿using DurakGame.Model.PlayingCards;
+using DurakGame.Model.TableDeck;
+using DurakGame.Model.GamePlayer;
+using DurakGame.Model.MiddleBout;
 using DurakGame.Server.Middleware;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DurakGame.Library.Game
+namespace DurakGame.Model.Durak
 {
     public enum AttackType { OneSideAttacking, NeighboursAttacking, AllSidesAttacking }
     public enum Variation { Classic, Passport }
@@ -21,99 +22,7 @@ namespace DurakGame.Library.Game
     {
         Six = 6, Ten = 10, Jack = 11, Queen = 12, King = 13, Ace = 14
     }
-    public class PlayerView
-    {
-        public int numberOfCards;
-        public bool isAttacking;
-        public bool allCardsPassport;
-        public PlayerState playerState;
-        public PassportCards passport;
-    }
-
-    public class GameView
-    {
-        private Durak game;
-
-        public int playerID;
-        public List<Card> hand = new List<Card>();
-
-        public Card trumpCard;
-
-        private int prevDiscardedHeapValue;
-        public bool discardHeapChanged;
-
-        public GameStatus gameStatus;
-        public int playerTurn;
-
-        public bool takingCards;
-        public int discardHeapSize => game.GetDiscardedHeapSize();
-        public int deckSize => game.GetDeck().cardsLeft;
-        public int defendingPlayer => game.GetDefendingPlayer();
-        public int attackingPlayer => game.GetAttackingPlayer();
-
-        public List<PlayerView> playersView = new List<PlayerView>();
-        public List<Card> attackingCards;
-        public List<Card> defendingCards;
-
-        public Variation variation;
-        public bool passportGameOver;
-
-        public GameView(Durak game, int id)
-        {
-            this.game = game;
-            variation = game.variation;
-
-            List<Player> players = game.GetPlayers();
-
-            playerID = id;
-            hand = players[id].GetPlayersHand();
-
-            if (prevDiscardedHeapValue != discardHeapSize)
-            {
-                discardHeapChanged = true;
-            }
-            prevDiscardedHeapValue = discardHeapSize;
-
-            PlayerView playerView;
-            List<PlayerView> pViews = new List<PlayerView>();
-
-
-            for (int i = 0; i < game.GetSizeOfPlayers(); i++)
-            {
-                playerView = new PlayerView();
-
-                playerView.numberOfCards = players[i].GetNumberOfCards();
-                playerView.isAttacking = (attackingPlayer == i);
-                playerView.playerState = players[i].playerState;
-                playerView.passport = players[i].passport;
-
-                if (players[i].playerState == PlayerState.Winner)
-                {
-                    passportGameOver = true;
-                }
-
-                if (variation == Variation.Passport && players[i].CheckIfAllCardsPassport())
-                {
-                    playerView.allCardsPassport = true;
-                }
-
-                pViews.Add(playerView);
-            }
-            playersView = pViews;
-
-            trumpCard = deckSize == 0 ? new Card(game.GetTrumpCard().suit, (Rank)5)
-                                       : game.GetTrumpCard();
-
-            attackingCards = game.GetBoutInformation().GetAttackingCards();
-            defendingCards = game.GetBoutInformation().GetDefendingCards();
-
-            takingCards = game.GetPlayer(defendingPlayer).IsPlayerTaking();
-
-            playerTurn = game.GetPlayersTurn();
-            gameStatus = game.gameStatus;
-        }
-    }
-
+  
     public class Durak
     {
         private Bout bout;

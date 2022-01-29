@@ -1,4 +1,4 @@
-﻿namespace DurakGame.Library.GameCard
+﻿namespace DurakGame.Model.PlayingCards
 {
     /// <summary>
     /// Card class that represents the card in Durak

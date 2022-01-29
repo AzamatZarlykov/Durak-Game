@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-using DurakGame.Library.GameCard;
+using DurakGame.Model.Durak;
+using DurakGame.Model.PlayingCards;
 
-namespace DurakGame.Library.Game
+namespace DurakGame.Model.MiddleBout
 {
     /// <summary>
     /// Bout class is the gameplay at the center of the board

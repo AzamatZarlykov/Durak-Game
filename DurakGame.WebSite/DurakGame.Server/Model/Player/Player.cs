@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using DurakGame.Library.GameCard;
-using DurakGame.Library.Game;
+using DurakGame.Model.PlayingCards;
+
+using DurakGame.Model.Durak;
 using DurakGame.Server.Middleware;
 
-namespace DurakGame.Library.GamePlayer
+namespace DurakGame.Model.GamePlayer
 {
     public enum PlayerState { Playing, NotAscended, Ascended, Winner, Durak }
     public class Player

@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 using System.Collections.Generic;
 
-using DurakGame.Library.Game;
+using DurakGame.GameStateView;
+using DurakGame.Model.Durak;
 
 namespace DurakGame.Server.Middleware
 {

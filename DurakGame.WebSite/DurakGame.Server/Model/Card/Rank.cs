@@ -1,4 +1,4 @@
-﻿namespace DurakGame.Library.GameCard
+﻿namespace DurakGame.Model.PlayingCards
 {
     public enum Rank
     {

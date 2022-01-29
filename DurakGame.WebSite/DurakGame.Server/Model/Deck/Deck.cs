@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using DurakGame.Library.GameCard;
-using DurakGame.Library.GamePlayer;
+using DurakGame.Model.PlayingCards;
+using DurakGame.Model.GamePlayer;
 
-namespace DurakGame.Library.GameDeck
+namespace DurakGame.Model.TableDeck
 {
     public class Deck
     {
