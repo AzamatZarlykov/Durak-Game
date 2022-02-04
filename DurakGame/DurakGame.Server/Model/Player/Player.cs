@@ -18,7 +18,7 @@ namespace DurakGame.Model.GamePlayer
         private bool isAttackersTurn;
 
         public PassportCards passport = PassportCards.Six;
-        public WaitingRoomState waitingRoomState; 
+        public WaitingRoomState waitingRoomState;
         public PlayerState playerState;
 
         private List<Card> playersHand = new List<Card>();
@@ -109,7 +109,7 @@ namespace DurakGame.Model.GamePlayer
         {
             Console.WriteLine("PRINTING PLAYER INFORMATION:");
             Console.WriteLine("NAME: " + name);
-            Console.WriteLine("IS " + (isAttacker ? "ATTACKING: ": "TAKING: ") + 
+            Console.WriteLine("IS " + (isAttacker ? "ATTACKING: " : "TAKING: ") +
                 (isAttacker ? isAttackersTurn : isTaking));
             Console.WriteLine("PLAYER STATE: " + playerState);
             Console.WriteLine("CARDS: ");

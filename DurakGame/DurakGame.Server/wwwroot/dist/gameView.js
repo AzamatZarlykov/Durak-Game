@@ -1,65 +1,6 @@
 import { Button } from './button.js';
-var GameStatus;
-(function (GameStatus) {
-    GameStatus[GameStatus["NotCreated"] = 0] = "NotCreated";
-    GameStatus[GameStatus["GameInProgress"] = 1] = "GameInProgress";
-    GameStatus[GameStatus["GameOver"] = 2] = "GameOver";
-})(GameStatus || (GameStatus = {}));
-var PlayerState;
-(function (PlayerState) {
-    PlayerState[PlayerState["Playing"] = 0] = "Playing";
-    PlayerState[PlayerState["NotAscended"] = 1] = "NotAscended";
-    PlayerState[PlayerState["Ascended"] = 2] = "Ascended";
-    PlayerState[PlayerState["Winner"] = 3] = "Winner";
-    PlayerState[PlayerState["Durak"] = 4] = "Durak";
-})(PlayerState || (PlayerState = {}));
-var Rank;
-(function (Rank) {
-    Rank[Rank["Six"] = 6] = "Six";
-    Rank[Rank["Seven"] = 7] = "Seven";
-    Rank[Rank["Eight"] = 8] = "Eight";
-    Rank[Rank["Nine"] = 9] = "Nine";
-    Rank[Rank["Ten"] = 10] = "Ten";
-    Rank[Rank["Jack"] = 11] = "Jack";
-    Rank[Rank["Queen"] = 12] = "Queen";
-    Rank[Rank["King"] = 13] = "King";
-    Rank[Rank["Ace"] = 14] = "Ace";
-})(Rank || (Rank = {}));
-var Suit;
-(function (Suit) {
-    Suit[Suit["Club"] = 0] = "Club";
-    Suit[Suit["Diamonds"] = 1] = "Diamonds";
-    Suit[Suit["Heart"] = 2] = "Heart";
-    Suit[Suit["Spade"] = 3] = "Spade";
-})(Suit || (Suit = {}));
-var PassportCards;
-(function (PassportCards) {
-    PassportCards[PassportCards["Six"] = 6] = "Six";
-    PassportCards[PassportCards["Ten"] = 10] = "Ten";
-    PassportCards[PassportCards["Jack"] = 11] = "Jack";
-    PassportCards[PassportCards["Queen"] = 12] = "Queen";
-    PassportCards[PassportCards["King"] = 13] = "King";
-    PassportCards[PassportCards["Ace"] = 14] = "Ace";
-})(PassportCards || (PassportCards = {}));
-var Variation;
-(function (Variation) {
-    Variation[Variation["Classic"] = 0] = "Classic";
-    Variation[Variation["Passport"] = 1] = "Passport";
-})(Variation || (Variation = {}));
-export var State;
-(function (State) {
-    State[State["Menu"] = 0] = "Menu";
-    State[State["CreateGame"] = 1] = "CreateGame";
-    State[State["PlayerSetup"] = 2] = "PlayerSetup";
-    State[State["WaitingRoom"] = 3] = "WaitingRoom";
-    State[State["GameTable"] = 4] = "GameTable";
-})(State || (State = {}));
-class MousePos {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-}
+import { MousePos } from './mouse.js';
+import * as Helper from './helper.js';
 export class GameView {
     constructor(socket) {
         this.mouseClickMargin = 7;
@@ -78,7 +19,7 @@ export class GameView {
         // setting is the first mode of each row
         this.selectedModes = [0, 0, 0];
         this.availableIcons = [true, true, true, true, true, true];
-        this.state = State.Menu;
+        this.state = Helper.State.Menu;
         this.socket = socket;
         let canvas = document.getElementById("canvas");
         let context = canvas.getContext("2d");
@@ -90,7 +31,6 @@ export class GameView {
         this.canvas.addEventListener("click", (e) => {
             this.mousePos.x = e.x;
             this.mousePos.y = e.y;
-            console.log("The mouse click at : " + this.mousePos.x + " " + this.mousePos.y);
             this.CheckMouseClick();
         });
         window.addEventListener("resize", () => this.reportWindowResize(this.canvas, this.context));
@@ -106,7 +46,6 @@ export class GameView {
         this.totalPlayers = players;
     }
     storePreviousBoutState() {
-        console.log("Defender: " + this.gameView.defendingPlayer);
         this.prevDefender = this.playerUserNames[this.gameView.defendingPlayer];
         this.attackCardsSize = this.gameView.attackingCards.length;
     }
@@ -207,19 +146,19 @@ export class GameView {
     reportWindowResize(canvas, context) {
         this.windowObjectsResize(canvas, context);
         switch (this.state) {
-            case State.Menu:
+            case Helper.State.Menu:
                 this.displayMenu();
                 break;
-            case State.CreateGame:
+            case Helper.State.CreateGame:
                 this.loadGameSettingMenu();
                 break;
-            case State.GameTable:
+            case Helper.State.GameTable:
                 this.displayStateOfTheGame();
                 break;
-            case State.PlayerSetup:
+            case Helper.State.PlayerSetup:
                 this.loadPlayerSetupPage();
                 break;
-            case State.WaitingRoom:
+            case Helper.State.WaitingRoom:
                 this.loadWaitingRoomPage();
                 break;
         }
@@ -227,19 +166,19 @@ export class GameView {
     setFontSize(size) {
         if (typeof size !== undefined) {
             switch (this.state) {
-                case State.Menu:
+                case Helper.State.Menu:
                     this.fontSize = 50;
                     break;
-                case State.GameTable:
+                case Helper.State.GameTable:
                     this.fontSize = 21;
                     break;
-                case State.CreateGame:
+                case Helper.State.CreateGame:
                     this.fontSize = 45;
                     break;
-                case State.PlayerSetup:
+                case Helper.State.PlayerSetup:
                     this.fontSize = 45;
                     break;
-                case State.WaitingRoom:
+                case Helper.State.WaitingRoom:
                     this.fontSize = 50;
                     break;
             }
@@ -408,14 +347,14 @@ export class GameView {
         let img;
         let pos;
         for (let i = 0; i < 6; i++) {
-            pos = this.state == State.CreateGame ? this.modesPositions.get(i + 1) :
+            pos = this.state == Helper.State.CreateGame ? this.modesPositions.get(i + 1) :
                 this.iconsPositions.get(i);
-            img = this.getImage(undefined, false, this.state == State.CreateGame ? (i + 1).toString()
+            img = this.getImage(undefined, false, this.state == Helper.State.CreateGame ? (i + 1).toString()
                 : "icon" + i.toString());
-            this.context.drawImage(img, pos.x, pos.y, this.state == State.CreateGame ?
-                this.cardHeight : this.cardWidth, this.state == State.CreateGame ?
+            this.context.drawImage(img, pos.x, pos.y, this.state == Helper.State.CreateGame ?
+                this.cardHeight : this.cardWidth, this.state == Helper.State.CreateGame ?
                 this.cardHeight : this.cardWidth);
-            if (this.state == State.PlayerSetup && !this.availableIcons[i]) {
+            if (this.state == Helper.State.PlayerSetup && !this.availableIcons[i]) {
                 this.drawX(pos.x, pos.y);
             }
         }
@@ -592,16 +531,16 @@ export class GameView {
     switchPages(state, refresh) {
         this.state = state;
         switch (this.state) {
-            case State.WaitingRoom:
+            case Helper.State.WaitingRoom:
                 this.loadWaitingRoomPage();
                 break;
-            case State.GameTable:
+            case Helper.State.GameTable:
                 this.displayStateOfTheGame();
                 break;
-            case State.CreateGame:
+            case Helper.State.CreateGame:
                 this.loadGameSettingMenu();
                 break;
-            case State.PlayerSetup:
+            case Helper.State.PlayerSetup:
                 this.loadPlayerSetupPage();
                 break;
         }
@@ -624,14 +563,14 @@ export class GameView {
     checkKeyButtonPress() {
         let strJSON;
         if (this.isBackToMenuPressed()) {
-            if (this.state == State.PlayerSetup) {
+            if (this.state == Helper.State.PlayerSetup) {
                 this.resetSetupPageSettings();
             }
-            this.switchPages(State.Menu, false);
+            this.switchPages(Helper.State.Menu, false);
             this.displayMenu();
         }
         else if (this.isButtonSelected()) {
-            if (this.state == State.PlayerSetup) {
+            if (this.state == Helper.State.PlayerSetup) {
                 if (this.userName.length == 0) {
                     alert("Write the user name");
                     return;
@@ -645,14 +584,14 @@ export class GameView {
                 });
                 this.socket.send(strJSON);
             }
-            else if (this.state == State.CreateGame) {
+            else if (this.state == Helper.State.CreateGame) {
                 // send information about the game settings 
                 strJSON = JSON.stringify({
                     Message: "GameSetup",
                     GameSetting: this.selectedModes
                 });
                 this.socket.send(strJSON);
-                this.switchPages(State.PlayerSetup, true);
+                this.switchPages(Helper.State.PlayerSetup, true);
             }
         }
     }
@@ -672,12 +611,12 @@ export class GameView {
     */
     handleJoinButtonInstructions() {
         // if game is not being created then players cant join
-        if (this.gameStatus == GameStatus.NotCreated) {
+        if (this.gameStatus == Helper.GameStatus.NotCreated) {
             this.displayMessage("GameNotCreated", true, 'red', 'red', this.canvas.width / 2, this.deckPosY +
                 this.boxHeight + 25 * this.canvas.height / 100);
         }
-        else if (this.gameStatus == GameStatus.GameInProgress && this.isPlaying) {
-            this.switchPages(State.PlayerSetup, true);
+        else if (this.gameStatus == Helper.GameStatus.GameInProgress && this.isPlaying) {
+            this.switchPages(Helper.State.PlayerSetup, true);
         }
         else if (!this.isPlaying) {
             this.displayMessage("CannotJoin", true, 'red', 'red', this.canvas.width / 2, this.deckPosY +
@@ -693,13 +632,13 @@ export class GameView {
             this.displayMessage("LackOfPlayers", true, 'red', 'red', this.canvas.width / 2, this.deckPosY +
                 this.boxHeight + 25 * this.canvas.height / 100);
         }
-        else if (this.gameStatus == GameStatus.NotCreated) {
+        else if (this.gameStatus == Helper.GameStatus.NotCreated) {
             strJSON = JSON.stringify({
                 From: this.id,
                 Message: "CreateGame"
             });
             this.socket.send(strJSON);
-            this.switchPages(State.CreateGame, false);
+            this.switchPages(Helper.State.CreateGame, false);
         }
         else if (this.isPlaying) {
             // display that game is being created
@@ -722,9 +661,9 @@ export class GameView {
         }
     }
     backToLobby() {
-        this.switchPages(State.Menu, false);
+        this.switchPages(Helper.State.Menu, false);
         this.displayMenu();
-        this.gameStatus = GameStatus.NotCreated;
+        this.gameStatus = Helper.GameStatus.NotCreated;
         this.availableIcons = [true, true, true, true, true, true];
         this.userName = "";
         this.id = undefined;
@@ -789,16 +728,16 @@ export class GameView {
         Function that tells which card the attacking player has selected to attack
     */
     CheckMouseClick() {
-        if (this.state == State.GameTable) {
-            if (this.gameView.gameStatus == GameStatus.GameInProgress &&
+        if (this.state == Helper.State.GameTable) {
+            if (this.gameView.gameStatus == Helper.GameStatus.GameInProgress &&
                 (this.isAttacking() || this.isDefending())) {
                 this.handleCardClickInstructions();
             }
-            else if (this.gameView.gameStatus == GameStatus.GameOver) {
+            else if (this.gameView.gameStatus == Helper.GameStatus.GameOver) {
                 this.handleEndGameInstructions();
             }
         }
-        else if (this.state == State.Menu) {
+        else if (this.state == Helper.State.Menu) {
             if (this.isJoinPressed()) {
                 this.handleJoinButtonInstructions();
             }
@@ -808,20 +747,20 @@ export class GameView {
             else {
             }
         }
-        else if (this.state == State.CreateGame) {
+        else if (this.state == Helper.State.CreateGame) {
             this.checkKeyButtonPress();
             if (this.anyModePressed()) {
-                this.switchPages(State.CreateGame, false);
+                this.switchPages(Helper.State.CreateGame, false);
             }
         }
-        else if (this.state == State.PlayerSetup) {
+        else if (this.state == Helper.State.PlayerSetup) {
             this.userName = this.input.value;
             this.checkKeyButtonPress();
             if (this.anyIconPressed()) {
-                this.switchPages(State.PlayerSetup, false);
+                this.switchPages(Helper.State.PlayerSetup, false);
             }
         }
-        else if (this.state == State.WaitingRoom) {
+        else if (this.state == Helper.State.WaitingRoom) {
             this.handleWaitingRoomInstructions();
         }
     }
@@ -933,7 +872,7 @@ export class GameView {
     }
     getDurakIndex() {
         for (let i = 0; i < this.gameView.playersView.length; i++) {
-            if (this.gameView.playersView[i].playerState == PlayerState.Durak) {
+            if (this.gameView.playersView[i].playerState == Helper.PlayerState.Durak) {
                 return i;
             }
         }
@@ -986,7 +925,7 @@ export class GameView {
         this.context.restore();
     }
     GetBoxStyle(currentID) {
-        if (this.gameView.gameStatus == GameStatus.GameOver) {
+        if (this.gameView.gameStatus == Helper.GameStatus.GameOver) {
             return 'black';
         }
         if (currentID == this.gameView.attackingPlayer) {
@@ -1004,17 +943,17 @@ export class GameView {
     }
     getPassportString(enumPassporty) {
         switch (enumPassporty) {
-            case PassportCards.Six:
+            case Helper.PassportCards.Six:
                 return "6";
-            case PassportCards.Ten:
+            case Helper.PassportCards.Ten:
                 return "10";
-            case PassportCards.Jack:
+            case Helper.PassportCards.Jack:
                 return "J";
-            case PassportCards.Queen:
+            case Helper.PassportCards.Queen:
                 return "Q";
-            case PassportCards.King:
+            case Helper.PassportCards.King:
                 return "K";
-            case PassportCards.Ace:
+            case Helper.PassportCards.Ace:
                 return "A";
             default:
                 console.log("Unknown Passport Index Given");
@@ -1022,10 +961,10 @@ export class GameView {
         }
     }
     PlayerWon(currentID) {
-        return this.gameView.playersView[currentID].playerState == PlayerState.Winner;
+        return this.gameView.playersView[currentID].playerState == Helper.PlayerState.Winner;
     }
     PlayerAscended(currentID) {
-        return this.gameView.playersView[currentID].playerState == PlayerState.Ascended;
+        return this.gameView.playersView[currentID].playerState == Helper.PlayerState.Ascended;
     }
     displayPlayersSetup(currentID, pos) {
         let color = this.GetBoxStyle(currentID);
@@ -1034,7 +973,7 @@ export class GameView {
         // dispaly the players icons
         this.displayPlayerIconInGame(currentID, pos);
         // setup for passport variation
-        if (this.gameView.variation == Variation.Passport) {
+        if (this.gameView.variation == Helper.Variation.Passport) {
             if (this.PlayerWon(currentID)) {
                 this.drawBox("Winner", pos.x + pos.tWidth / 2, pos.y + this.cardHeight / 4, 'white', 'white', true, this.fontSize);
             }
@@ -1067,7 +1006,7 @@ export class GameView {
     */
     passportDisplayed() {
         let cards = this.gameView.attackingCards; // all attacking cards in bout
-        let attackerPassport = this.gameView.playersView // passport 
+        let attackerPassport = this.gameView.playersView // passport
         [this.gameView.attackingPlayer].passport;
         for (let i = 0; i < cards.length; i++) {
             if (cards[i].rank.valueOf() != attackerPassport.valueOf()) {
@@ -1085,7 +1024,7 @@ export class GameView {
         this.button.draw('white', 'white');
     }
     manageAttackingPlayerGameSetup(pos) {
-        if (this.gameView.gameStatus == GameStatus.GameOver) {
+        if (this.gameView.gameStatus == Helper.GameStatus.GameOver) {
             return;
         }
         // just display button "Show Passport"
@@ -1115,7 +1054,7 @@ export class GameView {
             }
         }
         // display "Done" in case when player display all passports
-        else if (this.gameView.variation == Variation.Passport && this.passportDisplayed()) {
+        else if (this.gameView.variation == Helper.Variation.Passport && this.passportDisplayed()) {
             this.displayPlayerOptions(undefined, "Done", pos, false);
         }
     }
@@ -1127,7 +1066,7 @@ export class GameView {
         let pos = this.positionsAroundTable[position[index] - 1];
         // Add an arrow indicating whose turn it is to play
         if (currentID == this.gameView.playerTurn &&
-            this.gameView.gameStatus != GameStatus.GameOver) {
+            this.gameView.gameStatus != Helper.GameStatus.GameOver) {
             let arrowPos = this.positionsAroundTableDuplicate[position[index] - 1];
             this.drawArrow(arrowPos.x - 130, pos.y + this.offset, arrowPos.x - 70, pos.y +
                 this.offset, 'white');
@@ -1139,7 +1078,8 @@ export class GameView {
             }
             // display "Take" button on the defending player if cannot defend / just want to
             if (this.isDefending() && this.checkTakingCondition()) {
-                if (this.gameView.variation == Variation.Classic || !this.passportDisplayed()) {
+                if (this.gameView.variation == Helper.Variation.Classic ||
+                    !this.passportDisplayed()) {
                     this.displayPlayerOptions("Defend", "Take", pos, true);
                 }
             }
@@ -1224,20 +1164,20 @@ export class GameView {
             this.displayDiscardedHeap();
         }
         this.displayBout();
-        if (this.gameView.gameStatus == GameStatus.GameOver) {
-            if (this.gameView.variation != Variation.Passport ||
+        if (this.gameView.gameStatus == Helper.GameStatus.GameOver) {
+            if (this.gameView.variation != Helper.Variation.Passport ||
                 this.gameView.passportGameOver) {
                 this.displayDurakMessage();
             }
             // display "Back To Lobby" button for the creator. When pressed every player moves 
             // to the lobby
             if (this.isCreator) {
-                if (this.gameView.variation == Variation.Passport &&
+                if (this.gameView.variation == Helper.Variation.Passport &&
                     !this.gameView.passportGameOver) {
                     this.buttonMenu = new Button(this, this.canvas.width / 2, 60 / 100 * this.canvas.height, "Start Next Round", 45);
                     this.buttonMenu.draw('white', 'white');
                 }
-                else if (this.gameView.variation != Variation.Passport ||
+                else if (this.gameView.variation != Helper.Variation.Passport ||
                     this.gameView.passportGameOver) {
                     this.buttonMenu = new Button(this, this.canvas.width / 2, 60 / 100 * this.canvas.height, "Back To Lobby", 45);
                     this.buttonMenu.draw('white', 'white');
@@ -1305,12 +1245,10 @@ export class GameView {
         Display the error if Attack/Defense is illegal
     */
     displayMessage(type, settings, fillS, strokeS, x, y) {
-        console.log("SHOW TAKE MESSAGE");
         this.context.save();
         this.context.fillStyle = fillS;
         this.context.strokeStyle = strokeS;
         let textStr = this.getSuitableErrorMessage(type);
-        console.log(textStr);
         let xP;
         let yP;
         if (settings) {
@@ -1325,10 +1263,10 @@ export class GameView {
         }
         this.drawBox(textStr, xP, yP, fillS, strokeS, true, this.fontSize);
         switch (this.state) {
-            case State.GameTable:
+            case Helper.State.GameTable:
                 setTimeout(() => this.displayStateOfTheGame(), 3000);
                 break;
-            case State.Menu:
+            case Helper.State.Menu:
                 setTimeout(() => this.displayMenu(), 3000);
                 break;
         }

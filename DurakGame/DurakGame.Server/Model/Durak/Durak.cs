@@ -22,7 +22,7 @@ namespace DurakGame.Model.Durak
     {
         Six = 6, Ten = 10, Jack = 11, Queen = 12, King = 13, Ace = 14
     }
-  
+
     public class Durak
     {
         private Bout bout;
@@ -716,10 +716,15 @@ namespace DurakGame.Model.Durak
 
         private bool IsDefenderTurn()
         {
+            Console.WriteLine("Defender taking status: " + GetPlayer(defendingPlayer).IsPlayerTaking());
             if (!GetPlayer(defendingPlayer).IsPlayerTaking())
             {
-                return bout.GetAttackingCardsSize() > bout.GetDefendingCardsSize() &&
-                    !bout.AllPassport(GetPlayer(attackingPlayer).passport);
+                Console.WriteLine("Attacking BOUT size: " + bout.GetAttackingCardsSize());
+                Console.WriteLine("Defending BOUT size: " + bout.GetDefendingCardsSize());
+
+                if (variation == Variation.Classic)
+                    return bout.GetAttackingCardsSize() > bout.GetDefendingCardsSize();
+                return !bout.AllPassport(GetPlayer(attackingPlayer).passport);
             }
             return false;
         }
@@ -728,8 +733,11 @@ namespace DurakGame.Model.Durak
         {
             if (IsDefenderTurn())
             {
+                Console.WriteLine("DEFENDER'S TURN: " + defendingPlayer);
                 return defendingPlayer;
             }
+            Console.WriteLine("Attacker'S TURN: " + attackingPlayer);
+
             return attackingPlayer;
         }
 
@@ -753,7 +761,3 @@ namespace DurakGame.Model.Durak
         }
     }
 }
-
-
-// Winner should be given once the DONE/TAKE button pressed
-// Consider removing "Winner" enum from passport cards 

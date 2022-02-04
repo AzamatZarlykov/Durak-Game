@@ -41,7 +41,7 @@ namespace DurakGame.Server.Middleware
         // by removing the elements from the copy list 
         public void ReconnectTheConnectionOfOldPlayers()
         {
-            foreach(WebSocket socket in startIDsOfPlayers)
+            foreach (WebSocket socket in startIDsOfPlayers)
             {
                 sockets.Remove(socket);
                 sockets.Add(socket);

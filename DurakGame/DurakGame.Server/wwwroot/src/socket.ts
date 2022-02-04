@@ -1,6 +1,5 @@
-﻿import { GameView, State } from './gameView.js';
-
-let playingTable = document.getElementById("playingTable") as HTMLDivElement;
+﻿import { GameView } from './gameView.js';
+import { State } from './helper.js';
 
 let socket: WebSocket;
 let connectionUrl: string;
@@ -12,9 +11,7 @@ let id: number; // id of the player
 let nPlayers: number = 0; // total number of players on the webpage
 let nPlayersPlaying: number = 0; // total number of players playing on the table
 
-let InformLeavingCommand: string = "InformLeaving";
 let JoinGameCommand: string = "JoinGame";
-let RequestStateGameCommand: string = "RequestStateGame";
 let SetTotalPlayersCommand: string = "SetTotalPlayers";
 let UpdateGameProcessCommand: string = "UpdateGameProcess";
 let IllegalCommand: string = "Illegal";
@@ -34,9 +31,7 @@ let TerminateGameCommand: string = "Terminate";
 let view: GameView;
 
 let allCommands: string[] = [
-    InformLeavingCommand,
     JoinGameCommand,
-    RequestStateGameCommand,
     SetTotalPlayersCommand,
     UpdateGameProcessCommand,
     IllegalCommand,
@@ -75,36 +70,12 @@ socket.onmessage = function (event): void {
 
     if (allCommands.indexOf(obj.command) > -1) {
 
-        if ([InformLeavingCommand, SetTotalPlayersCommand, JoinGameCommand].includes(obj.command)) {
+        if ([SetTotalPlayersCommand, JoinGameCommand].includes(obj.command)) {
             setTotalPlayers(obj.totalPlayers);
             setPlayingPlayers(obj.sizeOfPlayers);
         }
 
         switch (obj.command) {
-            // Handles the event when the player leaves when the game is on. It updates the value of
-            // number of people playing and rearranges the position
-            // of players depending on IDs
-            case (InformLeavingCommand):
-                if (playingTable.hidden == false) {
-
-                    if (nPlayersPlaying > 1) {
-                        setPlayingPlayers(nPlayersPlaying);
-                    } else {
-                        // when 1 person left the game is over. Close the board and tell server that game
-                        // has finished
-                        view.removeTable();
-
-                        // no players playing
-                        setPlayingPlayers(0);
-
-                        console.log("The game is over");
-                    }
-                    console.log("Player " + obj.leavingPlayerID + " left the game");
-                } else {
-                    console.log("Player" + obj.leavingPlayerID + " left the server");
-                }
-                break;
-
             case (JoinGameCommand):
                 setPlayerID(obj.playerID);
                 view.gameStatus = obj.gameStatus;
@@ -233,17 +204,6 @@ Sets the total number of players playing in the game on html
 */
 function setPlayingPlayers(count: number): void {
     nPlayersPlaying = count;
-    console.log("Number Of Players In The Game: " + nPlayersPlaying);
-}
-
-/*
-Returns the JSON object that containts the message to the server
-*/
-function constructJSONPayload(message: string): string {
-    return JSON.stringify({
-        From: id,
-        Message: message,
-    });
 }
 
 /*
@@ -258,5 +218,4 @@ Sets the player ID on html
 */
 function setPlayerID(identifier: number): void {
     id = identifier;
-    console.log("ID of the player is: " + id);
 }

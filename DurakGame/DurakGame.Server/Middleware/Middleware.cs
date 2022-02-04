@@ -78,34 +78,34 @@ namespace DurakGame.Server.Middleware
 
         private async Task ManageAttackOutcomeWarnings(MoveResult outcome, WebSocket socket)
         {
-                if (outcome == MoveResult.OutOfTurn)
-                {
-                    command = "Wait";
-                }
-                else if (outcome == MoveResult.IllegalMove)
-                {
-                    command = "Illegal";
-                }
-                else if (outcome == MoveResult.ExtraCard)
-                {
-                    command = "ExtraCard";
-                }
-                else if (outcome == MoveResult.GameIsOver)
-                {
-                    command = "GameIsAlreadyOver";
-                }
-                else if (outcome == MoveResult.PassportViolation)
-                {
-                    command = "PassportViolation";
-                }
-                else if (outcome == MoveResult.UseDisplayButton)
-                {
-                    command = "UseDisplayButton";
-                }
-                await SendJSON(socket, new
-                {
-                    command
-                });
+            if (outcome == MoveResult.OutOfTurn)
+            {
+                command = "Wait";
+            }
+            else if (outcome == MoveResult.IllegalMove)
+            {
+                command = "Illegal";
+            }
+            else if (outcome == MoveResult.ExtraCard)
+            {
+                command = "ExtraCard";
+            }
+            else if (outcome == MoveResult.GameIsOver)
+            {
+                command = "GameIsAlreadyOver";
+            }
+            else if (outcome == MoveResult.PassportViolation)
+            {
+                command = "PassportViolation";
+            }
+            else if (outcome == MoveResult.UseDisplayButton)
+            {
+                command = "UseDisplayButton";
+            }
+            await SendJSON(socket, new
+            {
+                command
+            });
         }
 
         private async Task ManageDefenseOutcomeWarning(MoveResult outcome, WebSocket socket)
@@ -173,19 +173,7 @@ namespace DurakGame.Server.Middleware
             await DistributeGameViewToPlayers();
         }
 
-        private async Task InformLeavingToOtherPlayers(int leavingPlayerID)
-        {
-            command = "InformLeaving";
-
-            int totalPlayers = manager.GetTotalPlayers();
-            int sizeOfPlayers = game.GetSizeOfPlayers();
-
-            await DistributeJSONToWebSockets(new { 
-                command, leavingPlayerID, sizeOfPlayers, totalPlayers 
-            });
-        }
-
-        private async Task ReceiveMessage(WebSocket socket, 
+        private async Task ReceiveMessage(WebSocket socket,
             Action<WebSocketReceiveResult, byte[]> handleMessage)
         {
             var buffer = new byte[1024 * 4];
@@ -275,7 +263,7 @@ namespace DurakGame.Server.Middleware
         private async Task UpdateAvailableIcons(WebSocket websocket)
         {
             command = "UpdateAvailableIcons";
-            await SendJSON(websocket, new { command, availableIcons }); 
+            await SendJSON(websocket, new { command, availableIcons });
         }
 
         private async Task CheckPlayerSetup(ClientMessage route, WebSocket websocket)
@@ -286,7 +274,7 @@ namespace DurakGame.Server.Middleware
             if (!game.IsUserNameAvailable(route.Name))
             {
                 playerSetupOK = false;
-            } 
+            }
             else
             {
                 game.AssignUserName(route.Name, route.From);
@@ -338,8 +326,8 @@ namespace DurakGame.Server.Middleware
             // send the success message to playing players 
             foreach (WebSocket socket in manager.GetPlayingSockets())
             {
-                await SendJSON(socket, new 
-                { 
+                await SendJSON(socket, new
+                {
                     command
                     // no need to send the reset gameView. it is done in client-side
                 });
@@ -429,7 +417,7 @@ namespace DurakGame.Server.Middleware
                     {
                         // Storing the message from the client into json string e.g {"command":"SetPlayerID";"playerID":1;"totalPlayers":3}
                         string jsonMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                        Console.WriteLine("Client: "+ jsonMessage);
+                        Console.WriteLine("Client: " + jsonMessage);
                         // Deserialize from json string to an object 
                         var options = new JsonSerializerOptions { IncludeFields = true };
                         var route = JsonSerializer.Deserialize<ClientMessage>(jsonMessage, options);
@@ -446,26 +434,12 @@ namespace DurakGame.Server.Middleware
                         if (manager.IsPlayingSocket(websocket))
                         {
                             await HandleResetGameCommand(true);
-
-
-                            /*int id = manager.GetPlayingSockets().IndexOf(websocket);
-                            // Send messages to players informing which player leaves and update
-                            // the number of players
-                            // only if the game is on
-                            if (game.gameStatus == GameStatus.GameInProcess)
-                            {
-                                // Remove the players from the game 
-                                game.RemovePlayer(id);
-
-                                // During the game inform other players who left
-                                await InformLeavingToOtherPlayers(id);
-                            }*/
                         }
                         // Remove the player from the collection of players 
                         manager.RemoveElementFromSockets(websocket);
 
                         // Close the connection with the player
-                        await websocket.CloseAsync(result.CloseStatus.Value, 
+                        await websocket.CloseAsync(result.CloseStatus.Value,
                             result.CloseStatusDescription, CancellationToken.None);
 
                         return;
@@ -479,6 +453,3 @@ namespace DurakGame.Server.Middleware
         }
     }
 }
-
-
-
