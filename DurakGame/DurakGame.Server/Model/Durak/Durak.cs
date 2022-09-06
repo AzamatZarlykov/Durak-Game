@@ -414,8 +414,8 @@ namespace DurakGame.Model.Durak
             bout.RemoveCardsFromBout();
         }
 
-        // In case defender takes the cards, if the number attacking cards size (including new one) 
-        // - defending cards size is greater than defenders hand then it is an extra card
+        // In case defender takes the cards, if the number of attacking cards' size (including new one) 
+        // is greater than defenders hand then it is an extra card
         // In case defender defends all the cards and attacker attacks do a simple check - if the 
         // defender still has cards left
         private bool CheckIfAttackingCardIsExtra()
