@@ -6,24 +6,17 @@ This project is a web-based application designed to play the famous game Durak. 
 
 Here are some screenshots of the web-based implementation of Durak:
 
-![Screenshot 1](/Documentation/img/Screenshot%202023-02-11%20191252.jpg)
+![Screenshot 1](/Documentation/img/menu_setup.png)
 
-This screenshot shows the main menu of the Durak game.
+These screenshots show the main menu on the left and the player profile setup on the right of the Durak game. For the setup, the creator gets to this page when the game setup is finished. For the joining player(s), this gets moved immediately once the `'Join'` button pressed from the menu.
 
-![Screenshot 2](/Documentation/img/create_modes.jpg)
-
-This screenshot shows an example of setting the game modes as a creator of the game. Note: this can be access only by one player and when there are more than 1 player in the menu.
-
-![Screenshot 3](/Documentation/img/player_setup.jpg)
-
-This screenshot shows player setting up their profiles. The creator gets to this page when the game setup is finished. For the joining player(s), this gets moved immediately once the `'Join'` button pressed from the menu.
-
-![Screenshot 4](/Documentation/img/waiting_room.jpg)
+![Screenshot 2](/Documentation/img/waiting_room.jpg)
 
 This screenshot shows waiting room for the players before starting the game. The creator waits until all the other players set up their profiles. Once the players are ready, the start the game button pops up for the creator of the game. By pressing it, the game starts.
 
-![Screenshot 4](/Documentation/img/gameplay.jpg)
-This screenshot shows the game in progress between two players. 
+![Screenshot 3](/Documentation/img/modes_gameplay.png)
+
+These screenshots show an example of setting the game modes as a creator of the game on the left and the gameplay on the right. Note: the mode page can be access only by the creator and when there are more than 1 player in the menu. 
 
 ## Features
 
